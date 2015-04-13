@@ -203,10 +203,11 @@ void Application::create() {
     7, 3, 1
   };
 
-  DrawArrayIndirectCommand indirect_cmds[4] = {
+  DrawElementsIndirectCommand indirect_cmds[4] = {
     {
       9,
       1,
+      0,
       0,
       0
     },
@@ -214,18 +215,21 @@ void Application::create() {
       12,
       1,
       9,
+      0,
       0
     },
     {
       6,
       1,
       21,
+      0,
       0
     },
     {
       9,
       1,
       27,
+      0,
       0
     },
   };
@@ -248,8 +252,9 @@ void Application::create() {
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
+  float v = (float)clock() / 3000.0f * glm::pi<float>();
   m_inv_viewmat = glm::inverse(m_viewmat);
-  m_viewmat = glm::lookAt(glm::vec3(1.0, 1.0, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+  m_viewmat = glm::lookAt(glm::vec3(sin(v), 1.0f, cos(v)), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
   m_projmat = glm::perspective(glm::pi<float>() / 3.0f, (float)m_width / m_height, 0.1f, 1000.0f);
 }
 
@@ -286,8 +291,14 @@ void Application::draw() {
   e = glGetError();
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-  glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
+#define TRY_INDIRECT
+#ifndef TRY_INDIRECT
+  glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+#else
+  glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirect_buffer);
+  glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, 0, 4, 0);
+#endif
   e = glGetError();
 
   glDisableVertexAttribArray(0);

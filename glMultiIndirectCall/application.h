@@ -11,12 +11,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-typedef struct {
-  GLuint vertexCount;
-  GLuint instanceCount;
-  GLuint firstVertex;
-  GLuint baseInstance;
-} DrawArrayIndirectCommand;
+typedef  struct {
+  GLuint  count;
+  GLuint  instanceCount;
+  GLuint  firstIndex;
+  GLuint  baseVertex;
+  GLuint  baseInstance;
+} DrawElementsIndirectCommand;
 
 class Application {
 public:
