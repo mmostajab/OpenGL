@@ -148,18 +148,6 @@ void Application::init() {
   glClearColor(19.0f / 255.0f, 9.0f / 255.0f, 99.0f / 255.0f, 1.0f);
   e = glGetError();
 
-  glGenBuffers(1, &m_transformation_buffer);
-  glBindBuffer(GL_UNIFORM_BUFFER, m_transformation_buffer);
-  glBufferData(GL_UNIFORM_BUFFER, 3 * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
-
-  glGenBuffers(1, &m_lighting_buffer);
-  glBindBuffer(GL_UNIFORM_BUFFER, m_lighting_buffer);
-  glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), NULL, GL_DYNAMIC_DRAW);
-
-  glGenBuffers(1, &m_general_buffer);
-  glBindBuffer(GL_UNIFORM_BUFFER, m_general_buffer);
-  glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), NULL, GL_DYNAMIC_DRAW);
-
   e = glGetError();
   glEnable(GL_DEPTH_TEST);
   e = glGetError();
@@ -180,7 +168,19 @@ void Application::create() {
     -0.25f,  0.25f, 0.25f,
   };
 
-  const GLfloat vertex_indices[] = {
+  const GLfloat vertex_colors[] = {
+    0.0f, 0.0f, 1.0f,
+    1.0f, 1.0f, 1.0f,
+    0.0f, 1.0f, 1.0f,
+    0.0f, 1.0f, 1.0f,
+
+    1.0f, 0.0f, 0.0f,
+    0.0f, 1.0f, 0.0f,
+    1.0f, 1.0f, 0.0f,
+    1.0f, 0.0f, 1.0f
+  };
+
+  const GLuint vertex_indices[] = {
     // offset = 0
     // count  = 9
     0, 1, 2,
@@ -238,6 +238,10 @@ void Application::create() {
   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_positions), vertex_positions, GL_STATIC_DRAW);
 
+  glGenBuffers(1, &color_buffer);
+  glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_colors), vertex_colors, GL_STATIC_DRAW);
+
   glGenBuffers(1, &index_buffer);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(vertex_indices), vertex_indices, GL_STATIC_DRAW);
@@ -245,38 +249,49 @@ void Application::create() {
 
 void Application::update(float time, float timeSinceLastFrame) {
   m_inv_viewmat = glm::inverse(m_viewmat);
-  m_viewmat = glm::lookAt(glm::vec3(0.0, 0.0, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-  m_projmat = glm::perspective(glm::pi<float>() / 3.0f, 800.0f / 600.0f, 0.0f, 1000.0f);
-  glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_transformation_buffer);
-  glm::mat4* transform_matrices = (glm::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 3 * sizeof(glm::mat4), GL_MAP_WRITE_BIT);
-  transform_matrices[0] = m_projmat;
-  transform_matrices[1] = m_viewmat;
-  transform_matrices[2] = m_worldmat;
-  glUnmapBuffer(GL_UNIFORM_BUFFER);
+  m_viewmat = glm::lookAt(glm::vec3(1.0, 1.0, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+  m_projmat = glm::perspective(glm::pi<float>() / 3.0f, (float)m_width / m_height, 0.1f, 1000.0f);
 }
 
 void Application::draw() {
-
+  GLenum e = glGetError();
   glViewport(0, 0, m_width, m_height);
-
+  e = glGetError();
   float back_color[] = { 0, 0.2, 0.7 };
   float zero[] = { 0.0f, 0.0f, 0.0f, 0.0f };
   float one = 1.0f;
-
+  e = glGetError();
   glClearBufferfv(GL_COLOR, 0, back_color);
   glClearBufferfv(GL_DEPTH, 0, &one);
-
+  e = glGetError();
   glUseProgram(shader);
+  e = glGetError();
 
+  GLint proj_mat = glGetUniformLocation(shader, "proj_mat");
+  GLint view_mat = glGetUniformLocation(shader, "view_mat");
+  GLint world_mat = glGetUniformLocation(shader, "world_mat");
+
+  glUniformMatrix4fv(proj_mat, 1, GL_FALSE, &m_projmat[0][0]);
+  glUniformMatrix4fv(view_mat, 1, GL_FALSE, &m_viewmat[0][0]);
+  glUniformMatrix4fv(world_mat, 1, GL_FALSE, &m_worldmat[0][0]);
+
+  e = glGetError();
   glEnableVertexAttribArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, NULL, 0);
 
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+  glEnableVertexAttribArray(1);
+  glBindBuffer(GL_ARRAY_BUFFER, color_buffer);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, NULL, 0);
+  e = glGetError();
 
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
   glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 
+  e = glGetError();
+
   glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
 }
 
 void Application::run() {

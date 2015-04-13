@@ -59,12 +59,11 @@ private:
   static GLFWwindow* m_window;
   glm::mat4 m_projmat, m_viewmat, m_worldmat, m_inv_viewmat;
   static unsigned int m_width, m_height;
-  GLuint m_coord_system_program;
-  GLuint m_transformation_buffer, m_lighting_buffer, m_general_buffer;
 
   // application-specific data
   GLuint shader;
   GLuint vertex_buffer;
+  GLuint color_buffer;
   GLuint index_buffer;
   GLuint indirect_buffer;
 
