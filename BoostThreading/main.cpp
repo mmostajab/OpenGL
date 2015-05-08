@@ -8,24 +8,39 @@
 int global_val = 0;
 int before_breakpoint = 0, after_breakpoint = 0;
 
-void mythread(){
+class mythread_class{
+public:
+  mythread_class(){
 
-  for (size_t i = 0; i < 500000; i++);
+  }
 
-  if (global_val == 0)
-    before_breakpoint++;
-  else
-    after_breakpoint++;
+  ~mythread_class(){
 
-}
+  }
+
+  void mythread(){
+
+    for (size_t i = 0; i < 500000; i++);
+
+    if (global_val == 0)
+      before_breakpoint++;
+    else
+      after_breakpoint++;
+
+  }
+};
+
 
 void main() {
 
-  size_t num_threads = 160 ;
+
+
+  size_t num_threads = 4 ;
   std::vector<boost::thread*> threads(num_threads);
+  std::vector<mythread_class> myThreads(num_threads);
 
   for (size_t i = 0; i < num_threads; i++){
-    threads[i] = new boost::thread(mythread);
+    threads[i] = new boost::thread(boost::bind(&mythread_class::mythread, &myThreads[i]));
   }
 
   //for (size_t i = 0; i < 100000000000; i++);
