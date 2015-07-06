@@ -1,201 +1,86 @@
-// STD 
-#include <iostream>
-#include <vector>
-
-
-// BOOST
-#include <boost/thread.hpp>
 #include <boost/atomic.hpp>
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <iostream>
 
-#define USE_COND_VAR
+namespace /*static*/ {
+    boost::atomic<int> data;
 
-std::vector<boost::thread*> threads;
+    struct Work {
+        Work(boost::barrier& barrier) : _barrier(&barrier) { }
 
-std::vector<boost::mutex*> data_ready_mutex;
-std::vector<boost::condition_variable*> cond;
-std::vector<bool> data_ready;
-std::vector<int> num_run;
+        void signal_slave()
+        {
+            boost::lock_guard<boost::mutex> lock(data_ready_mutex);
+            data_ready = true;
+            cond.notify_all();
+        }
 
-boost::mutex check_finish_mutex;
-std::vector<bool> finished;
+        void slave_thread()
+        {
+            static boost::atomic_int _id_gen(0);
+            id = _id_gen++;
 
-boost::atomic<int> data;
-boost::atomic<int> next_thread_id;
+            std::cout << "(" << id << ") slave_thread created\n";
+            while (true) {
 
-#ifdef USE_COND_VAR
-  boost::mutex finished_task_mutex;
-  boost::condition_variable finished_task_cond;
-  bool finished_task = false;
-#else
-  boost::atomic<int> num_threads_done;
-  boost::mutex num_threads_done_mutex;
-#endif
+                boost::unique_lock<boost::mutex> lock(data_ready_mutex);
+                cond.wait(lock, [&] { return data_ready; });
 
-#ifdef USE_COND_VAR
-  void signal_finished(const int& id)
-  {
-    {
-      boost::lock_guard<boost::mutex> lock(finished_task_mutex);
-      finished[id] = true;
-      finished_task = true;
-    }
-    finished_task_cond.notify_all();
-  }
-#endif
+                data_ready = false;
 
-void slave_therad()
-{
-  int id = next_thread_id++;
+                data++;
 
-  std::cout << "( " << id << " ) slave_thread created\n";
-  while (true)
-  {
+                num_run++;
 
-    /*if (num_threads_done >= 10)
-    {
-      bool a = true;
-      a = false;
-    }*/
+                _barrier->count_down_and_wait();
+            }
+        }
 
-    boost::unique_lock<boost::mutex> lock(*data_ready_mutex[id]);
-    while (!data_ready[id])
-    {
-      cond[id]->wait(lock);
-    }
+    private:
+        int id = 0;
+        bool data_ready = false;
+        int num_run = 0;
 
-#ifdef USE_COND_VAR
-    finished[id] = false;
-#else
-    if (num_threads_done >= 10)
-    {
-      bool a = true;
-      a = false;
-    }
-#endif
-
-    
-
-
-    data_ready[id] = false;
-
-    data++;
-
-    num_run[id]++;
-
-#ifdef USE_COND_VAR
-    signal_finished(id);
-#else
-    {
-      boost::lock_guard<boost::mutex> lock(num_threads_done_mutex);
-      num_threads_done++;
-    }
-
-    std::cout << num_threads_done << std::endl;
-
-    if (num_threads_done > threads.size())
-    {
-      int a = 0;
-      a = 10;
-    }
-#endif
-  }
+        boost::barrier* _barrier;
+        boost::mutex data_ready_mutex;
+        boost::condition_variable cond;
+    };
 }
 
-void signal_slave(const int& id)
+#include <boost/chrono.hpp>
+#include <boost/chrono/chrono_io.hpp>
+
+using hrc = boost::chrono::high_resolution_clock;
+
+int main()
 {
-  {
-    boost::lock_guard<boost::mutex> lock(*data_ready_mutex[id]);
+    boost::thread_group tg;
 
-    data_ready[id] = true;
-  }
-  cond[id]->notify_all();
-}
+    size_t nThreads = 10;
 
-void main_thread()
-{
-  while (true)
-  {
-    clock_t start_time = clock();
+    boost::barrier finish(nThreads + 1); // one for the main thread
 
-#ifndef USE_COND_VAR
-    {
-      boost::lock_guard<boost::mutex> lock(num_threads_done_mutex);
-      num_threads_done = 0;
+    boost::ptr_vector<Work> works;
+    works.reserve(nThreads); // avoid reallocations
+
+    for (size_t i = 0; i < nThreads; i++) {
+        works.push_back(new Work(finish));
+        tg.create_thread(boost::bind(&Work::slave_thread, boost::ref(works.back())));
     }
 
-    if (num_threads_done > 0)
-    {
-      int a = 2;
-      a = 3;
+    while (true) {
+        auto start_time = hrc::now();
+
+        for (auto& w : works)
+            w.signal_slave();
+
+        // Wait for slave threads to finish.
+        finish.count_down_and_wait();
+
+        std::cout << "Elapsed Time =" << std::setw(10) << std::right << (hrc::now() - start_time) << std::endl;
     }
 
-#endif
-
-    for (size_t i = 0; i < threads.size(); i++)
-      signal_slave(static_cast<int>(i));
-
-    while (true)
-    {
-#ifdef USE_COND_VAR
-      boost::unique_lock<boost::mutex> lock(finished_task_mutex);
-      while (!finished_task)
-      {
-        finished_task_cond.wait(lock);
-      }
-      finished_task = false;
-
-      size_t i = 0;
-      for (; i < finished.size(); i++)
-      {
-        if (!finished[i]) break;
-      }
-      if (i == finished.size()) break;
-#else
-      {
-        boost::lock_guard<boost::mutex> lock(num_threads_done_mutex);
-        if (num_threads_done == threads.size()) break;
-      }
-#endif
-    }
-
-    clock_t end_time = clock();
-
-    std::cout << "Elapsed Time = " << static_cast<float>(end_time - start_time) / CLOCKS_PER_SEC << std::endl;
-
-    for (size_t i = 0; i < threads.size(); i++)
-      finished[i] = false;
-
-  }
-}
-
-void main()
-{
-  size_t nThreads = 10;
-  for (size_t i = 0; i < nThreads; i++)
-  {
-    threads.push_back(new boost::thread(slave_therad));
-  }
-
-  data_ready_mutex.resize(nThreads);
-  cond.resize(nThreads);
-  data_ready.resize(nThreads);
-  finished.resize(nThreads);
-  num_run.resize(nThreads, 0);
-  for (size_t i = 0; i < nThreads; i++)
-  {
-    data_ready_mutex[i] = new boost::mutex();
-    cond[i] = new boost::condition_variable();
-    data_ready[i] = false;
-    finished[i] = false;
-  }  
-
-  boost::thread mThread(main_thread);
-
-  mThread.join();
-
-  for (size_t i = 0; i < nThreads; i++)
-  {
-    threads[i]->join();
-  }
-
+    tg.join_all();
 }
