@@ -64,6 +64,8 @@ private:
 
   glm::vec3 m_dims;
 
+  float m_minRange, m_maxRange;
+
   // application-specific data
   GLuint shader;
   GLuint vertex_buffer;
@@ -71,6 +73,9 @@ private:
   GLuint index_buffer;
   GLuint indirect_buffer;
   GLuint localpos_buffer;
+  GLuint datasetTex;
+
+
 
   bool initialization_step;
 };

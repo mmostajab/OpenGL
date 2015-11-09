@@ -106,6 +106,8 @@ static GLuint compile_link_vs_fs(const std::string& vert_shader_file, const std:
 Application::Application() {
   initialization_step = true;
   m_worldmat = m_viewmat = m_projmat = glm::mat4(1.0f);
+  m_minRange = 0.0f;
+  m_maxRange = 0.01f;
 }
 
 void Application::init(const unsigned int& width, const unsigned int& height) {
@@ -267,6 +269,42 @@ void Application::create() {
   glGenBuffers(1, &index_buffer);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(vertex_indices), vertex_indices, GL_STATIC_DRAW);
+
+  glGenTextures(1, (GLuint*)&datasetTex);
+
+  glBindTexture(GL_TEXTURE_3D, datasetTex);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+  // Convert the data to RGBA data.
+  // Here we are simply putting the same value to R, G, B and A channels.
+  // Usually for raw data, the alpha value
+  // will be constructed by a threshold value given by the user 
+
+  int tex_dims[3] = { 380, 380, 828 };
+
+  std::ifstream inFile("F:/data/data/data/u_380x380x828_frame0010_subs00.raw", std::ios::binary);
+
+  if (!inFile){
+    std::cout << "No infile\n";
+    exit(0);
+  }
+
+  std::vector<float> data(tex_dims[0] * tex_dims[1] * tex_dims[2]);
+  for (int idx = 0; idx < tex_dims[0] * tex_dims[1] * tex_dims[2]; ++idx)
+  {
+    float val[3];
+    inFile.read((char*)&val, 12);
+
+    data[idx] = (std::sqrt(val[0] * val[0] + val[1] * val[1] + val[2] * val[2]));
+  }
+
+  glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F,
+    tex_dims[0], tex_dims[1], tex_dims[2], 0,
+    GL_RED, GL_FLOAT, (GLvoid *)data.data());
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
@@ -275,6 +313,17 @@ void Application::update(float time, float timeSinceLastFrame) {
   m_viewmat = glm::lookAt(m_cam_pos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
   m_inv_viewmat = glm::inverse(m_viewmat);
   m_projmat = glm::perspective(glm::pi<float>() / 3.0f, (float)m_width / m_height, 0.1f, 1000.0f);
+
+  if (m_w_pressed || m_s_pressed || m_a_pressed || m_d_pressed){
+    if (m_w_pressed) m_minRange += 0.0001f;
+    if (m_s_pressed) m_minRange -= 0.0001f;
+    if (m_a_pressed) m_maxRange -= 0.0001f;
+    if (m_d_pressed) m_maxRange += 0.0001f;
+    std::cout << "Min = " << m_minRange << ", Max = " << m_maxRange << std::endl;
+  }
+
+  
+
 }
 
 void Application::draw() {
@@ -297,12 +346,17 @@ void Application::draw() {
   GLint world_mat    = glGetUniformLocation(shader, "world_mat");
   GLint cam_pos      = glGetUniformLocation(shader, "camera_pos");
   GLint dims         = glGetUniformLocation(shader, "dims");
+  GLint min_range_loc = glGetUniformLocation(shader, "min_range");
+  GLint max_range_loc = glGetUniformLocation(shader, "max_range");
 
   m_worldmat = glm::mat4(1.0f);
   glUniformMatrix4fv(proj_mat,      1, GL_FALSE, &m_projmat[0][0]);
   glUniformMatrix4fv(inv_view_mat,  1, GL_FALSE, &m_inv_viewmat[0][0]);
   glUniformMatrix4fv(view_mat,      1, GL_FALSE, &m_viewmat[0][0]);
   glUniformMatrix4fv(world_mat,     1, GL_FALSE, &m_worldmat[0][0]);
+  glUniform1i(glGetUniformLocation(shader, "text"), 0);
+  glUniform1f(min_range_loc, m_minRange);
+  glUniform1f(max_range_loc, m_maxRange);
   //std::cout << "Camera Position = " << m_cam_pos.x << " " << m_cam_pos.y << " " << m_cam_pos.z << std::endl;
   glUniform3fv(cam_pos, 1, (float*)&m_cam_pos);
   glUniform3fv(dims, 1, (float*)&m_dims);
@@ -323,6 +377,9 @@ void Application::draw() {
   e = glGetError();
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+
+  glBindTexture(GL_TEXTURE_3D, datasetTex);
+
 
 #define TRY_INDIRECT
 #ifndef TRY_INDIRECT
@@ -406,12 +463,11 @@ void Application::EventMouseWheel(GLFWwindow* window, double xoffset, double yof
 }
 
 void Application::EventKey(GLFWwindow* window, int key, int scancode, int action, int mods) {
-
   if (action == GLFW_PRESS){
-    if (m_controlKeyHold && key == GLFW_KEY_W)  m_w_pressed = true;
-    if (m_controlKeyHold && key == GLFW_KEY_S)  m_s_pressed = true;
-    if (m_controlKeyHold && key == GLFW_KEY_A)  m_a_pressed = true;
-    if (m_controlKeyHold && key == GLFW_KEY_D)  m_d_pressed = true;
+    if (/*m_controlKeyHold &&*/ key == GLFW_KEY_W)  m_w_pressed = true;
+    if (/*m_controlKeyHold &&*/ key == GLFW_KEY_S)  m_s_pressed = true;
+    if (/*m_controlKeyHold &&*/ key == GLFW_KEY_A)  m_a_pressed = true;
+    if (/*m_controlKeyHold &&*/ key == GLFW_KEY_D)  m_d_pressed = true;
     if (m_controlKeyHold && key == GLFW_KEY_Q)  m_q_pressed = true;
     if (m_controlKeyHold && key == GLFW_KEY_E)  m_e_pressed = true;
 
