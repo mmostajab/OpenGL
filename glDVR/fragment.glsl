@@ -28,7 +28,7 @@ bool inRange(float val, float min, float max)
 
 vec3 getJetRGBMap(const float value, const float min_value, const float max_value)
 {
-  float v = 1 - ((value - min_value) / (max_value - min_value));
+  float v = ((value - min_value) / (max_value - min_value));
 
   float r, g, b;
 
@@ -127,7 +127,7 @@ void main() {
     //vec4 mapped_color = TexColorAlpha.SampleLevel(samLinear, s, 0.0f);
     found = true;
 
-    for(int i = 0; i < 100; i++){
+    for(int i = 0; i < 1000; i++){
       float new_t = (t_prev + t) / 2.0f;
 
       texCoords = (org + t * dir) / dims + vec3(0.5f);
@@ -145,7 +145,7 @@ void main() {
   }
 
     t_prev = t;
-	t += 0.01;
+	t += 0.001;
   }
 
   // if nothing is found, discard it.

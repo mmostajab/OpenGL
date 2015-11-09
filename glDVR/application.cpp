@@ -106,8 +106,14 @@ static GLuint compile_link_vs_fs(const std::string& vert_shader_file, const std:
 Application::Application() {
   initialization_step = true;
   m_worldmat = m_viewmat = m_projmat = glm::mat4(1.0f);
+#define JOHANNES
+#ifndef JOHANNES
   m_minRange = 0.0f;
   m_maxRange = 0.01f;
+#else
+  m_minRange = 17.0f;
+  m_maxRange = 17.2f;
+#endif
 }
 
 void Application::init(const unsigned int& width, const unsigned int& height) {
@@ -284,20 +290,51 @@ void Application::create() {
   // Usually for raw data, the alpha value
   // will be constructed by a threshold value given by the user 
 
+#ifdef WATER
   int tex_dims[3] = { 380, 380, 828 };
+#endif
 
+//#define TEST
+#ifdef TEST
+  int tex_dims[3] = { 200, 200, 200 };
+#else
+
+#define JOHANNES
+#ifdef JOHANNES
+  int tex_dims[3] = { 64, 64, 200 };
+#endif
+
+#endif
+
+#ifdef WATER
   std::ifstream inFile("F:/data/data/data/u_380x380x828_frame0010_subs00.raw", std::ios::binary);
+#elif defined(JOHANNES)
+  std::ifstream inFile("F:/data/vel/vel.dat", std::ios::binary);
+#endif
 
   if (!inFile){
     std::cout << "No infile\n";
     exit(0);
   }
 
+  float val[3];
+  inFile.read((char*)&val, 12);
+
   std::vector<float> data(tex_dims[0] * tex_dims[1] * tex_dims[2]);
   for (int idx = 0; idx < tex_dims[0] * tex_dims[1] * tex_dims[2]; ++idx)
   {
-    float val[3];
+
+#ifndef TEST
+#ifdef JOHANNES
     inFile.read((char*)&val, 12);
+#else
+    inFile.read((char*)&val, 12);
+#endif
+#else
+    val[0] = (float)(idx % tex_dims[0]) / tex_dims[0] * 0.2f;
+    val[1] = (float)((int)(idx / tex_dims[0]) % tex_dims[1]) / (float)(tex_dims[1]) * 0.2f;
+    val[2] = (idx / (tex_dims[0] * tex_dims[1])) / (float)(tex_dims[2]) * 0.2f;
+#endif
 
     data[idx] = (std::sqrt(val[0] * val[0] + val[1] * val[1] + val[2] * val[2]));
   }
@@ -315,10 +352,10 @@ void Application::update(float time, float timeSinceLastFrame) {
   m_projmat = glm::perspective(glm::pi<float>() / 3.0f, (float)m_width / m_height, 0.1f, 1000.0f);
 
   if (m_w_pressed || m_s_pressed || m_a_pressed || m_d_pressed){
-    if (m_w_pressed) m_minRange += 0.0001f;
-    if (m_s_pressed) m_minRange -= 0.0001f;
-    if (m_a_pressed) m_maxRange -= 0.0001f;
-    if (m_d_pressed) m_maxRange += 0.0001f;
+    if (m_w_pressed) m_minRange += 0.01f;
+    if (m_s_pressed) m_minRange -= 0.01f;
+    if (m_a_pressed) m_maxRange -= 0.01f;
+    if (m_d_pressed) m_maxRange += 0.01f;
     std::cout << "Min = " << m_minRange << ", Max = " << m_maxRange << std::endl;
   }
 
@@ -354,7 +391,7 @@ void Application::draw() {
   glUniformMatrix4fv(inv_view_mat,  1, GL_FALSE, &m_inv_viewmat[0][0]);
   glUniformMatrix4fv(view_mat,      1, GL_FALSE, &m_viewmat[0][0]);
   glUniformMatrix4fv(world_mat,     1, GL_FALSE, &m_worldmat[0][0]);
-  glUniform1i(glGetUniformLocation(shader, "text"), 0);
+  glUniform1i(glGetUniformLocation(shader, "tex"), 0);
   glUniform1f(min_range_loc, m_minRange);
   glUniform1f(max_range_loc, m_maxRange);
   //std::cout << "Camera Position = " << m_cam_pos.x << " " << m_cam_pos.y << " " << m_cam_pos.z << std::endl;
