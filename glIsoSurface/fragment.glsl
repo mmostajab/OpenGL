@@ -11,9 +11,6 @@ uniform vec3 camera_pos;
 uniform float min_range = 0.9f;
 uniform float max_range = 1.0f;
 
-uniform float min_alpha = 0.0f;
-uniform float max_alpha = 1.0f;
-
 uniform vec3 dims;
 
 in VS_OUT{
@@ -27,12 +24,6 @@ layout (location = 0) out vec4 out_color;
 bool inRange(float val, float min, float max)
 {
   return (val >= min) && (val <= max);
-}
-
-float getInterpVal(const float s, const float min_s, const float max_s, const float min_value, const float max_value){
-  float v = ((s - min_s) / (max_s - min_s));
-
-  return (1.0f - v) * min_value + v * max_value;
 }
 
 vec3 getJetRGBMap(const float value, const float min_value, const float max_value)
@@ -126,28 +117,37 @@ void main() {
   float t = t_entryPoint;
   float t_prev = t;
  
-  float alpha = 0;
-  vec3 color = vec3(0.0f);
+  bool found = false;
   while(t < t_exitPoint)
   {
-	   texCoords = (org + t * dir) / dims + vec3(0.5f);
-	   float s = texture(tex, texCoords).r;
+	texCoords = (org + t * dir) / dims + vec3(0.5f);
+	float s = texture(tex, texCoords).r;
 
-    if(inRange(s, min_range, max_range)){
+  if(inRange(s, min_range, max_range)){
+    //vec4 mapped_color = TexColorAlpha.SampleLevel(samLinear, s, 0.0f);
+    found = true;
 
-      float alphaF = getInterpVal(s, min_range, max_range, min_alpha, max_alpha);
-      vec3  colorF = getJetRGBMap(s, min_range, max_range);
+    for(int i = 0; i < 1000; i++){
+      float new_t = (t_prev + t) / 2.0f;
 
-      alpha = alpha + (1 - alpha) * alphaF;
-      color = color + (1 - alpha) * colorF;
+      texCoords = (org + t * dir) / dims + vec3(0.5f);
+      s = texture(tex, texCoords).r;
 
-      if(abs(alpha - 1) < 0.001f)
-        break;
+      if(inRange(s, min_range, max_range)){
+        t = new_t;
+      } else {
+        t_prev = new_t;
+      }
     }
 
-	  t += 0.001;
+    out_color = vec4(getJetRGBMap(s, min_range, max_range), 1.0f);
+    break;
   }
 
-  out_color = vec4(color, alpha);
+    t_prev = t;
+	t += 0.001;
+  }
 
+  // if nothing is found, discard it.
+  if(!found) discard;
 }

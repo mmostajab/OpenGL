@@ -15,8 +15,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <GL/glew.h>
 
-#define WATER
-//#define JOHANNES
 
 // Static Members
 GLFWwindow*				    Application::m_window = 0;
@@ -108,12 +106,13 @@ static GLuint compile_link_vs_fs(const std::string& vert_shader_file, const std:
 Application::Application() {
   initialization_step = true;
   m_worldmat = m_viewmat = m_projmat = glm::mat4(1.0f);
+#define JOHANNES
 #ifndef JOHANNES
   m_minRange = 0.0f;
   m_maxRange = 0.01f;
 #else
-  m_minRange = 16.01f;
-  m_maxRange = 16.02f;
+  m_minRange = 17.0f;
+  m_maxRange = 17.2f;
 #endif
 }
 
@@ -160,15 +159,6 @@ void Application::init() {
   e = glGetError();
   glEnable(GL_DEPTH_TEST);
   e = glGetError();
-
-  glEnable(GL_BLEND);
-  /*glBlendFunc(GL_SRC_COLOR, GL_ONE);
-  glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_DST_ALPHA);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);*/
-
-  glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
-  glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 }
 
 void Application::create() {
@@ -309,6 +299,7 @@ void Application::create() {
   int tex_dims[3] = { 200, 200, 200 };
 #else
 
+#define JOHANNES
 #ifdef JOHANNES
   int tex_dims[3] = { 64, 64, 200 };
 #endif
@@ -361,10 +352,10 @@ void Application::update(float time, float timeSinceLastFrame) {
   m_projmat = glm::perspective(glm::pi<float>() / 3.0f, (float)m_width / m_height, 0.1f, 1000.0f);
 
   if (m_w_pressed || m_s_pressed || m_a_pressed || m_d_pressed){
-    if (m_w_pressed) m_minRange += 0.001f;
-    if (m_s_pressed) m_minRange -= 0.001f;
-    if (m_a_pressed) m_maxRange -= 0.001f;
-    if (m_d_pressed) m_maxRange += 0.001f;
+    if (m_w_pressed) m_minRange += 0.01f;
+    if (m_s_pressed) m_minRange -= 0.01f;
+    if (m_a_pressed) m_maxRange -= 0.01f;
+    if (m_d_pressed) m_maxRange += 0.01f;
     std::cout << "Min = " << m_minRange << ", Max = " << m_maxRange << std::endl;
   }
 
