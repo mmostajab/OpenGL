@@ -7,7 +7,7 @@
 # include <crtdbg.h>
 #endif //DEBUG_MEM_LEAKS
 
-Application app;
+Application app("F:/data/vel/vel.dat");
 
 int main() {
 #ifdef DEBUG_MEM_LEAKS

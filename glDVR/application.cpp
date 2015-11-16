@@ -105,16 +105,16 @@ static GLuint compile_link_vs_fs(const std::string& vert_shader_file, const std:
 }
 
 
-Application::Application() {
+Application::Application(const std::string& dataset_filename, const float& minRange, const float& maxRange, const float& minAlpha, const float& maxAlpha, const float& stepsize) {
   initialization_step = true;
   m_worldmat = m_viewmat = m_projmat = glm::mat4(1.0f);
-#ifndef JOHANNES
-  m_minRange = 0.0f;
-  m_maxRange = 0.01f;
-#else
-  m_minRange = 16.01f;
-  m_maxRange = 16.02f;
-#endif
+
+  m_dataset_filename = dataset_filename;
+  m_minRange = minRange;
+  m_maxRange = maxRange;
+  m_minAlpha = minAlpha;
+  m_maxAlpha = maxAlpha;
+  m_stepSize = stepsize;
 }
 
 void Application::init(const unsigned int& width, const unsigned int& height) {
@@ -125,7 +125,7 @@ void Application::init(const unsigned int& width, const unsigned int& height) {
   if (!glfwInit())
     exit(EXIT_FAILURE);
 
-  m_window = glfwCreateWindow(width, height, "Stream Surface Generator (Demo): Beta", NULL, NULL);
+  m_window = glfwCreateWindow(width, height, "Direct Volume Rendering: Beta", NULL, NULL);
   if (!m_window)
   {
     glfwTerminate();
@@ -162,11 +162,6 @@ void Application::init() {
   e = glGetError();
 
   glEnable(GL_BLEND);
-  /*glBlendFunc(GL_SRC_COLOR, GL_ONE);
-  glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_DST_ALPHA);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA);*/
-
   glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
   glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 }
@@ -300,34 +295,16 @@ void Application::create() {
   // Usually for raw data, the alpha value
   // will be constructed by a threshold value given by the user 
 
-#ifdef WATER
-  int tex_dims[3] = { 380, 380, 828 };
-#endif
-
-//#define TEST
-#ifdef TEST
-  int tex_dims[3] = { 200, 200, 200 };
-#else
-
-#ifdef JOHANNES
-  int tex_dims[3] = { 64, 64, 200 };
-#endif
-
-#endif
-
-#ifdef WATER
-  std::ifstream inFile("F:/data/data/data/u_380x380x828_frame0010_subs00.raw", std::ios::binary);
-#elif defined(JOHANNES)
-  std::ifstream inFile("F:/data/vel/vel.dat", std::ios::binary);
-#endif
+  std::ifstream inFile(m_dataset_filename, std::ios::binary);
 
   if (!inFile){
-    std::cout << "No infile\n";
+    std::cout << "Cannot open " << m_dataset_filename << std::endl;
     exit(0);
   }
 
+  float tex_dims[3];
   float val[3];
-  inFile.read((char*)&val, 12);
+  inFile.read((char*)&tex_dims, 12);
 
   std::vector<float> data(tex_dims[0] * tex_dims[1] * tex_dims[2]);
   for (int idx = 0; idx < tex_dims[0] * tex_dims[1] * tex_dims[2]; ++idx)

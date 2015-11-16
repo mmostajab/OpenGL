@@ -11,8 +11,10 @@ uniform vec3 camera_pos;
 uniform float min_range = 0.9f;
 uniform float max_range = 1.0f;
 
-uniform float min_alpha = 0.0f;
-uniform float max_alpha = 1.0f;
+uniform float min_alpha = 0.2f;
+uniform float max_alpha = 0.6f;
+
+uniform float stepsize = 0.001f;
 
 uniform vec3 dims;
 
@@ -145,7 +147,7 @@ void main() {
         break;
     }
 
-	  t += 0.001;
+	  t += stepsize;
   }
 
   out_color = vec4(color, alpha);

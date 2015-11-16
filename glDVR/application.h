@@ -21,7 +21,7 @@ typedef  struct {
 
 class Application {
 public:
-  Application();
+  Application(const std::string& dataset_filename, const float& minRange = 0.0f, const float& maxRange = 10.0f, const float& minAlpha = 0.2f, const float& maxAlpha = 1.0f, const float& stepsize = 0.001f);
 
   void init(const unsigned int& width, const unsigned int& height);
   void init();
@@ -64,7 +64,10 @@ private:
 
   glm::vec3 m_dims;
 
+  std::string m_dataset_filename;
   float m_minRange, m_maxRange;
+  float m_minAlpha, m_maxAlpha;
+  float m_stepSize;
 
   // application-specific data
   GLuint shader;
@@ -75,7 +78,7 @@ private:
   GLuint localpos_buffer;
   GLuint datasetTex;
 
-
+  
 
   bool initialization_step;
 };
