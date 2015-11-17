@@ -15,9 +15,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <GL/glew.h>
 
-#define WATER
-//#define JOHANNES
-
 // Static Members
 GLFWwindow*				    Application::m_window = 0;
 unsigned int			    Application::m_width = 0;
@@ -105,16 +102,16 @@ static GLuint compile_link_vs_fs(const std::string& vert_shader_file, const std:
 }
 
 
-Application::Application(const std::string& dataset_filename, const float& minRange, const float& maxRange, const float& minAlpha, const float& maxAlpha, const float& stepsize) {
+Application::Application(const std::string& dataset_filename, const float& minRange, const float& maxRange, const float& minAlpha, const float& maxAlpha, const float& stepsize, const float& rangestep) {
   initialization_step = true;
   m_worldmat = m_viewmat = m_projmat = glm::mat4(1.0f);
-
   m_dataset_filename = dataset_filename;
   m_minRange = minRange;
   m_maxRange = maxRange;
   m_minAlpha = minAlpha;
   m_maxAlpha = maxAlpha;
   m_stepSize = stepsize;
+  m_rangeStep = rangestep;
 }
 
 void Application::init(const unsigned int& width, const unsigned int& height) {
@@ -302,7 +299,7 @@ void Application::create() {
     exit(0);
   }
 
-  float tex_dims[3];
+  int tex_dims[3];
   float val[3];
   inFile.read((char*)&tex_dims, 12);
 
@@ -310,17 +307,7 @@ void Application::create() {
   for (int idx = 0; idx < tex_dims[0] * tex_dims[1] * tex_dims[2]; ++idx)
   {
 
-#ifndef TEST
-#ifdef JOHANNES
     inFile.read((char*)&val, 12);
-#else
-    inFile.read((char*)&val, 12);
-#endif
-#else
-    val[0] = (float)(idx % tex_dims[0]) / tex_dims[0] * 0.2f;
-    val[1] = (float)((int)(idx / tex_dims[0]) % tex_dims[1]) / (float)(tex_dims[1]) * 0.2f;
-    val[2] = (idx / (tex_dims[0] * tex_dims[1])) / (float)(tex_dims[2]) * 0.2f;
-#endif
 
     data[idx] = (std::sqrt(val[0] * val[0] + val[1] * val[1] + val[2] * val[2]));
   }
@@ -338,10 +325,10 @@ void Application::update(float time, float timeSinceLastFrame) {
   m_projmat = glm::perspective(glm::pi<float>() / 3.0f, (float)m_width / m_height, 0.1f, 1000.0f);
 
   if (m_w_pressed || m_s_pressed || m_a_pressed || m_d_pressed){
-    if (m_w_pressed) m_minRange += 0.001f;
-    if (m_s_pressed) m_minRange -= 0.001f;
-    if (m_a_pressed) m_maxRange -= 0.001f;
-    if (m_d_pressed) m_maxRange += 0.001f;
+    if (m_w_pressed) m_minRange += m_rangeStep;
+    if (m_s_pressed) m_minRange -= m_rangeStep;
+    if (m_a_pressed) m_maxRange -= m_rangeStep;
+    if (m_d_pressed) m_maxRange += m_rangeStep;
     std::cout << "Min = " << m_minRange << ", Max = " << m_maxRange << std::endl;
   }
 
@@ -371,6 +358,9 @@ void Application::draw() {
   GLint dims         = glGetUniformLocation(shader, "dims");
   GLint min_range_loc = glGetUniformLocation(shader, "min_range");
   GLint max_range_loc = glGetUniformLocation(shader, "max_range");
+  GLint min_alpha_loc = glGetUniformLocation(shader, "min_alpha");
+  GLint max_alpha_loc = glGetUniformLocation(shader, "max_alpha");
+  GLint step_size_loc = glGetUniformLocation(shader, "step_size");
 
   m_worldmat = glm::mat4(1.0f);
   glUniformMatrix4fv(proj_mat,      1, GL_FALSE, &m_projmat[0][0]);
@@ -380,6 +370,9 @@ void Application::draw() {
   glUniform1i(glGetUniformLocation(shader, "tex"), 0);
   glUniform1f(min_range_loc, m_minRange);
   glUniform1f(max_range_loc, m_maxRange);
+  glUniform1f(min_alpha_loc, m_minAlpha);
+  glUniform1f(max_alpha_loc, m_maxAlpha);
+  glUniform1f(step_size_loc, m_stepSize);
   //std::cout << "Camera Position = " << m_cam_pos.x << " " << m_cam_pos.y << " " << m_cam_pos.z << std::endl;
   glUniform3fv(cam_pos, 1, (float*)&m_cam_pos);
   glUniform3fv(dims, 1, (float*)&m_dims);

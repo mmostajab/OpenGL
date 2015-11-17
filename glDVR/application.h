@@ -21,7 +21,7 @@ typedef  struct {
 
 class Application {
 public:
-  Application(const std::string& dataset_filename, const float& minRange = 0.0f, const float& maxRange = 10.0f, const float& minAlpha = 0.2f, const float& maxAlpha = 1.0f, const float& stepsize = 0.001f);
+  Application(const std::string& dataset_filename, const float& minRange = 0.0f, const float& maxRange = 10.0f, const float& minAlpha = 0.2f, const float& maxAlpha = 1.0f, const float& stepsize = 0.001f, const float& rangestep = 0.0001f);
 
   void init(const unsigned int& width, const unsigned int& height);
   void init();
@@ -67,6 +67,7 @@ private:
   std::string m_dataset_filename;
   float m_minRange, m_maxRange;
   float m_minAlpha, m_maxAlpha;
+  float m_rangeStep;
   float m_stepSize;
 
   // application-specific data
