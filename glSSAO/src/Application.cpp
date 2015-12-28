@@ -38,6 +38,8 @@ static unsigned int seed = 0x13371337;
 
 static inline float random_float()
 {
+  //return static_cast<float>(rand() % 100000) / 100000.0f;
+
     float res;
     unsigned int tmp;
 
@@ -48,6 +50,8 @@ static inline float random_float()
     *((unsigned int *)&res) = (tmp >> 9) | 0x3F800000;
 
     return (res - 1.0f);
+
+
 }
 
 Application::Application() {
@@ -126,8 +130,12 @@ void Application::init() {
 
 void Application::create() {
    compileShaders();
-
-   PlyDataReader::getSingletonPtr()->readDataInfo("bunny.ply", nullptr, 0);
+#define aaa
+#ifdef aaa
+   PlyDataReader::getSingletonPtr()->readDataInfo("big_porsche.ply", nullptr, 0);
+#else
+   PlyDataReader::getSingletonPtr()->readDataInfo("cow.ply", nullptr, 0);
+#endif
 
    unsigned int nVertices = PlyDataReader::getSingletonPtr()->getNumVertices();
    unsigned int nFaces    = PlyDataReader::getSingletonPtr()->getNumFaces();
@@ -143,12 +151,19 @@ void Application::create() {
      center += vertices[i].pos;
    }
    center /= vertices.size();
+
    for (size_t i = 0; i < vertices.size(); i++) {
      vertices[i].pos -= center;
    }
 
    for (size_t i = 0; i < vertices.size(); i++) {
-     vertices[i].pos *= 30;
+
+     //vertices[i].pos *= 30.0;
+#ifdef aaa
+     vertices[i].pos *= 0.4;
+#else
+     vertices[i].pos *= 1.0;
+#endif
    }
 
    glGenBuffers(1, &vertices_buffer);
@@ -224,11 +239,10 @@ void Application::draw() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 //	m_ground.draw();
-
-  drawPly();
  
   // Render the Screen Space Ambient Occlusion from generated depth texture
   glBindBufferBase(GL_UNIFORM_BUFFER, 2, points_buffer);
+  drawPly();
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glUseProgram(ssao_program);
   
@@ -365,25 +379,35 @@ void Application::prepare_ssao() {
 
   std::random_device rd;
   std::mt19937_64 generator(rd());
-  std::uniform_int_distribution<int> distribution(0, 1000);
+  std::uniform_real_distribution<float> distribution(-3.141592f, 3.141592f);
 
   for (i = 0; i < 256; i++)
   {
-      do
+    do
+    {
+      point_data.point[i][0] = 2 * random_float() - 1;
+      point_data.point[i][1] = 2 * random_float() - 1;
+      point_data.point[i][2] = 2 * random_float() - 1;
+      point_data.point[i][3] = 2 * random_float() - 1;
+
+      float d2 = (point_data.point[i][0] * point_data.point[i][0] + point_data.point[i][1] * point_data.point[i][1]);
+      if (d2 < 0.2)
       {
-          point_data.point[i][0] = random_float() * 2.0f - 1.0f;
-          point_data.point[i][1] = random_float();
-          point_data.point[i][2] = random_float();
-          point_data.point[i][3] = 0.0f;
-      } while (glm::length(point_data.point[i]) > 1.0f);
-      glm::normalize(point_data.point[i]);
+        point_data.point[i][2] = cos(sqrtf(d2));
+      }
+      else
+        continue;
+
+    } while (glm::length(point_data.point[i]) > 1.0f);
+    glm::normalize(point_data.point[i]);
   }
   for (i = 0; i < 256; i++)
   {
-      point_data.random_vectors[i][0] = random_float();
-      point_data.random_vectors[i][1] = random_float();
-      point_data.random_vectors[i][2] = random_float();
-      point_data.random_vectors[i][3] = random_float();
+    point_data.random_vectors[i][0] = 2 * random_float() - 1;
+    point_data.random_vectors[i][1] = 2 * random_float() - 1;
+    point_data.random_vectors[i][2] = 2 * random_float() - 1;
+    point_data.random_vectors[i][3] = random_float();
+    //glm::normalize(point_data.random_vectors[i]);
   }
 
   glGenBuffers(1, &points_buffer);

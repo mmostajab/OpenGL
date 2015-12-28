@@ -18,24 +18,23 @@ layout( location = 0 ) in vec3 position;
 layout( location = 1 ) in vec3 normal;
 
 out VS_OUT {
-    vec3 view_dir_view;
+    vec4 pos;
     vec3 light_dir_view;
-    vec3 normal_view;
+    vec3 normal;
     vec4 color;
 } vs_out;
 
 void main() {
     vec4 p_view = view_mat * world_mat * vec4(position, 1.0f);
-
-    vs_out.normal_view = mat3(view_mat * world_mat) * normal;
+	vs_out.normal = normal;
     vs_out.light_dir_view = mat3(view_mat * world_mat) * dir.xyz;
-    vs_out.view_dir_view = -p_view.xyz;
+    vs_out.pos = vec4(position, 1.0);
 
 	if(use_const_color == 0)
 		vs_out.color = vec4(normal, 1.0f);
 	else
 		vs_out.color = vec4(normal, 1.0f);
-    //vs_out.color = vec4(normalize(normal), 1.0f);
+    vs_out.color = vec4((normalize(normal) + 1.0f) / 2.0f, 1.0f);
 
     gl_Position   = proj_mat * p_view;
 }
