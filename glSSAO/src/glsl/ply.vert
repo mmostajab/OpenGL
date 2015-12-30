@@ -34,7 +34,7 @@ void main() {
 		vs_out.color = vec4(normal, 1.0f);
 	else
 		vs_out.color = vec4(normal, 1.0f);
-    vs_out.color = vec4((normalize(normal) + 1.0f) / 2.0f, 1.0f);
+    vs_out.color = vec4(1, 1, 1, 1); //vec4((normalize(normal) + 1.0f) / 2.0f, 1.0f);
 
     gl_Position   = proj_mat * p_view;
 }

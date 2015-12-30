@@ -31,6 +31,7 @@ bool					        Application::m_e_pressed          = false;
 bool                  Application::m_mouse_left_drag    = false;
 bool                  Application::m_mouse_middle_drag  = false;
 bool                  Application::m_mouse_right_drag   = false;
+int                   Application::rendering_state      = 0;
 Camera				        Application::m_camera;
 
 // Random number generator
@@ -100,7 +101,7 @@ void Application::init(const unsigned int& width, const unsigned int& height) {
 
 void Application::init() {
     GLenum e = glGetError();
-    glClearColor(19.0f / 255.0f, 9.0f / 255.0f, 99.0f / 255.0f, 1.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     e = glGetError();
 
     m_camera.SetMode(MODELVIEWER);
@@ -134,23 +135,43 @@ void Application::create() {
 #ifdef aaa
    PlyDataReader::getSingletonPtr()->readDataInfo("big_porsche.ply", nullptr, 0);
 #else
-   PlyDataReader::getSingletonPtr()->readDataInfo("cow.ply", nullptr, 0);
+   PlyDataReader::getSingletonPtr()->readDataInfo("happy.ply", nullptr, 0);
 #endif
 
    unsigned int nVertices = PlyDataReader::getSingletonPtr()->getNumVertices();
    unsigned int nFaces    = PlyDataReader::getSingletonPtr()->getNumFaces();
 
 
-   vertices.resize(nVertices);
-   indices.resize(nFaces * 3);
+   vertices.resize(nVertices+4);
+   indices.resize(nFaces * 3+6);
    
    PlyDataReader::getSingletonPtr()->readData(vertices.data(), indices.data());
 
    glm::vec3 center;
-   for (size_t i = 0; i < vertices.size(); i++) {
+   glm::float32 min_y = vertices[0].pos.y;
+   size_t i = 0;
+   for (; i < vertices.size()-4; i++) {
      center += vertices[i].pos;
+     min_y = glm::min(min_y, vertices[i].pos.y);
    }
    center /= vertices.size();
+
+   float width = 400.0f;
+   vertices[nVertices + 0].pos = glm::vec3(-width, min_y, -width);
+   vertices[nVertices + 0].normal = glm::vec3(0, 1, 0);
+   vertices[nVertices + 1].pos = glm::vec3(-width, min_y, width);
+   vertices[nVertices + 1].normal = glm::vec3(0, 1, 0);
+   vertices[nVertices + 2].pos = glm::vec3( width, min_y, -width);
+   vertices[nVertices + 2].normal = glm::vec3(0, 1, 0);
+   vertices[nVertices + 3].pos = glm::vec3( width, min_y, width);
+   vertices[nVertices + 3].normal = glm::vec3(0, 1, 0);
+
+   indices[3 * nFaces + 0] = nVertices + 0;
+   indices[3 * nFaces + 1] = nVertices + 1;
+   indices[3 * nFaces + 2] = nVertices + 2;
+   indices[3 * nFaces + 3] = nVertices + 2;
+   indices[3 * nFaces + 4] = nVertices + 1;
+   indices[3 * nFaces + 5] = nVertices + 3;
 
    for (size_t i = 0; i < vertices.size(); i++) {
      vertices[i].pos -= center;
@@ -229,7 +250,7 @@ void Application::draw() {
   glEnable(GL_DEPTH_TEST);
     
   float back_color[] = { 1, 1, 1, 1 };
-  float zero[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+  float zero[] = { 0.0f, 0.0f, 0.0f, -10.0f };
   float one = 1.0f;
 
   glClearBufferfv(GL_COLOR, 0, back_color);
@@ -246,6 +267,9 @@ void Application::draw() {
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glUseProgram(ssao_program);
   
+  GLint rendering_state_loc = glGetUniformLocation(ssao_program, "rendering_state");
+  glUniform1i(rendering_state_loc, rendering_state);
+
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
   glActiveTexture(GL_TEXTURE1);
@@ -374,6 +398,9 @@ void Application::prepare_framebuffer() {
 }
 
 void Application::prepare_ssao() {
+
+  rendering_state = 0;
+
   int i;
   SAMPLE_POINTS point_data;
 
@@ -383,22 +410,17 @@ void Application::prepare_ssao() {
 
   for (i = 0; i < 256; i++)
   {
-    do
-    {
-      point_data.point[i][0] = 2 * random_float() - 1;
-      point_data.point[i][1] = 2 * random_float() - 1;
-      point_data.point[i][2] = 2 * random_float() - 1;
-      point_data.point[i][3] = 2 * random_float() - 1;
+    //do {
+    
+      float phi = 2 * glm::pi<float>() * random_float();
+      float thetha = acos(pow(1 - random_float(), 1 / (glm::e<float>() + 1)));
 
-      float d2 = (point_data.point[i][0] * point_data.point[i][0] + point_data.point[i][1] * point_data.point[i][1]);
-      if (d2 < 0.2)
-      {
-        point_data.point[i][2] = cos(sqrtf(d2));
-      }
-      else
-        continue;
+      point_data.point[i][0] = sin(thetha) * cos(phi);
+      point_data.point[i][1] = sin(thetha) * sin(phi);
+      point_data.point[i][2] = cos(thetha);
+      point_data.point[i][3] = 0.0f;
 
-    } while (glm::length(point_data.point[i]) > 1.0f);
+    //} while (glm::length(point_data.point[i]) > 1.0f);
     glm::normalize(point_data.point[i]);
   }
   for (i = 0; i < 256; i++)
@@ -481,6 +503,10 @@ void Application::EventKey(GLFWwindow* window, int key, int scancode, int action
     if (key == GLFW_KEY_D)  m_d_pressed = false;
     if (key == GLFW_KEY_Q)  m_q_pressed = false;
     if (key == GLFW_KEY_E)  m_e_pressed = false;
+
+    if (key == GLFW_KEY_M) {
+      rendering_state = ++rendering_state % 3;
+    }
 
     if (key == GLFW_KEY_LEFT_CONTROL)           m_controlKeyHold    = false;
     if (key == GLFW_KEY_LEFT_ALT)               m_altKeyHold        = false;

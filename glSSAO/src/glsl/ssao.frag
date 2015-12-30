@@ -12,9 +12,10 @@ layout (location = 0) uniform int ssao_active = 1;
 layout (location = 0) out vec4 color;
 
 // Various uniforms controling SSAO effect
+uniform int rendering_state;
 uniform float ssao_level      = 1.0;
-uniform float ssao_radius     = 0.01;
-uniform uint point_count      = 16;
+uniform float ssao_radius     = 0.2;
+uniform uint point_count      = 32;
 uniform bool randomize_points = true;
 
 // Uniform block containing up to 256 random directions (x,y,z,0)
@@ -104,9 +105,9 @@ void main(void) {
 
 				float t = atan(abs(T.z - my_depth) / length(T.xy));
 
-				//occ += sin(h);// - sin(t);
+				//occ += (sin(h) - sin(t));
 
-				occ += dot(N, dir);
+				occ += clamp(4.0 * dot(N, dir), 0.0f, 1.0f);
 				//occ += 1.0f;
             }
         }
@@ -119,6 +120,13 @@ void main(void) {
     vec4 object_color =  textureLod(sColor, P, 0);
 
     // Mix in ambient color scaled by SSAO level
-    color = object_color;// * mix(vec4(0.1), vec4(ao_amount), ssao_level);
-	color = vec4(ao_amount);
+
+	if(rendering_state == 0)
+		color = object_color * mix(vec4(0.1), vec4(ao_amount), ssao_level);
+	else if(rendering_state == 1)
+		color = vec4(ao_amount);
+	else if(rendering_state == 2)
+		color = object_color;
+	//else if(rendering_state == 3)
+	//color = vec4(ao_amount);
 }

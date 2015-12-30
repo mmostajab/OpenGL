@@ -80,6 +80,7 @@ private:
 	  static Camera m_camera;
 
     // Screen Space Ambient Occlusion
+    static int         rendering_state;
     GLuint      ssao_program;
     GLuint      render_fbo;
     GLuint      fbo_textures[3];

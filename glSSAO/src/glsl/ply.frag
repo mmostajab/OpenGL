@@ -29,7 +29,7 @@ uniform float shading_level = 1.0;
 
 void main() {
 	vec3 v = normalize(view_mat * world_mat * fs_in.pos).xyz;
-	vec3 l = normalize(fs_in.light_dir_view);
+	vec3 l = vec3(0.5, 0.5, 0.5);
 	vec3 n = normalize(mat3(view_mat) * mat3(world_mat) * fs_in.normal);
 	vec3 r = reflect(-l, n);
 	vec3 h = normalize(l + v);
@@ -38,8 +38,6 @@ void main() {
 	vec3 diffuse_factor  = diffuse_albedo * max(dot(n,l), 0.0f);
 	vec3 specular_factor = specular_albedo * pow(max(dot(r, v), 0.0f), specular_power); 
 
-	out_color = fs_in.color ;
-	//out_color = color_multiplier * fs_in.color * mix(vec4(0.0), vec4( ambient_factor + diffuse_factor + specular_factor, 1.0), shading_level);
-	//n = vec3(0, 1, 0);
+	out_color = fs_in.color * mix(vec4(0.0), vec4( ambient_factor + diffuse_factor + specular_factor, 1.0), shading_level);
 	normal_depth = vec4(n, -(view_mat * world_mat * fs_in.pos).z);
 }
