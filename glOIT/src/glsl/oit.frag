@@ -1,4 +1,4 @@
-#version 450 core
+#version 430 core
 
 // The per-pixel image containing the head pointers
 layout (binding = 0, r32ui) uniform uimage2D head_pointer_image;

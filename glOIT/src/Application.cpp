@@ -37,24 +37,6 @@ Camera				        Application::m_camera;
 // Random number generator
 static unsigned int seed = 0x13371337;
 
-static inline float random_float()
-{
-  //return static_cast<float>(rand() % 100000) / 100000.0f;
-
-    float res;
-    unsigned int tmp;
-
-    seed *= 16807;
-
-    tmp = seed ^ (seed >> 4) ^ (seed << 15);
-
-    *((unsigned int *)&res) = (tmp >> 9) | 0x3F800000;
-
-    return (res - 1.0f);
-
-
-}
-
 Application::Application() {
 }
 
@@ -114,7 +96,7 @@ void Application::init() {
     m_camera.camera_scale = 0.01f;
 
     prepare_framebuffer();
-    prepare_ssao();
+    prepare_Order_Independent_Transparency();
 
     glGenBuffers(1, &m_transformation_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, m_transformation_buffer);
@@ -262,7 +244,6 @@ void Application::draw() {
 //	m_ground.draw();
  
   // Render the Screen Space Ambient Occlusion from generated depth texture
-  glBindBufferBase(GL_UNIFORM_BUFFER, 2, points_buffer);
   drawPly();
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glUseProgram(ssao_program);
@@ -355,8 +336,8 @@ Application::~Application() {
 void Application::compileShaders() { 
     
   m_coord_system_program = compile_link_vs_fs("../../src/glsl/coord_sys.vert", "../../src/glsl/coord_sys.frag");
-  ssao_program = compile_link_vs_fs("../../src/glsl/ssao.vert", "../../src/glsl/ssao.frag");
-  ply_program = compile_link_vs_fs("../../src/glsl/ply.vert", "../../src/glsl/ply.frag");
+  ssao_program = compile_link_vs_fs("../../src/glsl/oit.vert", "../../src/glsl/oit.frag");
+  ply_program = compile_link_vs_fs("../../src/glsl/ply_oit.vert", "../../src/glsl/ply_oit.frag");
   //render_oreder_independece_linked_list_program = compile_link_vs_fs("../../src/glsl/OIT_build_list.vert", "../../src/glsl/OIT_build_list.frag");
   //resolve_order_independence_program = compile_link_vs_fs("../../src/glsl/OIT_resolve.vert", "../../src/glsl/OIT_resolve.frag");
 }
@@ -397,44 +378,95 @@ void Application::prepare_framebuffer() {
   glBindVertexArray(quad_vao);
 }
 
-void Application::prepare_ssao() {
+void Application::prepare_Order_Independent_Transparency() {
+  GLuint* data;
 
-  rendering_state = 0;
+  // Create head pointer texture
+  glActiveTexture(GL_TEXTURE0);
+  glGenTextures(1, &head_pointer_texture);
+  glBindTexture(GL_TEXTURE_2D, head_pointer_texture);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, MAX_FRAMEBUFFER_WIDTH, MAX_FRAMEBUFFER_HEIGHT, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  
+  glBindImageTexture(0, head_pointer_texture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+  
+  // Create buffer for clearing the head pointer texture
+  glGenBuffers(1, &head_pointer_clear_buffer);
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, head_pointer_clear_buffer);
+  glBufferData(GL_PIXEL_UNPACK_BUFFER, MAX_FRAMEBUFFER_WIDTH * MAX_FRAMEBUFFER_HEIGHT * sizeof(GLuint), NULL, GL_STATIC_DRAW);
+  data = (GLuint *)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+  memset(data, 0x00, MAX_FRAMEBUFFER_WIDTH * MAX_FRAMEBUFFER_HEIGHT * sizeof(GLuint));
+  glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-  int i;
-  SAMPLE_POINTS point_data;
+  // Create the atomic counter buffer
+  glGenBuffers(1, &atomic_counter_buffer);
+  glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomic_counter_buffer);
+  glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), NULL, GL_DYNAMIC_COPY);
 
-  std::random_device rd;
-  std::mt19937_64 generator(rd());
-  std::uniform_real_distribution<float> distribution(-3.141592f, 3.141592f);
+  // Create the linked list storage buffer
+  glGenBuffers(1, &linked_list_buffer);
+  glBindBuffer(GL_TEXTURE_BUFFER, linked_list_buffer);
+  glBufferData(GL_TEXTURE_BUFFER, MAX_FRAMEBUFFER_WIDTH * MAX_FRAMEBUFFER_HEIGHT * 6 * sizeof(glm::vec4), NULL, GL_DYNAMIC_COPY);
+  glBindBuffer(GL_TEXTURE_BUFFER, 0);
 
-  for (i = 0; i < 256; i++)
-  {
-    //do {
-    
-      float phi = 2 * glm::pi<float>() * random_float();
-      float thetha = acos(pow(1 - random_float(), 1 / (glm::e<float>() + 1)));
+  // Bind it to a texture (for use as a TBO)
+  glGenTextures(1, &linked_list_texture);
+  glBindTexture(GL_TEXTURE_BUFFER, linked_list_texture);
+  glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32UI, linked_list_buffer);
+  glBindTexture(GL_TEXTURE_BUFFER, 0);
 
-      point_data.point[i][0] = sin(thetha) * cos(phi);
-      point_data.point[i][1] = sin(thetha) * sin(phi);
-      point_data.point[i][2] = cos(thetha);
-      point_data.point[i][3] = 0.0f;
+  glBindImageTexture(1, linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
+}
 
-    //} while (glm::length(point_data.point[i]) > 1.0f);
-    glm::normalize(point_data.point[i]);
-  }
-  for (i = 0; i < 256; i++)
-  {
-    point_data.random_vectors[i][0] = 2 * random_float() - 1;
-    point_data.random_vectors[i][1] = 2 * random_float() - 1;
-    point_data.random_vectors[i][2] = 2 * random_float() - 1;
-    point_data.random_vectors[i][3] = random_float();
-    //glm::normalize(point_data.random_vectors[i]);
-  }
+void Application::draw_Order_Independent_Transparency() {
+  GLuint * data;
 
-  glGenBuffers(1, &points_buffer);
-  glBindBuffer(GL_UNIFORM_BUFFER, points_buffer);
-  glBufferData(GL_UNIFORM_BUFFER, sizeof(SAMPLE_POINTS), &point_data, GL_STATIC_DRAW);
+  glDisable(GL_DEPTH_TEST);
+  glDisable(GL_CULL_FACE);
+
+  // Reset atomic counter
+  glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_counter_buffer);
+  data = (GLuint *)glMapBuffer(GL_ATOMIC_COUNTER_BUFFER, GL_WRITE_ONLY);
+  data[0] = 0;
+  glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
+
+  // Clear head-pointer image
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, head_pointer_clear_buffer);
+  glBindTexture(GL_TEXTURE_2D, head_pointer_texture);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+  // Bind head-pointer image for read-write
+  glBindImageTexture(0, head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
+
+  // Bind linked-list buffer for write
+  glBindImageTexture(1, linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
+  glUseProgram(render_oreder_independece_linked_list_program);
+
+  glUniform1i(5, 0);
+  glUniform1f(0, 1.0f);
+  glUniform1i(2, 1);
+
+  float transparency_value = 0.6f;
+  glUniform1f(0, transparency_value);
+  glUniform1i(2, 0);
+
+  // disable constant color
+  glUniform1i(5, 0);
+  
+  // Bind head-pointer image for read-write
+  glBindImageTexture(0, head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
+
+  // Bind linked-list buffer for write
+  glBindImageTexture(1, linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
+
+  glBindVertexArray(quad_vao);
+  glUseProgram(resolve_order_independence_program);
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
 void Application::EventMouseButton(GLFWwindow* window, int button, int action, int mods) {

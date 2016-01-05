@@ -15,11 +15,6 @@
 
 #include "Camera.h"
 
-struct SAMPLE_POINTS {
-    glm::vec4     point[256];
-    glm::vec4     random_vectors[256];
-};
-
 #define MAX_FRAMEBUFFER_WIDTH 2048
 #define MAX_FRAMEBUFFER_HEIGHT 2048
 
@@ -48,7 +43,8 @@ private:
     void compileShaders();
 
     void prepare_framebuffer();
-    void prepare_ssao();
+    void prepare_Order_Independent_Transparency();
+    void draw_Order_Independent_Transparency();
 
     GLuint simple_program;
 
@@ -79,13 +75,12 @@ private:
 	  // scene objects
 	  static Camera m_camera;
 
-    // Screen Space Ambient Occlusion
-    static int         rendering_state;
+    // Rendering buffer
+    static int  rendering_state;
     GLuint      ssao_program;
     GLuint      render_fbo;
     GLuint      fbo_textures[3];
     GLuint      quad_vao;
-    GLuint      points_buffer;
 
     // Order Independence Transparency
     GLuint render_oreder_independece_linked_list_program, resolve_order_independence_program;
