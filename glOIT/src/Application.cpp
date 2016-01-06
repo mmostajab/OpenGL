@@ -33,6 +33,8 @@ bool                  Application::m_mouse_middle_drag  = false;
 bool                  Application::m_mouse_right_drag   = false;
 int                   Application::rendering_state      = 0;
 Camera				        Application::m_camera;
+float                 Application::transparency_value   = 0.5f;
+int                   Application::comp_shaders            = 1;
 
 Application::Application() {
 }
@@ -109,73 +111,112 @@ void Application::init() {
 }
 
 void Application::create() {
-   compileShaders();
+  compileShaders();
 #define aaa
+  {
 #ifdef aaa
-   PlyDataReader::getSingletonPtr()->readDataInfo("big_porsche.ply", nullptr, 0);
+    PlyDataReader::getSingletonPtr()->readDataInfo("big_porsche.ply", nullptr, 0);
 #else
-   PlyDataReader::getSingletonPtr()->readDataInfo("happy.ply", nullptr, 0);
+    PlyDataReader::getSingletonPtr()->readDataInfo("tetrahedron.ply", nullptr, 0);
 #endif
 
-   unsigned int nVertices = PlyDataReader::getSingletonPtr()->getNumVertices();
-   unsigned int nFaces    = PlyDataReader::getSingletonPtr()->getNumFaces();
+    unsigned int nVertices = PlyDataReader::getSingletonPtr()->getNumVertices();
+    unsigned int nFaces = PlyDataReader::getSingletonPtr()->getNumFaces();
 
 
-   vertices.resize(nVertices+4);
-   indices.resize(nFaces * 3+6);
-   
-   PlyDataReader::getSingletonPtr()->readData(vertices.data(), indices.data());
+    vertices.resize(nVertices);
+    indices.resize(nFaces * 3);
 
-   glm::vec3 center;
-   glm::float32 min_y = vertices[0].pos.y;
-   size_t i = 0;
-   for (; i < vertices.size()-4; i++) {
-     center += vertices[i].pos;
-     min_y = glm::min(min_y, vertices[i].pos.y);
-   }
-   center /= vertices.size();
+    PlyDataReader::getSingletonPtr()->readData(vertices.data(), indices.data());
 
-   float width = 400.0f;
-   vertices[nVertices + 0].pos = glm::vec3(-width, min_y, -width);
-   vertices[nVertices + 0].normal = glm::vec3(0, 1, 0);
-   vertices[nVertices + 1].pos = glm::vec3(-width, min_y, width);
-   vertices[nVertices + 1].normal = glm::vec3(0, 1, 0);
-   vertices[nVertices + 2].pos = glm::vec3( width, min_y, -width);
-   vertices[nVertices + 2].normal = glm::vec3(0, 1, 0);
-   vertices[nVertices + 3].pos = glm::vec3( width, min_y, width);
-   vertices[nVertices + 3].normal = glm::vec3(0, 1, 0);
+    glm::vec3 center;
+    glm::float32 min_y = vertices[0].pos.y;
+    size_t i = 0;
+    for (; i < vertices.size() - 4; i++) {
+      center += vertices[i].pos;
+      min_y = glm::min(min_y, vertices[i].pos.y);
+    }
+    center /= vertices.size();
 
-   indices[3 * nFaces + 0] = nVertices + 0;
-   indices[3 * nFaces + 1] = nVertices + 1;
-   indices[3 * nFaces + 2] = nVertices + 2;
-   indices[3 * nFaces + 3] = nVertices + 2;
-   indices[3 * nFaces + 4] = nVertices + 1;
-   indices[3 * nFaces + 5] = nVertices + 3;
+    for (size_t i = 0; i < vertices.size(); i++) {
+      vertices[i].pos -= center;
+    }
 
-   for (size_t i = 0; i < vertices.size(); i++) {
-     vertices[i].pos -= center;
-   }
+    for (size_t i = 0; i < vertices.size(); i++) {
 
-   for (size_t i = 0; i < vertices.size(); i++) {
-
-     //vertices[i].pos *= 30.0;
+      //vertices[i].pos *= 30.0;
 #ifdef aaa
-     vertices[i].pos *= 0.4;
+      vertices[i].pos *= 0.4;
 #else
-     vertices[i].pos *= 1.0;
+      vertices[i].pos *= 1.0;
 #endif
-   }
+    }
 
-   glGenBuffers(1, &vertices_buffer);
-   glBindBuffer(GL_ARRAY_BUFFER, vertices_buffer);
-   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(PlyObjVertex), vertices.data(), GL_STATIC_DRAW);
+    glGenBuffers(1, &vertices_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertices_buffer);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(PlyObjVertex), vertices.data(), GL_STATIC_DRAW);
 
-   glGenBuffers(1, &indices_buffer);
-   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_buffer);
-   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+    glGenBuffers(1, &indices_buffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_buffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+  }
+
+  {
+    PlyDataReader::getSingletonPtr()->renew();
+#ifdef aaa
+    PlyDataReader::getSingletonPtr()->readDataInfo("cow.ply", nullptr, 0);
+#else
+    PlyDataReader::getSingletonPtr()->readDataInfo("tetrahedron.ply", nullptr, 0);
+#endif
+
+    unsigned int nVertices = PlyDataReader::getSingletonPtr()->getNumVertices();
+    unsigned int nFaces = PlyDataReader::getSingletonPtr()->getNumFaces();
+
+
+    vertices2.resize(nVertices);
+    indices2.resize(nFaces * 3);
+
+    PlyDataReader::getSingletonPtr()->readData(vertices2.data(), indices2.data());
+
+    glm::vec3 center;
+    glm::float32 min_y = vertices2[0].pos.y;
+    size_t i = 0;
+    for (; i < vertices2.size() - 4; i++) {
+      center += vertices2[i].pos;
+      min_y = glm::min(min_y, vertices2[i].pos.y);
+    }
+    center /= vertices2.size();
+
+    for (size_t i = 0; i < vertices2.size(); i++) {
+      vertices2[i].pos -= center;
+    }
+
+    for (size_t i = 0; i < vertices2.size(); i++) {
+
+      //vertices[i].pos *= 30.0;
+#ifdef aaa
+      vertices2[i].pos *= 0.4;
+#else
+      vertices2[i].pos *= 1.0;
+#endif
+    }
+
+    glGenBuffers(1, &vertices_buffer2);
+    glBindBuffer(GL_ARRAY_BUFFER, vertices_buffer2);
+    glBufferData(GL_ARRAY_BUFFER, vertices2.size() * sizeof(PlyObjVertex), vertices2.data(), GL_STATIC_DRAW);
+
+    glGenBuffers(1, &indices_buffer2);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_buffer2);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices2.size() * sizeof(unsigned int), indices2.data(), GL_STATIC_DRAW);
+  }
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
+
+  if (comp_shaders == 1){
+    compileShaders();
+    comp_shaders = 0;
+  }
 
     if (m_w_pressed)
         m_camera.Move(CameraDirection::FORWARD);
@@ -228,8 +269,8 @@ void Application::draw() {
   glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
   glEnable(GL_DEPTH_TEST);
     
-  float back_color[] = { 0, 0, 0, 0 };
-  float zero[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+  float back_color[] = { 1, 1, 1, 1 };
+  float zero[] = { 1.0f, 1.0f, 1.0f, 0.0f };
   float one = 1.0f;
 
   glClearBufferfv(GL_COLOR, 0, back_color);
@@ -265,7 +306,7 @@ void Application::drawPly() {
 
   
 
-  /*bool use_const_color = false;
+  bool use_const_color = false;
   float const_color[] = { 1.0f, 1.0f, 1.0f };
   if (use_const_color) {
     glUniform1i(5, 1);
@@ -275,7 +316,7 @@ void Application::drawPly() {
     glUniform1i(5, 0);
   }
 
-  glUniform1i(0, 1);*/
+  //glUniform1i(0, 1);
 
   glEnableVertexAttribArray(0);
   glEnableVertexAttribArray(1);
@@ -289,6 +330,40 @@ void Application::drawPly() {
 
   //std::cout << "Try to draw...\n";
   glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
+  // std::cout << "Drawing done...\n";
+
+  glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
+}
+
+void Application::drawPly2() {
+
+
+
+  bool use_const_color = false;
+  float const_color[] = { 1.0f, 1.0f, 1.0f };
+  if (use_const_color) {
+    glUniform1i(5, 1);
+    glUniform3fv(6, 1, const_color);
+  }
+  else {
+    glUniform1i(5, 0);
+  }
+
+  //glUniform1i(0, 1);
+
+  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(1);
+
+  int stride = sizeof(PlyObjVertex);
+  glBindBuffer(GL_ARRAY_BUFFER, vertices_buffer2);
+  glVertexAttribPointer((GLint)0, 3, GL_FLOAT, GL_FALSE, stride, 0);
+  glVertexAttribPointer((GLint)1, 3, GL_FLOAT, GL_FALSE, stride, (char*)0 + 12);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_buffer2);
+
+  //std::cout << "Try to draw...\n";
+  glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices2.size()), GL_UNSIGNED_INT, 0);
   // std::cout << "Drawing done...\n";
 
   glDisableVertexAttribArray(0);
@@ -423,8 +498,6 @@ void Application::draw_Order_Independent_Transparency() {
   glDisable(GL_DEPTH_TEST);
   glDisable(GL_CULL_FACE);
 
-  
-
   // Reset atomic counter
   glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_counter_buffer);
   data = (GLuint *)glMapBuffer(GL_ATOMIC_COUNTER_BUFFER, GL_WRITE_ONLY);
@@ -446,11 +519,6 @@ void Application::draw_Order_Independent_Transparency() {
 //  glUseProgram(render_oreder_independece_linked_list_program);
   glUseProgram(ply_program);
 
-  glUniform1i(5, 0);
-  glUniform1f(0, 1.0f);
-  glUniform1i(2, 1);
-
-  float transparency_value = 0.6f;
   glUniform1f(0, transparency_value);
   glUniform1i(2, 0);
 
@@ -458,6 +526,8 @@ void Application::draw_Order_Independent_Transparency() {
   glUniform1i(5, 0);
   
   drawPly();
+  //drawPly2();
+  
 
   // Bind head-pointer image for read-write
   glBindImageTexture(0, head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
@@ -540,6 +610,14 @@ void Application::EventKey(GLFWwindow* window, int key, int scancode, int action
     if (key == GLFW_KEY_M) {
       rendering_state = ++rendering_state % 3;
     }
+
+    if (key == GLFW_KEY_P)
+      comp_shaders = 1;
+
+    if (key == GLFW_KEY_O)
+      transparency_value += 0.01f;
+    if (key == GLFW_KEY_L)
+      transparency_value -= 0.01f;
 
     if (key == GLFW_KEY_LEFT_CONTROL)           m_controlKeyHold    = false;
     if (key == GLFW_KEY_LEFT_ALT)               m_altKeyHold        = false;

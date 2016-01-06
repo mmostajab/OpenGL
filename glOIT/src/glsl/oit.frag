@@ -14,6 +14,8 @@ layout(std140, binding = 3) uniform GeneralBlock {
 layout (location = 0) out vec4 color;
 layout (location = 1) out vec4 normal_depth;
 
+layout( location = 10 ) uniform int obj_order = 0;
+
 // This is the maximum number of overlapping fragments allowed
 #define MAX_FRAGMENTS 40
 
@@ -45,21 +47,21 @@ void main(void) {
                 float depth1 = uintBitsToFloat(fragment1.z);
                 float depth2 = uintBitsToFloat(fragment2.z);
 
-                if (depth1 < depth2){
-                    fragment_list[i] = fragment2;
-                    fragment_list[j] = fragment1;
-                }
+                  if (depth1 > depth2){
+                      fragment_list[i] = fragment2;
+                      fragment_list[j] = fragment1;
+                  }
             }
         }
 
     }
 
-    vec4 final_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    vec4 final_color = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
     for (i = 0; i < fragment_count; i++){
         vec4 frag_color = unpackUnorm4x8(fragment_list[i].y);
-		vec4 frag_specularity = unpackUnorm4x8(fragment_list[i].w);
-        final_color = mix(final_color, frag_color, 0.2) + frag_specularity;
+		    vec4 frag_specularity = unpackUnorm4x8(fragment_list[i].w);
+        final_color = mix(final_color, frag_color,frag_color.a) + frag_specularity ;
     }
 
     color		 = mix(color_background, final_color, final_color.a) ;

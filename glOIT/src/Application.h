@@ -83,6 +83,8 @@ private:
     GLuint      quad_vao;
 
     // Order Independence Transparency
+    static int  comp_shaders;
+    static float transparency_value;
     GLuint resolve_order_independence_program;
     size_t total_pixels;
     GLuint head_pointer_texture;
@@ -94,10 +96,12 @@ private:
 
     // Ply buffers
     GLuint ply_program;
-    std::vector<PlyObjVertex> vertices;
-    std::vector<unsigned int> indices;
+    std::vector<PlyObjVertex> vertices, vertices2;
+    std::vector<unsigned int> indices, indices2;
     GLuint vertices_buffer, indices_buffer;
+    GLuint vertices_buffer2, indices_buffer2;
     void drawPly();
+    void drawPly2();
 };
 
 #endif

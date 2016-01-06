@@ -53,18 +53,20 @@ void main(void)
 		vec3 diffuse_factor  = diffuse_albedo * max(dot(n,l), 0.0f);
 		vec3 specular_factor = specular_albedo * pow(max(dot(r, v), 0.0f), specular_power); 
 
-		frag_color	 = color_multiplier * fs_in.color * mix(vec4(0.0), vec4( ambient_factor + diffuse_factor, alpha_val), shading_level);
+		frag_color	 = 40.0f * fs_in.color * mix(vec4(0.0), vec4( ambient_factor + diffuse_factor, alpha_val), shading_level);
 		frag_color.w = alpha_val;
-		frag_specularity = color_multiplier * fs_in.color * vec4(specular_factor, 0.0f);
+		frag_specularity = fs_in.color * vec4(specular_factor, 0.0f);
 
 		if(length(fs_in.normal_view) == 0){
 			frag_color = fs_in.color;
 			frag_specularity = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 		}
 
+
+    //frag_color = fs_in.color;
 	
-	index = atomicCounterIncrement(list_counter);
-	old_head = imageAtomicExchange(head_pointer_image, ivec2(gl_FragCoord.xy), uint(index));
+	  index = atomicCounterIncrement(list_counter);
+	  old_head = imageAtomicExchange(head_pointer_image, ivec2(gl_FragCoord.xy), uint(index));
 
     item.x = old_head;
     item.y = packUnorm4x8(frag_color);

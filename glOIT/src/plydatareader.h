@@ -24,11 +24,18 @@ private:
   static char* m_IndexDataPtr;
   static int m_CurrIndexByte;
 
+ 
+
 private:
   PlyDataReader();
   ~PlyDataReader();
 
 public:
+  static void renew(){
+    delete m_SingletonPtr;
+    m_SingletonPtr = 0;
+    releaseDataHandles();
+  }
   static PlyDataReader* getSingletonPtr();
   void readDataInfo(const char* _pFileName, void* _pUserDataPtr, const long int& _pUserDataLen);
 
