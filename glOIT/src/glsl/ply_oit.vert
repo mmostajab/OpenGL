@@ -15,8 +15,7 @@ layout (location = 5) uniform int use_const_color;
 layout (location = 6) uniform vec3 const_color = vec3(1.0f, 0.0f, 0.0f);
 
 layout( location = 0 ) in vec3 position;
-layout( location = 1 ) in vec3 color;
-layout( location = 2 ) in vec3 normal;
+layout( location = 1 ) in vec3 normal;
 
 out VS_OUT {
     vec3 view_dir_view;
@@ -33,9 +32,9 @@ void main() {
     vs_out.light_dir_view = mat3(view_mat * world_mat) * dir.xyz;
     vs_out.view_dir_view = -p_view.xyz;
     if(use_const_color == 0)
-		vs_out.color = vec4(color, 1.0f);
+		vs_out.color = vec4(normalize(normal), 1.0f);
 	else
-		vs_out.color = vec4(const_color, 1.0f);
+		vs_out.color = vec4(normalize(normal), 1.0f);
     //vs_out.color = vec4(normalize(normal), 1.0f);
 	vs_out.world_pos = world_mat * vec4(position, 1.0f);
 

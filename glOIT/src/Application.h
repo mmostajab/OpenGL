@@ -83,7 +83,7 @@ private:
     GLuint      quad_vao;
 
     // Order Independence Transparency
-    GLuint render_oreder_independece_linked_list_program, resolve_order_independence_program;
+    GLuint resolve_order_independence_program;
     size_t total_pixels;
     GLuint head_pointer_texture;
     GLuint head_pointer_clear_buffer;

@@ -34,9 +34,6 @@ bool                  Application::m_mouse_right_drag   = false;
 int                   Application::rendering_state      = 0;
 Camera				        Application::m_camera;
 
-// Random number generator
-static unsigned int seed = 0x13371337;
-
 Application::Application() {
 }
 
@@ -231,8 +228,8 @@ void Application::draw() {
   glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
   glEnable(GL_DEPTH_TEST);
     
-  float back_color[] = { 1, 1, 1, 1 };
-  float zero[] = { 0.0f, 0.0f, 0.0f, -10.0f };
+  float back_color[] = { 0, 0, 0, 0 };
+  float zero[] = { 0.0f, 0.0f, 0.0f, 0.0f };
   float one = 1.0f;
 
   glClearBufferfv(GL_COLOR, 0, back_color);
@@ -241,12 +238,9 @@ void Application::draw() {
     
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-//	m_ground.draw();
- 
-  // Render the Screen Space Ambient Occlusion from generated depth texture
-  drawPly();
+  draw_Order_Independent_Transparency();
+
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glUseProgram(ssao_program);
   
   GLint rendering_state_loc = glGetUniformLocation(ssao_program, "rendering_state");
   glUniform1i(rendering_state_loc, rendering_state);
@@ -259,6 +253,8 @@ void Application::draw() {
   glBindVertexArray(quad_vao);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
+  
+
   // Draw the world coordinate system
   glViewport(0, 0, 100, 100);
   glUseProgram(m_coord_system_program);
@@ -267,9 +263,9 @@ void Application::draw() {
 
 void Application::drawPly() {
 
-  glUseProgram(ply_program);
+  
 
-  bool use_const_color = true;
+  /*bool use_const_color = false;
   float const_color[] = { 1.0f, 1.0f, 1.0f };
   if (use_const_color) {
     glUniform1i(5, 1);
@@ -279,7 +275,7 @@ void Application::drawPly() {
     glUniform1i(5, 0);
   }
 
-  glUniform1i(0, 0);
+  glUniform1i(0, 1);*/
 
   glEnableVertexAttribArray(0);
   glEnableVertexAttribArray(1);
@@ -334,9 +330,9 @@ Application::~Application() {
 }
 
 void Application::compileShaders() { 
-    
+  ssao_program = compile_link_vs_fs("../../src/glsl/ssao.vert", "../../src/glsl/ssao.frag");
   m_coord_system_program = compile_link_vs_fs("../../src/glsl/coord_sys.vert", "../../src/glsl/coord_sys.frag");
-  ssao_program = compile_link_vs_fs("../../src/glsl/oit.vert", "../../src/glsl/oit.frag");
+  resolve_order_independence_program = compile_link_vs_fs("../../src/glsl/oit.vert", "../../src/glsl/oit.frag");
   ply_program = compile_link_vs_fs("../../src/glsl/ply_oit.vert", "../../src/glsl/ply_oit.frag");
   //render_oreder_independece_linked_list_program = compile_link_vs_fs("../../src/glsl/OIT_build_list.vert", "../../src/glsl/OIT_build_list.frag");
   //resolve_order_independence_program = compile_link_vs_fs("../../src/glsl/OIT_resolve.vert", "../../src/glsl/OIT_resolve.frag");
@@ -427,6 +423,8 @@ void Application::draw_Order_Independent_Transparency() {
   glDisable(GL_DEPTH_TEST);
   glDisable(GL_CULL_FACE);
 
+  
+
   // Reset atomic counter
   glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_counter_buffer);
   data = (GLuint *)glMapBuffer(GL_ATOMIC_COUNTER_BUFFER, GL_WRITE_ONLY);
@@ -445,7 +443,8 @@ void Application::draw_Order_Independent_Transparency() {
 
   // Bind linked-list buffer for write
   glBindImageTexture(1, linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
-  glUseProgram(render_oreder_independece_linked_list_program);
+//  glUseProgram(render_oreder_independece_linked_list_program);
+  glUseProgram(ply_program);
 
   glUniform1i(5, 0);
   glUniform1f(0, 1.0f);
@@ -458,6 +457,8 @@ void Application::draw_Order_Independent_Transparency() {
   // disable constant color
   glUniform1i(5, 0);
   
+  drawPly();
+
   // Bind head-pointer image for read-write
   glBindImageTexture(0, head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
 

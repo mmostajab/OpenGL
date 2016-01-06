@@ -43,8 +43,6 @@ void main(void)
     vec4 frag_color;
     vec4 frag_specularity;
 
-	if(ground == 0){
-        
 		vec3 v = normalize(fs_in.view_dir_view);
 		vec3 l = normalize(fs_in.light_dir_view);
 		vec3 n = normalize(fs_in.normal_view);
@@ -63,13 +61,7 @@ void main(void)
 			frag_color = fs_in.color;
 			frag_specularity = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 		}
-		
-	} else {
-		float gradient = exp(-1.0f / (8 * radius) * (fs_in.world_pos.x * fs_in.world_pos.x + fs_in.world_pos.z * fs_in.world_pos.z));
-		frag_color = fs_in.color * gradient;
-		frag_color.w = alpha_val;
-		frag_specularity = vec4(0.0f);
-	}
+
 	
 	index = atomicCounterIncrement(list_counter);
 	old_head = imageAtomicExchange(head_pointer_image, ivec2(gl_FragCoord.xy), uint(index));
