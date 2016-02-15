@@ -30,6 +30,11 @@ private:
 
 public:
   static PlyDataReader* getSingletonPtr();
+  static void renew(){
+    delete m_SingletonPtr;
+    m_SingletonPtr = 0;
+    releaseDataHandles();
+  }
   void readDataInfo(const char* _pFileName, void* _pUserDataPtr, const long int& _pUserDataLen);
 
   unsigned int getNumVertices();

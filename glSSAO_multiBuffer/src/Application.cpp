@@ -132,6 +132,9 @@ void Application::init() {
 void Application::create() {
    compileShaders();
    for (int idx = 0; idx < NUM_FRAME_BUFFERS; idx++){
+
+     PlyDataReader::getSingletonPtr()->renew();
+
 #define aaa
 #ifdef aaa
      PlyDataReader::getSingletonPtr()->readDataInfo("big_porsche.ply", nullptr, 0);
