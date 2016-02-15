@@ -15,6 +15,8 @@
 
 #include "Camera.h"
 
+#define NUM_FRAME_BUFFERS 2
+
 struct SAMPLE_POINTS {
     glm::vec4     point[256];
     glm::vec4     random_vectors[256];
@@ -80,29 +82,23 @@ private:
 	  static Camera m_camera;
 
     // Screen Space Ambient Occlusion
-    static int         rendering_state;
+    static int  rendering_state;
     GLuint      ssao_program;
-    GLuint      render_fbo;
-    GLuint      fbo_textures[3];
+    GLuint      render_fbo[NUM_FRAME_BUFFERS];
+    GLuint      fbo_textures[NUM_FRAME_BUFFERS][3];
     GLuint      quad_vao;
     GLuint      points_buffer;
 
-    // Order Independence Transparency
-    GLuint render_oreder_independece_linked_list_program, resolve_order_independence_program;
-    size_t total_pixels;
-    GLuint head_pointer_texture;
-    GLuint head_pointer_clear_buffer;
-    GLuint linked_list_buffer, linked_list_texture;
-    GLuint atomic_counter_buffer;
-    GLuint render_opaque_fbo;
-    GLuint fbo_opaque_texture;
+    // Main renderer
+    GLuint      main_render_fbo;
+    GLuint      main_fbo_textures[3];
 
     // Ply buffers
     GLuint ply_program;
-    std::vector<PlyObjVertex> vertices;
-    std::vector<unsigned int> indices;
-    GLuint vertices_buffer, indices_buffer;
-    void drawPly();
+    std::vector<PlyObjVertex> vertices[NUM_FRAME_BUFFERS];
+    std::vector<unsigned int> indices[NUM_FRAME_BUFFERS];
+    GLuint vertices_buffer[NUM_FRAME_BUFFERS], indices_buffer[NUM_FRAME_BUFFERS];
+    void drawPly(const int& ply_idx);
 };
 
 #endif
