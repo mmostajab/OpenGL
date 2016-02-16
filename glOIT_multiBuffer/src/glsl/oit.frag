@@ -47,7 +47,7 @@ void main(void) {
                 float depth1 = uintBitsToFloat(fragment1.z);
                 float depth2 = uintBitsToFloat(fragment2.z);
 
-                  if (depth1 > depth2){
+                  if (depth1 < depth2){
                       fragment_list[i] = fragment2;
                       fragment_list[j] = fragment1;
                   }

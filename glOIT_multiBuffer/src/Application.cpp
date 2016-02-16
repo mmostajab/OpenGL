@@ -277,11 +277,13 @@ void Application::draw() {
   glClearBufferfv(GL_COLOR, 1, zero);
   glClearBufferfv(GL_DEPTH, 0, &one);
     
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  
 
   draw_Order_Independent_Transparency();
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glClearDepth(1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   
   GLint rendering_state_loc = glGetUniformLocation(ssao_program, "rendering_state");
   glUniform1i(rendering_state_loc, rendering_state);
@@ -495,8 +497,9 @@ void Application::prepare_Order_Independent_Transparency() {
 void Application::draw_Order_Independent_Transparency() {
   GLuint * data;
 
-  glDisable(GL_DEPTH_TEST);
-  glDisable(GL_CULL_FACE);
+  glEnable(GL_DEPTH_TEST);
+  //glDisable(GL_DEPTH_TEST);
+  //glDisable(GL_CULL_FACE);
 
   // Reset atomic counter
   glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_counter_buffer);
@@ -526,8 +529,9 @@ void Application::draw_Order_Independent_Transparency() {
   glUniform1i(5, 0);
   
   drawPly();
-  //drawPly2();
+  drawPly2();
   
+  glDisable(GL_DEPTH_TEST);
 
   // Bind head-pointer image for read-write
   glBindImageTexture(0, head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
@@ -537,7 +541,7 @@ void Application::draw_Order_Independent_Transparency() {
 
   glBindVertexArray(quad_vao);
   glUseProgram(resolve_order_independence_program);
-  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  //glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
 void Application::EventMouseButton(GLFWwindow* window, int button, int action, int mods) {
