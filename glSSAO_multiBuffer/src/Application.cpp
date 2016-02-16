@@ -131,7 +131,14 @@ void Application::init() {
 
 void Application::create() {
    compileShaders();
+
+   int dim = static_cast<int>( glm::ceil( glm::sqrt(NUM_FRAME_BUFFERS) ) );
+
    for (int idx = 0; idx < NUM_FRAME_BUFFERS; idx++){
+
+     float width = 400.0f;
+     glm::vec3 offset((idx % dim) / static_cast<float>(dim), 0.0f, idx / static_cast<float>(dim));
+     glm::float32 offset_scale = 20.0f;
 
      PlyDataReader::getSingletonPtr()->renew();
 
@@ -155,19 +162,18 @@ void Application::create() {
      glm::float32 min_y = vertices[idx][0].pos.y;
      size_t i = 0;
      for (; i < vertices[idx].size() - 4; i++) {
-       center += vertices[idx][i].pos;
+       center += vertices[idx][i].pos + offset_scale * offset;
        min_y = glm::min(min_y, vertices[idx][i].pos.y);
      }
      center /= vertices[idx].size();
 
-     float width = 400.0f;
-     vertices[idx][nVertices + 0].pos = glm::vec3(-width, min_y, -width);
+     vertices[idx][nVertices + 0].pos = glm::vec3(-width, min_y, -width) + offset_scale * offset;
      vertices[idx][nVertices + 0].normal = glm::vec3(0, 1, 0);
-     vertices[idx][nVertices + 1].pos = glm::vec3(-width, min_y, width);
+     vertices[idx][nVertices + 1].pos = glm::vec3(-width, min_y, width) + offset_scale * offset;
      vertices[idx][nVertices + 1].normal = glm::vec3(0, 1, 0);
-     vertices[idx][nVertices + 2].pos = glm::vec3(width, min_y, -width);
+     vertices[idx][nVertices + 2].pos = glm::vec3(width, min_y, -width) + offset_scale * offset;
      vertices[idx][nVertices + 2].normal = glm::vec3(0, 1, 0);
-     vertices[idx][nVertices + 3].pos = glm::vec3(width, min_y, width);
+     vertices[idx][nVertices + 3].pos = glm::vec3(width, min_y, width) + offset_scale * offset;
      vertices[idx][nVertices + 3].normal = glm::vec3(0, 1, 0);
 
      indices[idx][3 * nFaces + 0] = nVertices + 0;
@@ -249,11 +255,13 @@ void Application::update(float time, float timeSinceLastFrame) {
 
 void Application::draw() {
 
+  glEnable(GL_DEPTH);
   glViewport(0, 0, m_width, m_height);
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LESS);
 
   for (int idx = 0; idx < NUM_FRAME_BUFFERS; idx++){
     glBindFramebuffer(GL_FRAMEBUFFER, render_fbo[idx]);
-    glEnable(GL_DEPTH_TEST);
 
     float back_color[]  = { 1, 1, 1, 1 };
     float zero[]        = { 0.0f, 0.0f, 0.0f, -10.0f };
@@ -262,17 +270,14 @@ void Application::draw() {
     glClearBufferfv(GL_COLOR, 0, back_color);
     glClearBufferfv(GL_COLOR, 1, zero);
     glClearBufferfv(GL_DEPTH, 0, &one);
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     drawPly(idx);
   }
 
   // Combine the textures
-  // TODO should be replaced with copying the texture.
+  // TODO The texture copying should be done, first.
   {
     glBindFramebuffer(GL_FRAMEBUFFER, main_render_fbo);
-    glEnable(GL_DEPTH_TEST);
 
     float back_color[]  = { 1, 1, 1, 1 };
     float zero[]        = { 0.0f, 0.0f, 0.0f, -10.0f };
@@ -282,14 +287,15 @@ void Application::draw() {
     glClearBufferfv(GL_COLOR, 1, zero);
     glClearBufferfv(GL_DEPTH, 0, &one);
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     for (int idx = 0; idx < NUM_FRAME_BUFFERS; idx++){
+      glUseProgram(combine_program);
+      glEnable(GL_DEPTH_TEST);
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, fbo_textures[idx][0]);
       glActiveTexture(GL_TEXTURE1);
       glBindTexture(GL_TEXTURE_2D, fbo_textures[idx][1]);
-      glDisable(GL_DEPTH_TEST);
+      glActiveTexture(GL_TEXTURE2);
+      glBindTexture(GL_TEXTURE_2D, fbo_textures[idx][2]);
       glBindVertexArray(quad_vao);
       glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
@@ -301,6 +307,10 @@ void Application::draw() {
   // Render the Screen Space Ambient Occlusion (SSAO)
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glUseProgram(ssao_program);
+
+  glClearColor(0, 0, 0, 1);
+  glClearDepth(1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   GLint rendering_state_loc = glGetUniformLocation(ssao_program, "rendering_state");
   glUniform1i(rendering_state_loc, rendering_state);
@@ -389,6 +399,7 @@ Application::~Application() {
 void Application::compileShaders() { 
     
   m_coord_system_program = compile_link_vs_fs("../../src/glsl/coord_sys.vert", "../../src/glsl/coord_sys.frag");
+  combine_program = compile_link_vs_fs("../../src/glsl/combine.vert", "../../src/glsl/combine.frag");
   ssao_program = compile_link_vs_fs("../../src/glsl/ssao.vert", "../../src/glsl/ssao.frag");
   ply_program = compile_link_vs_fs("../../src/glsl/ply.vert", "../../src/glsl/ply.frag");
   //render_oreder_independece_linked_list_program = compile_link_vs_fs("../../src/glsl/OIT_build_list.vert", "../../src/glsl/OIT_build_list.frag");
@@ -396,6 +407,8 @@ void Application::compileShaders() {
 }
 
 void Application::prepare_framebuffer() {
+  GLenum e;
+
   for (int i = 0; i < NUM_FRAME_BUFFERS; i++){
     glGenFramebuffers(1, &render_fbo[i]);
     glBindFramebuffer(GL_FRAMEBUFFER, render_fbo[i]);
@@ -427,6 +440,10 @@ void Application::prepare_framebuffer() {
     glDrawBuffers(2, draw_buffers);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    e = glGetError();
+    if (e != GL_NO_ERROR) std::cout << __LINE__ << " " << e << std::endl;
+
   }
 
   glGenFramebuffers(1, &main_render_fbo);
@@ -458,10 +475,16 @@ void Application::prepare_framebuffer() {
 
   glDrawBuffers(2, draw_buffers);
 
+  e = glGetError();
+  if (e != GL_NO_ERROR) std::cout << __LINE__ << " " << e << std::endl;
+
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   glGenVertexArrays(1, &quad_vao);
   glBindVertexArray(quad_vao);
+
+  e = glGetError();
+  if (e != GL_NO_ERROR) std::cout << __LINE__ << " " << e << std::endl;
 }
 
 void Application::prepare_ssao() {

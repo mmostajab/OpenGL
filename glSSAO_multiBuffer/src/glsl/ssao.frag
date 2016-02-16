@@ -128,5 +128,5 @@ void main(void) {
 	else if(rendering_state == 2)
 		color = object_color;
 	//else if(rendering_state == 3)
-	//color = vec4(ao_amount);
+	//color = vec4(0.0f);//ao_amount);
 }

@@ -15,7 +15,7 @@
 
 #include "Camera.h"
 
-#define NUM_FRAME_BUFFERS 2
+#define NUM_FRAME_BUFFERS 9
 
 struct SAMPLE_POINTS {
     glm::vec4     point[256];
@@ -83,6 +83,7 @@ private:
 
     // Screen Space Ambient Occlusion
     static int  rendering_state;
+    GLuint      combine_program;
     GLuint      ssao_program;
     GLuint      render_fbo[NUM_FRAME_BUFFERS];
     GLuint      fbo_textures[NUM_FRAME_BUFFERS][3];
