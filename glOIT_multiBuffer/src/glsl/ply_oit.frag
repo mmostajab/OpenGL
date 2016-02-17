@@ -1,6 +1,6 @@
 #version 430 core
 
-layout (early_fragment_tests) in;
+//layout (early_fragment_tests) in;
 
 layout (binding = 0, r32ui) uniform uimage2D head_pointer_image;
 layout (binding = 1, rgba32ui) uniform writeonly uimageBuffer list_buffer;

@@ -15,8 +15,10 @@
 
 #include "Camera.h"
 
-#define MAX_FRAMEBUFFER_WIDTH 2048
-#define MAX_FRAMEBUFFER_HEIGHT 2048
+#define MAX_FRAMEBUFFER_WIDTH   2048
+#define MAX_FRAMEBUFFER_HEIGHT  2048
+
+#define NUM_FRAME_BUFFERS       4
 
 struct PlyObjVertex
 {
@@ -77,9 +79,10 @@ private:
 
     // Rendering buffer
     static int  rendering_state;
+    GLuint      combine_program;
     GLuint      ssao_program;
-    GLuint      render_fbo;
-    GLuint      fbo_textures[3];
+    GLuint      render_fbo[NUM_FRAME_BUFFERS];
+    GLuint      fbo_textures[NUM_FRAME_BUFFERS][3];
     GLuint      quad_vao;
 
     // Order Independence Transparency
@@ -96,11 +99,14 @@ private:
 
     // Ply buffers
     GLuint ply_program;
-    std::vector<PlyObjVertex> vertices, vertices2;
-    std::vector<unsigned int> indices, indices2;
-    GLuint vertices_buffer, indices_buffer;
+    std::vector<PlyObjVertex> vertices[NUM_FRAME_BUFFERS];
+    std::vector<unsigned int> indices[NUM_FRAME_BUFFERS];
+    GLuint vertices_buffer[NUM_FRAME_BUFFERS], indices_buffer[NUM_FRAME_BUFFERS];
+
+    std::vector<PlyObjVertex> vertices2;
+    std::vector<unsigned int> indices2;
     GLuint vertices_buffer2, indices_buffer2;
-    void drawPly();
+    void drawPly(const int& idx);
     void drawPly2();
 };
 

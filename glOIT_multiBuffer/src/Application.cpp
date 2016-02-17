@@ -112,102 +112,79 @@ void Application::init() {
 
 void Application::create() {
   compileShaders();
+
+  int dim = static_cast<int>(glm::ceil(glm::sqrt(NUM_FRAME_BUFFERS)));
+
+  for (int idx = 0; idx < NUM_FRAME_BUFFERS; idx++){
+
+    float width = 400.0f;
+    glm::vec3 offset((idx % dim) / static_cast<float>(dim), 0.0f, idx / static_cast<float>(dim));
+    glm::float32 offset_scale = 20.0f;
+
+    PlyDataReader::getSingletonPtr()->renew();
+
 #define aaa
-  {
 #ifdef aaa
     PlyDataReader::getSingletonPtr()->readDataInfo("big_porsche.ply", nullptr, 0);
 #else
-    PlyDataReader::getSingletonPtr()->readDataInfo("tetrahedron.ply", nullptr, 0);
+    PlyDataReader::getSingletonPtr()->readDataInfo("happy.ply", nullptr, 0);
 #endif
 
     unsigned int nVertices = PlyDataReader::getSingletonPtr()->getNumVertices();
     unsigned int nFaces = PlyDataReader::getSingletonPtr()->getNumFaces();
 
 
-    vertices.resize(nVertices);
-    indices.resize(nFaces * 3);
+    vertices[idx].resize(nVertices + 4);
+    indices[idx].resize(nFaces * 3 + 6);
 
-    PlyDataReader::getSingletonPtr()->readData(vertices.data(), indices.data());
+    PlyDataReader::getSingletonPtr()->readData(vertices[idx].data(), indices[idx].data());
 
     glm::vec3 center;
-    glm::float32 min_y = vertices[0].pos.y;
+    glm::float32 min_y = vertices[idx][0].pos.y;
     size_t i = 0;
-    for (; i < vertices.size() - 4; i++) {
-      center += vertices[i].pos;
-      min_y = glm::min(min_y, vertices[i].pos.y);
+    for (; i < vertices[idx].size() - 4; i++) {
+      center += vertices[idx][i].pos + offset_scale * offset;
+      min_y = glm::min(min_y, vertices[idx][i].pos.y);
     }
-    center /= vertices.size();
+    center /= vertices[idx].size();
 
-    for (size_t i = 0; i < vertices.size(); i++) {
-      vertices[i].pos -= center;
+    vertices[idx][nVertices + 0].pos = glm::vec3(-width, min_y, -width) + offset_scale * offset;
+    vertices[idx][nVertices + 0].normal = glm::vec3(0, 1, 0);
+    vertices[idx][nVertices + 1].pos = glm::vec3(-width, min_y, width) + offset_scale * offset;
+    vertices[idx][nVertices + 1].normal = glm::vec3(0, 1, 0);
+    vertices[idx][nVertices + 2].pos = glm::vec3(width, min_y, -width) + offset_scale * offset;
+    vertices[idx][nVertices + 2].normal = glm::vec3(0, 1, 0);
+    vertices[idx][nVertices + 3].pos = glm::vec3(width, min_y, width) + offset_scale * offset;
+    vertices[idx][nVertices + 3].normal = glm::vec3(0, 1, 0);
+
+    indices[idx][3 * nFaces + 0] = nVertices + 0;
+    indices[idx][3 * nFaces + 1] = nVertices + 1;
+    indices[idx][3 * nFaces + 2] = nVertices + 2;
+    indices[idx][3 * nFaces + 3] = nVertices + 2;
+    indices[idx][3 * nFaces + 4] = nVertices + 1;
+    indices[idx][3 * nFaces + 5] = nVertices + 3;
+
+    for (size_t i = 0; i < vertices[idx].size(); i++) {
+      vertices[idx][i].pos -= center;
     }
 
-    for (size_t i = 0; i < vertices.size(); i++) {
+    for (size_t i = 0; i < vertices[idx].size(); i++) {
 
       //vertices[i].pos *= 30.0;
 #ifdef aaa
-      vertices[i].pos *= 0.4;
+      vertices[idx][i].pos *= 0.4;
 #else
       vertices[i].pos *= 1.0;
 #endif
     }
 
-    glGenBuffers(1, &vertices_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertices_buffer);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(PlyObjVertex), vertices.data(), GL_STATIC_DRAW);
+    glGenBuffers(1, &vertices_buffer[idx]);
+    glBindBuffer(GL_ARRAY_BUFFER, vertices_buffer[idx]);
+    glBufferData(GL_ARRAY_BUFFER, vertices[idx].size() * sizeof(PlyObjVertex), vertices[idx].data(), GL_STATIC_DRAW);
 
-    glGenBuffers(1, &indices_buffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-  }
-
-  {
-    PlyDataReader::getSingletonPtr()->renew();
-#ifdef aaa
-    PlyDataReader::getSingletonPtr()->readDataInfo("cow.ply", nullptr, 0);
-#else
-    PlyDataReader::getSingletonPtr()->readDataInfo("tetrahedron.ply", nullptr, 0);
-#endif
-
-    unsigned int nVertices = PlyDataReader::getSingletonPtr()->getNumVertices();
-    unsigned int nFaces = PlyDataReader::getSingletonPtr()->getNumFaces();
-
-
-    vertices2.resize(nVertices);
-    indices2.resize(nFaces * 3);
-
-    PlyDataReader::getSingletonPtr()->readData(vertices2.data(), indices2.data());
-
-    glm::vec3 center;
-    glm::float32 min_y = vertices2[0].pos.y;
-    size_t i = 0;
-    for (; i < vertices2.size() - 4; i++) {
-      center += vertices2[i].pos;
-      min_y = glm::min(min_y, vertices2[i].pos.y);
-    }
-    center /= vertices2.size();
-
-    for (size_t i = 0; i < vertices2.size(); i++) {
-      vertices2[i].pos -= center;
-    }
-
-    for (size_t i = 0; i < vertices2.size(); i++) {
-
-      //vertices[i].pos *= 30.0;
-#ifdef aaa
-      vertices2[i].pos *= 0.4;
-#else
-      vertices2[i].pos *= 1.0;
-#endif
-    }
-
-    glGenBuffers(1, &vertices_buffer2);
-    glBindBuffer(GL_ARRAY_BUFFER, vertices_buffer2);
-    glBufferData(GL_ARRAY_BUFFER, vertices2.size() * sizeof(PlyObjVertex), vertices2.data(), GL_STATIC_DRAW);
-
-    glGenBuffers(1, &indices_buffer2);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_buffer2);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices2.size() * sizeof(unsigned int), indices2.data(), GL_STATIC_DRAW);
+    glGenBuffers(1, &indices_buffer[idx]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_buffer[idx]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices[idx].size() * sizeof(unsigned int), indices[idx].data(), GL_STATIC_DRAW);
   }
 }
 
@@ -266,6 +243,7 @@ void Application::draw() {
 
   glViewport(0, 0, m_width, m_height);
 
+  for (int i = 0; i < NUM_FRAME_BUFFERS; i++){
   glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
   glEnable(GL_DEPTH_TEST);
     
