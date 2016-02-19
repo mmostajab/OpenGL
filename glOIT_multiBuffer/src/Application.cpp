@@ -244,37 +244,42 @@ void Application::draw() {
   glViewport(0, 0, m_width, m_height);
 
   for (int i = 0; i < NUM_FRAME_BUFFERS; i++){
-  glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
-  glEnable(GL_DEPTH_TEST);
-    
-  float back_color[] = { 1, 1, 1, 1 };
-  float zero[] = { 1.0f, 1.0f, 1.0f, 0.0f };
-  float one = 1.0f;
+    glBindFramebuffer(GL_FRAMEBUFFER, render_fbo[i]);
+    glEnable(GL_DEPTH_TEST);
 
-  glClearBufferfv(GL_COLOR, 0, back_color);
-  glClearBufferfv(GL_COLOR, 1, zero);
-  glClearBufferfv(GL_DEPTH, 0, &one);
-    
-  
+    float back_color[] = { 1, 1, 1, 1 };
+    float zero[] = { 1.0f, 1.0f, 1.0f, 0.0f };
+    float one = 1.0f;
 
-  draw_Order_Independent_Transparency();
+    glClearBufferfv(GL_COLOR, 0, back_color);
+    glClearBufferfv(GL_COLOR, 1, zero);
+    glClearBufferfv(GL_DEPTH, 0, &one);
+
+    draw_framebuffer(i);
+    draw_Order_Independent_Transparency(i);
+  }
+    //drawPly2();
+
+  combine_Lists_Order_Independent_Transparency();
+
+  apply_transparency();
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glClearDepth(1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  
+
   GLint rendering_state_loc = glGetUniformLocation(ssao_program, "rendering_state");
   glUniform1i(rendering_state_loc, rendering_state);
 
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
+  glBindTexture(GL_TEXTURE_2D, main_fbo_textures[0]);
   glActiveTexture(GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
+  glBindTexture(GL_TEXTURE_2D, main_fbo_textures[1]);
   glDisable(GL_DEPTH_TEST);
   glBindVertexArray(quad_vao);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-  
+
 
   // Draw the world coordinate system
   glViewport(0, 0, 100, 100);
@@ -282,7 +287,7 @@ void Application::draw() {
   glDrawArrays(GL_LINES, 0, 6);
 }
 
-void Application::drawPly() {
+  void Application::drawPly(const int& idx) {
 
   
 
@@ -302,14 +307,14 @@ void Application::drawPly() {
   glEnableVertexAttribArray(1);
 
   int stride = sizeof(PlyObjVertex);
-  glBindBuffer(GL_ARRAY_BUFFER, vertices_buffer);
+  glBindBuffer(GL_ARRAY_BUFFER, vertices_buffer[idx]);
   glVertexAttribPointer((GLint)0, 3, GL_FLOAT, GL_FALSE, stride, 0);
   glVertexAttribPointer((GLint)1, 3, GL_FLOAT, GL_FALSE, stride, (char*)0 + 12);
 
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_buffer);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_buffer[idx]);
 
   //std::cout << "Try to draw...\n";
-  glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
+  glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices[idx].size()), GL_UNSIGNED_INT, 0);
   // std::cout << "Drawing done...\n";
 
   glDisableVertexAttribArray(0);
@@ -394,55 +399,89 @@ void Application::compileShaders() {
 }
 
 void Application::prepare_framebuffer() {
-  glGenFramebuffers(1, &render_fbo);
-  glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
-  glGenTextures(3, fbo_textures);
+  GLenum e;
 
-  glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
+  for (int i = 0; i < NUM_FRAME_BUFFERS; i++){
+    glGenFramebuffers(1, &render_fbo[i]);
+    glBindFramebuffer(GL_FRAMEBUFFER, render_fbo[i]);
+    glGenTextures(3, fbo_textures[i]);
+
+    glBindTexture(GL_TEXTURE_2D, fbo_textures[i][0]);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB16F, 2048, 2048);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glBindTexture(GL_TEXTURE_2D, fbo_textures[i][1]);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, 2048, 2048);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glBindTexture(GL_TEXTURE_2D, fbo_textures[i][2]);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 2048, 2048);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_textures[i][0], 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fbo_textures[i][1], 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fbo_textures[i][2], 0);
+
+    static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+
+    glDrawBuffers(2, draw_buffers);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    e = glGetError();
+    if (e != GL_NO_ERROR) std::cout << __LINE__ << " " << e << std::endl;
+
+  }
+
+  glGenFramebuffers(1, &main_render_fbo);
+  glBindFramebuffer(GL_FRAMEBUFFER, main_render_fbo);
+  glGenTextures(3, main_fbo_textures);
+
+  glBindTexture(GL_TEXTURE_2D, main_fbo_textures[0]);
   glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB16F, 2048, 2048);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-  glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
+  glBindTexture(GL_TEXTURE_2D, main_fbo_textures[1]);
   glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, 2048, 2048);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-  glBindTexture(GL_TEXTURE_2D, fbo_textures[2]);
+  glBindTexture(GL_TEXTURE_2D, main_fbo_textures[2]);
   glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 2048, 2048);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_textures[0], 0);
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fbo_textures[1], 0);
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fbo_textures[2], 0);
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, main_fbo_textures[0], 0);
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, main_fbo_textures[1], 0);
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, main_fbo_textures[2], 0);
 
   static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 
   glDrawBuffers(2, draw_buffers);
 
+  e = glGetError();
+  if (e != GL_NO_ERROR) std::cout << __LINE__ << " " << e << std::endl;
+
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   glGenVertexArrays(1, &quad_vao);
   glBindVertexArray(quad_vao);
+
+  e = glGetError();
+  if (e != GL_NO_ERROR) std::cout << __LINE__ << " " << e << std::endl;
 }
 
 void Application::prepare_Order_Independent_Transparency() {
   GLuint* data;
 
-  // Create head pointer texture
-  glActiveTexture(GL_TEXTURE0);
-  glGenTextures(1, &head_pointer_texture);
-  glBindTexture(GL_TEXTURE_2D, head_pointer_texture);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, MAX_FRAMEBUFFER_WIDTH, MAX_FRAMEBUFFER_HEIGHT, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
-  glBindTexture(GL_TEXTURE_2D, 0);
-  
-  glBindImageTexture(0, head_pointer_texture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-  
   // Create buffer for clearing the head pointer texture
   glGenBuffers(1, &head_pointer_clear_buffer);
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, head_pointer_clear_buffer);
@@ -452,52 +491,91 @@ void Application::prepare_Order_Independent_Transparency() {
   glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
+  for (int i = 0; i < NUM_FRAME_BUFFERS; i++){
+    
+
+    // Create head pointer texture
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &head_pointer_texture[i]);
+    glBindTexture(GL_TEXTURE_2D, head_pointer_texture[i]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, MAX_FRAMEBUFFER_WIDTH, MAX_FRAMEBUFFER_HEIGHT, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glBindImageTexture(0, head_pointer_texture[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+
+    // Create the atomic counter buffer
+    glGenBuffers(1, &atomic_counter_buffer[i]);
+    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomic_counter_buffer[i]);
+    glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), NULL, GL_DYNAMIC_COPY);
+
+    // Create the linked list storage buffer
+    glGenBuffers(1, &linked_list_buffer[i]);
+    glBindBuffer(GL_TEXTURE_BUFFER, linked_list_buffer[i]);
+    glBufferData(GL_TEXTURE_BUFFER, MAX_FRAMEBUFFER_WIDTH * MAX_FRAMEBUFFER_HEIGHT * 6 * sizeof(glm::vec4), NULL, GL_DYNAMIC_COPY);
+    glBindBuffer(GL_TEXTURE_BUFFER, 0);
+
+    // Bind it to a texture (for use as a TBO)
+    glGenTextures(1, &linked_list_texture[i]);
+    glBindTexture(GL_TEXTURE_BUFFER, linked_list_texture[i]);
+    glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32UI, linked_list_buffer[i]);
+    glBindTexture(GL_TEXTURE_BUFFER, 0);
+
+    glBindImageTexture(1, linked_list_texture[i], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
+  }
+
+  // Create head pointer texture
+  glActiveTexture(GL_TEXTURE0);
+  glGenTextures(1, &main_head_pointer_texture);
+  glBindTexture(GL_TEXTURE_2D, main_head_pointer_texture);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, MAX_FRAMEBUFFER_WIDTH, MAX_FRAMEBUFFER_HEIGHT, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  glBindImageTexture(0, main_head_pointer_texture, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+
   // Create the atomic counter buffer
-  glGenBuffers(1, &atomic_counter_buffer);
-  glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomic_counter_buffer);
+  glGenBuffers(1, &main_atomic_counter_buffer);
+  glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, main_atomic_counter_buffer);
   glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), NULL, GL_DYNAMIC_COPY);
 
   // Create the linked list storage buffer
-  glGenBuffers(1, &linked_list_buffer);
-  glBindBuffer(GL_TEXTURE_BUFFER, linked_list_buffer);
+  glGenBuffers(1, &main_linked_list_buffer);
+  glBindBuffer(GL_TEXTURE_BUFFER, main_linked_list_buffer);
   glBufferData(GL_TEXTURE_BUFFER, MAX_FRAMEBUFFER_WIDTH * MAX_FRAMEBUFFER_HEIGHT * 6 * sizeof(glm::vec4), NULL, GL_DYNAMIC_COPY);
   glBindBuffer(GL_TEXTURE_BUFFER, 0);
 
   // Bind it to a texture (for use as a TBO)
-  glGenTextures(1, &linked_list_texture);
-  glBindTexture(GL_TEXTURE_BUFFER, linked_list_texture);
-  glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32UI, linked_list_buffer);
+  glGenTextures(1, &main_linked_list_texture);
+  glBindTexture(GL_TEXTURE_BUFFER, main_linked_list_texture);
+  glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32UI, main_linked_list_texture);
   glBindTexture(GL_TEXTURE_BUFFER, 0);
 
-  glBindImageTexture(1, linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
+  glBindImageTexture(1, main_linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
 }
 
-void Application::draw_Order_Independent_Transparency() {
-  GLuint * data;
-
-  glEnable(GL_DEPTH_TEST);
-  //glDisable(GL_DEPTH_TEST);
-  //glDisable(GL_CULL_FACE);
-
+void Application::draw_framebuffer(const int& idx) {
   // Reset atomic counter
-  glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_counter_buffer);
-  data = (GLuint *)glMapBuffer(GL_ATOMIC_COUNTER_BUFFER, GL_WRITE_ONLY);
+  glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_counter_buffer[idx]);
+  GLuint * data = (GLuint *)glMapBuffer(GL_ATOMIC_COUNTER_BUFFER, GL_WRITE_ONLY);
   data[0] = 0;
   glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
 
   // Clear head-pointer image
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, head_pointer_clear_buffer);
-  glBindTexture(GL_TEXTURE_2D, head_pointer_texture);
+  glBindTexture(GL_TEXTURE_2D, head_pointer_texture[idx]);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
   glBindTexture(GL_TEXTURE_2D, 0);
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
   // Bind head-pointer image for read-write
-  glBindImageTexture(0, head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
+  glBindImageTexture(0, head_pointer_texture[idx], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
 
   // Bind linked-list buffer for write
-  glBindImageTexture(1, linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
-//  glUseProgram(render_oreder_independece_linked_list_program);
+  glBindImageTexture(1, linked_list_texture[idx], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
+  //  glUseProgram(render_oreder_independece_linked_list_program);
   glUseProgram(ply_program);
 
   glUniform1f(0, transparency_value);
@@ -505,22 +583,46 @@ void Application::draw_Order_Independent_Transparency() {
 
   // disable constant color
   glUniform1i(5, 0);
-  
-  drawPly();
-  drawPly2();
-  
+
+  drawPly(idx);
+}
+
+void Application::draw_Order_Independent_Transparency(const int& idx) {
   glDisable(GL_DEPTH_TEST);
 
   // Bind head-pointer image for read-write
-  glBindImageTexture(0, head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
+  glBindImageTexture(0, head_pointer_texture[idx], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
 
   // Bind linked-list buffer for write
-  glBindImageTexture(1, linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
+  glBindImageTexture(1, linked_list_texture[idx], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
 
   glBindVertexArray(quad_vao);
   glUseProgram(resolve_order_independence_program);
-  //glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
+
+void Application::combine_Lists_Order_Independent_Transparency() {
+  glDisable(GL_DEPTH_TEST);
+
+  for (int i = 0; i < NUM_FRAME_BUFFERS; i++){
+    // Bind head-pointer image for read-write
+    glBindImageTexture(0, head_pointer_texture[i], 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI);
+
+    // Bind linked-list buffer for write
+    glBindImageTexture(1, linked_list_texture[i], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32UI);
+
+    // Bind head-pointer image for read-write
+    glBindImageTexture(2, main_head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
+
+    // Bind linked-list buffer for write
+    glBindImageTexture(3, main_linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
+
+    glBindVertexArray(quad_vao);
+    glUseProgram(resolve_order_independence_program);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  }
+}
+
 
 void Application::EventMouseButton(GLFWwindow* window, int button, int action, int mods) {
 

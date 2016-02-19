@@ -46,7 +46,10 @@ private:
 
     void prepare_framebuffer();
     void prepare_Order_Independent_Transparency();
-    void draw_Order_Independent_Transparency();
+    void draw_framebuffer(const int& idx);
+    void draw_Order_Independent_Transparency(const int& idx);
+    void combine_Lists_Order_Independent_Transparency();
+    void apply_transparency();
 
     GLuint simple_program;
 
@@ -90,10 +93,10 @@ private:
     static float transparency_value;
     GLuint resolve_order_independence_program;
     size_t total_pixels;
-    GLuint head_pointer_texture;
+    GLuint head_pointer_texture[NUM_FRAME_BUFFERS];
     GLuint head_pointer_clear_buffer;
-    GLuint linked_list_buffer, linked_list_texture;
-    GLuint atomic_counter_buffer;
+    GLuint linked_list_buffer[NUM_FRAME_BUFFERS], linked_list_texture[NUM_FRAME_BUFFERS];
+    GLuint atomic_counter_buffer[NUM_FRAME_BUFFERS];
     GLuint render_opaque_fbo;
     GLuint fbo_opaque_texture;
 
@@ -102,6 +105,13 @@ private:
     std::vector<PlyObjVertex> vertices[NUM_FRAME_BUFFERS];
     std::vector<unsigned int> indices[NUM_FRAME_BUFFERS];
     GLuint vertices_buffer[NUM_FRAME_BUFFERS], indices_buffer[NUM_FRAME_BUFFERS];
+
+    // Main renderer
+    GLuint      main_render_fbo;
+    GLuint      main_fbo_textures[3];
+    GLuint      main_head_pointer_texture;
+    GLuint      main_linked_list_buffer, main_linked_list_texture;
+    GLuint      main_atomic_counter_buffer;
 
     std::vector<PlyObjVertex> vertices2;
     std::vector<unsigned int> indices2;
