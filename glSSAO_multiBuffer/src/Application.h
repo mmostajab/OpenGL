@@ -15,7 +15,7 @@
 
 #include "Camera.h"
 
-#define NUM_FRAME_BUFFERS 9
+#define NUM_FRAME_BUFFERS 2
 
 struct SAMPLE_POINTS {
     glm::vec4     point[256];
@@ -70,6 +70,7 @@ private:
     static bool m_altKeyHold;
     static bool m_w_pressed, m_s_pressed, m_a_pressed, m_d_pressed, m_q_pressed, m_e_pressed;
     static bool m_mouse_left_drag, m_mouse_middle_drag, m_mouse_right_drag;
+    static int  begin_frambuffer_idx;
 
 private:
     static GLFWwindow* m_window;

@@ -32,6 +32,7 @@ bool                  Application::m_mouse_left_drag    = false;
 bool                  Application::m_mouse_middle_drag  = false;
 bool                  Application::m_mouse_right_drag   = false;
 int                   Application::rendering_state      = 0;
+int                   Application::begin_frambuffer_idx = 0;
 Camera				        Application::m_camera;
 
 // Random number generator
@@ -287,7 +288,14 @@ void Application::draw() {
     glClearBufferfv(GL_COLOR, 1, zero);
     glClearBufferfv(GL_DEPTH, 0, &one);
 
-    for (int idx = 0; idx < NUM_FRAME_BUFFERS; idx++){
+    int start_combine_framebuffer = 0;
+    int last_combine_framebuffer = NUM_FRAME_BUFFERS;
+    if (begin_frambuffer_idx > 0) {
+      start_combine_framebuffer = begin_frambuffer_idx - 1;
+      last_combine_framebuffer  = start_combine_framebuffer + 1;
+    }
+
+    for (int idx = start_combine_framebuffer; idx < last_combine_framebuffer; idx++){
       glUseProgram(combine_program);
       glEnable(GL_DEPTH_TEST);
       glActiveTexture(GL_TEXTURE0);
@@ -596,6 +604,10 @@ void Application::EventKey(GLFWwindow* window, int key, int scancode, int action
 
     if (key == GLFW_KEY_M) {
       rendering_state = ++rendering_state % 3;
+    }
+
+    if (key == GLFW_KEY_B) {
+      begin_frambuffer_idx = ++begin_frambuffer_idx % (NUM_FRAME_BUFFERS + 1);
     }
 
     if (key == GLFW_KEY_LEFT_CONTROL)           m_controlKeyHold    = false;

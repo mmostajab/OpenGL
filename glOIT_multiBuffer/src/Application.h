@@ -92,6 +92,8 @@ private:
     static int  comp_shaders;
     static float transparency_value;
     GLuint resolve_order_independence_program;
+    GLuint combine_order_independence_lists_program;
+    GLuint blend_order_independence_buffers_program;
     size_t total_pixels;
     GLuint head_pointer_texture[NUM_FRAME_BUFFERS];
     GLuint head_pointer_clear_buffer;
@@ -104,7 +106,7 @@ private:
     GLuint ply_program;
     std::vector<PlyObjVertex> vertices[NUM_FRAME_BUFFERS];
     std::vector<unsigned int> indices[NUM_FRAME_BUFFERS];
-    GLuint vertices_buffer[NUM_FRAME_BUFFERS], indices_buffer[NUM_FRAME_BUFFERS];
+    GLuint                    vertices_buffer[NUM_FRAME_BUFFERS], indices_buffer[NUM_FRAME_BUFFERS];
 
     // Main renderer
     GLuint      main_render_fbo;
@@ -115,7 +117,7 @@ private:
 
     std::vector<PlyObjVertex> vertices2;
     std::vector<unsigned int> indices2;
-    GLuint vertices_buffer2, indices_buffer2;
+    GLuint vertices_buffer2,  indices_buffer2;
     void drawPly(const int& idx);
     void drawPly2();
 };

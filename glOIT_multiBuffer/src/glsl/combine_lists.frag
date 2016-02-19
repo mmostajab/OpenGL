@@ -1,9 +1,16 @@
 #version 430 core
 
+// Current buffer:
 // The per-pixel image containing the head pointers
 layout (binding = 0, r32ui) uniform uimage2D head_pointer_image;
 // Buffer containing linked lists of fragments
 layout (binding = 1, rgba32ui) uniform uimageBuffer list_buffer;
+
+// New buffer:
+// The per-pixel image containing the head pointers
+layout (binding = 2, r32ui) uniform uimage2D head_pointer_image;
+// Buffer containing linked lists of fragments
+layout (binding = 3, rgba32ui) uniform uimageBuffer list_buffer;
 
 layout(std140, binding = 3) uniform GeneralBlock {
     float color_multiplier;

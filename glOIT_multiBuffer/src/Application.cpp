@@ -393,6 +393,8 @@ void Application::compileShaders() {
   ssao_program = compile_link_vs_fs("../../src/glsl/ssao.vert", "../../src/glsl/ssao.frag");
   m_coord_system_program = compile_link_vs_fs("../../src/glsl/coord_sys.vert", "../../src/glsl/coord_sys.frag");
   resolve_order_independence_program = compile_link_vs_fs("../../src/glsl/oit.vert", "../../src/glsl/oit.frag");
+  combine_order_independence_lists_program = compile_link_vs_fs("../../src/glsl/combine_lists.vert", "../../src/glsl/combine_lists.frag");
+  blend_order_independence_buffers_program = compile_link_vs_fs("../../src/glsl/blend.vert", "../../src/glsl/blend.frag");
   ply_program = compile_link_vs_fs("../../src/glsl/ply_oit.vert", "../../src/glsl/ply_oit.frag");
   //render_oreder_independece_linked_list_program = compile_link_vs_fs("../../src/glsl/OIT_build_list.vert", "../../src/glsl/OIT_build_list.frag");
   //resolve_order_independence_program = compile_link_vs_fs("../../src/glsl/OIT_resolve.vert", "../../src/glsl/OIT_resolve.frag");
