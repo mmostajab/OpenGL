@@ -28,51 +28,92 @@ layout( location = 10 ) uniform int obj_order = 0;
 
 // Temporary array used for sorting fragments
 uvec4 fragment_list[MAX_FRAGMENTS];
-uvec4 new_fragment_list[MAX_FRAGMENTS];
+uvec4 new_fragment_list[MAX_FRAGS];
+
+
+    
+    
+    
+    
+    
 
 void main(void) {
     uint current_index;
     uint fragment_count = 0;
 
-    current_index = imageLoad(head_pointer_image, ivec2(gl_FragCoord).xy).x;
-
+    // Copy the linked list in local array
+    uint current_index = imageLoad(head_pointer_image, ivec2(gl_FragCoord).xy).x;
 	while (current_index != 0 && fragment_count < MAX_FRAGMENTS){
         uvec4 fragment = imageLoad(list_buffer, int(current_index));
         fragment_list[fragment_count] = fragment;
         current_index = fragment.x;
         fragment_count++;
     }
+    
+    uint new_fragments_count = 0;
+    uint headptr_idx = imageLoad(new_headptr_image, ivec2(gl_FragCoord).xy).x;
+    current_idx = headptr_idx;
+    while (current_idx != 0 && new_fragments_count < MAX_FRAGS){
+        uvec4 frag = imageLoad(new_frag_buffer, int(curr_idx));
+        new_fragments_list[new_fragments_count] = frag;
+        curr_idx = frag.x;
+        new_fragments_count++;
+    }
 
+    // Sort the new_frag_list with bubble sort.
+    
+    // merging the new fragments into current sorted fragments.
     uint i, j;
-
-    if (fragment_count > 1){
-
-        for (i = 0; i < fragment_count - 1; i++){
-            for (j = i + 1; j < fragment_count; j++){
-                uvec4 fragment1 = fragment_list[i];
-                uvec4 fragment2 = fragment_list[j];
-
-                float depth1 = uintBitsToFloat(fragment1.z);
-                float depth2 = uintBitsToFloat(fragment2.z);
-
-                  if (depth1 < depth2){
-                      fragment_list[i] = fragment2;
-                      fragment_list[j] = fragment1;
-                  }
+    while(i < new_frag_count && j < frag_count){
+        uvec4 new_fragment = new_frag_list[i];
+        uvec4 fragment     = tmp_frag_list[j];
+        
+        float new_depth = uintBitsToFloat(new_fragment.z);
+        float depth     = uintBitsToFloat(fragment.z);
+        
+        if(new_depth >= depth) 
+            j++;
+        else
+        {
+            int curr_fragment_idx;
+            uint new_frag_idx = atomicCounterIncrement(frag_counter);
+            
+            // not the last element in current sorted fragment buffer
+            if(j < frag_count - 1)
+            {
+                curr_fragment_idx = tmp_frag_list[j+1].x;     
             }
+            else
+            {
+                curr_fragment_idx = headptr_idx;
+            }
+            
+            new_fragment.x     = fragment.x;
+            fragment.x         = new_frag_idx;
+            imageStore(frag_buffer, int(curr_frag_idx), fragment);      
+            imageStore(frag_buffer, int(new_frag_idx), new_fragment);
+            i++;
         }
-
     }
 
-    vec4 final_color = vec4(0.0f, 0.0f, 0.0f, 0.0f);
-
-    for (i = 0; i < fragment_count; i++){
-        vec4 frag_color = unpackUnorm4x8(fragment_list[i].y);
-		    vec4 frag_specularity = unpackUnorm4x8(fragment_list[i].w);
-        final_color = mix(final_color, frag_color,frag_color.a) + frag_specularity ;
+    // append the remaining new elements to the fragments list
+    uint new_frag_idx, prev_frag_idx, link_frag_idx;
+    for(int i_prime = i; i_prime < new_frag_count; i_prime++){
+        uvec4 new_fragment = new_frag_list[i_prime];
+        uint new_frag_idx = atomicCounterIncrement(frag_counter);
+        if(i_prime > i)
+        {
+            new_fragment.x = prev_frag_count;
+            imageStore(frag_buffer, int(new_frag_idx), new_fragment);
+        }
+        else
+            link_frag_idx = new_frag_idx;
     }
-
-    color		 = mix(color_background, final_color, final_color.a) ;
-    normal_depth = vec4(0.0f);
-	gl_FragDepth = fragment_list[fragment_count - 1].z;
+    
+    // If any of the new fragments are appended to the fragment buffer list, head pointer should changed.
+    if(i < new_frag_count){
+        int old_head = imageAtomicExchange(headptr_image, ivec2(gl_FragCoord.xy), uint(new_frag_idx));
+        new_frag_list[i].x = old_head;
+        imageStore(frag_buffer, int(new_frag_idx), new_frag_list[i]);
+    }
 }
