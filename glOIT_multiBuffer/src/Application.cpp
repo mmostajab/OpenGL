@@ -259,15 +259,17 @@ void Application::draw() {
     draw_Order_Independent_Transparency(i);
   }
     //drawPly2();
+  
+  glBindFramebuffer(GL_FRAMEBUFFER, main_render_fbo);
 
   combine_Lists_Order_Independent_Transparency();
 
   apply_transparency();
-
+  
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glClearDepth(1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+  glUseProgram(ssao_program);
   GLint rendering_state_loc = glGetUniformLocation(ssao_program, "rendering_state");
   glUniform1i(rendering_state_loc, rendering_state);
 
@@ -278,9 +280,7 @@ void Application::draw() {
   glDisable(GL_DEPTH_TEST);
   glBindVertexArray(quad_vao);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-
-
+    
   // Draw the world coordinate system
   glViewport(0, 0, 100, 100);
   glUseProgram(m_coord_system_program);
@@ -494,8 +494,6 @@ void Application::prepare_Order_Independent_Transparency() {
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
   for (int i = 0; i < NUM_FRAME_BUFFERS; i++){
-    
-
     // Create head pointer texture
     glActiveTexture(GL_TEXTURE0);
     glGenTextures(1, &head_pointer_texture[i]);
@@ -606,23 +604,48 @@ void Application::draw_Order_Independent_Transparency(const int& idx) {
 void Application::combine_Lists_Order_Independent_Transparency() {
   glDisable(GL_DEPTH_TEST);
 
+  glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, main_atomic_counter_buffer);
+  GLuint * data = (GLuint *)glMapBuffer(GL_ATOMIC_COUNTER_BUFFER, GL_WRITE_ONLY);
+  data[0] = 0;
+  glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
+
+  // Clear head-pointer image
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, head_pointer_clear_buffer);
+  glBindTexture(GL_TEXTURE_2D, main_head_pointer_texture);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
   for (int i = 0; i < NUM_FRAME_BUFFERS; i++){
     // Bind head-pointer image for read-write
-    glBindImageTexture(0, head_pointer_texture[i], 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI);
+    glBindImageTexture(0, main_head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
 
     // Bind linked-list buffer for write
-    glBindImageTexture(1, linked_list_texture[i], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32UI);
+    glBindImageTexture(1, main_linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
 
     // Bind head-pointer image for read-write
-    glBindImageTexture(2, main_head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
+    glBindImageTexture(2, head_pointer_texture[i], 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI);
 
     // Bind linked-list buffer for write
-    glBindImageTexture(3, main_linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
+    glBindImageTexture(4, linked_list_texture[i], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32UI);
 
     glBindVertexArray(quad_vao);
-    glUseProgram(resolve_order_independence_program);
+    glUseProgram(combine_order_independence_lists_program);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   }
+}
+
+void Application::apply_transparency() {
+  glDisable(GL_DEPTH_TEST);
+
+  glBindImageTexture(0, head_pointer_texture[1], 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI);
+
+  // Bind linked-list buffer for write
+  glBindImageTexture(1, linked_list_texture[1], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32UI);
+
+  glBindVertexArray(quad_vao);
+  glUseProgram(blend_order_independence_buffers_program);
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
 

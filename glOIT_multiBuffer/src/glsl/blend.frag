@@ -23,10 +23,10 @@ layout( location = 10 ) uniform int obj_order = 0;
 uvec4 fragment_list[MAX_FRAGMENTS];
 
 void main(void) {
-    uint current_index;
-    uint fragment_count = 0;
+  uint current_index;
+  uint fragment_count = 0;
 
-    current_index = imageLoad(head_pointer_image, ivec2(gl_FragCoord).xy).x;
+  current_index = imageLoad(head_pointer_image, ivec2(gl_FragCoord).xy).x;
 
 	while (current_index != 0 && fragment_count < MAX_FRAGMENTS){
         uvec4 fragment = imageLoad(list_buffer, int(current_index));
@@ -35,15 +35,17 @@ void main(void) {
         fragment_count++;
     }
 
-    vec4 final_color = vec4(0.0f, 0.0f, 0.0f, 0.0f);
-
-    for (uint i = 0; i < fragment_count; i++){
-        vec4 frag_color = unpackUnorm4x8(fragment_list[i].y);
+    vec4 final_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    vec4 frag_color = vec4(1, 0, 0, 0);
+    for (int i = 0; i < fragment_count; i++){
+        frag_color = unpackUnorm4x8(fragment_list[i].y);
 		    vec4 frag_specularity = unpackUnorm4x8(fragment_list[i].w);
-        final_color = mix(final_color, frag_color,frag_color.a) + frag_specularity ;
+        final_color.rgb = final_color.a * (frag_color.a * frag_color.rgb) + final_color.rgb;
+        final_color.a   = 0.0f + (1 - frag_color.a) * final_color.a;
+        
     }
 
-    color		 = mix(color_background, final_color, final_color.a) ;
-    normal_depth = vec4(0.0f);
-	gl_FragDepth = fragment_list[fragment_count - 1].z;
+  color		 = final_color.a * color_background + final_color;
+  normal_depth = vec4(0.0f);
+	gl_FragDepth = uintBitsToFloat(fragment_list[fragment_count - 1].z);
 }

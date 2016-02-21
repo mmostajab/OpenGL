@@ -14,10 +14,9 @@ layout (location = 0) out vec4 color;
 void main(void) {
 
 	// Get texture position from gl_FragCoord
-    vec2 P = gl_FragCoord.xy / textureSize(sColor, 0);
+  vec2 P = gl_FragCoord.xy / textureSize(sColor, 0);
 
 	// Get object color from color texture
-    vec4 object_color =  textureLod(sColor, P, 0);
+  vec4 object_color = textureLod(sColor, P, 0);
 	color = object_color;
-	return;
 }

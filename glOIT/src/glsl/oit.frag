@@ -56,12 +56,14 @@ void main(void) {
 
     }
 
-    vec4 final_color = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+    vec4 final_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
     for (i = 0; i < fragment_count; i++){
         vec4 frag_color = unpackUnorm4x8(fragment_list[i].y);
 		    vec4 frag_specularity = unpackUnorm4x8(fragment_list[i].w);
-        final_color = (1.0f - final_color.a) * frag_color + final_color + frag_specularity ;//  = mix(frag_color, final_color,final_color.a);// 
+        //final_color = (1.0f - final_color.a) * frag_color + final_color + frag_specularity ;//  = mix(frag_color, final_color,final_color.a);// 
+        final_color.rgb = final_color.a * (frag_color.a * frag_color.rgb) + final_color.rgb;
+        final_color.a   = 0 + (1 - frag_color.a) * final_color.a;
         
     }
 
