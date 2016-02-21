@@ -61,7 +61,8 @@ void main(void) {
     for (i = 0; i < fragment_count; i++){
         vec4 frag_color = unpackUnorm4x8(fragment_list[i].y);
 		    vec4 frag_specularity = unpackUnorm4x8(fragment_list[i].w);
-        final_color = mix(final_color, frag_color,frag_color.a) + frag_specularity ;
+        final_color = (1.0f - final_color.a) * frag_color + final_color + frag_specularity ;//  = mix(frag_color, final_color,final_color.a);// 
+        
     }
 
     color		 = mix(color_background, final_color, final_color.a) ;

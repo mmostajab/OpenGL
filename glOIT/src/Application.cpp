@@ -33,7 +33,7 @@ bool                  Application::m_mouse_middle_drag  = false;
 bool                  Application::m_mouse_right_drag   = false;
 int                   Application::rendering_state      = 0;
 Camera				        Application::m_camera;
-float                 Application::transparency_value   = 0.5f;
+float                 Application::transparency_value   = 0.2f;
 int                   Application::comp_shaders            = 1;
 
 Application::Application() {
