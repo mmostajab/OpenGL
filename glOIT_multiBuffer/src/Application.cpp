@@ -260,9 +260,19 @@ void Application::draw() {
   }
     //drawPly2();
   
-  glBindFramebuffer(GL_FRAMEBUFFER, main_render_fbo);
+  {
+    float back_color[] = { 1, 1, 1, 1 };
+    float zero[] = { 1.0f, 1.0f, 1.0f, 0.0f };
+    float one = 1.0f;
 
-  combine_Lists_Order_Independent_Transparency();
+    glClearBufferfv(GL_COLOR, 0, back_color);
+    glClearBufferfv(GL_COLOR, 1, zero);
+    glClearBufferfv(GL_DEPTH, 0, &one);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, main_render_fbo);
+
+    combine_Lists_Order_Independent_Transparency();
+  }
 
   apply_transparency();
   
@@ -550,7 +560,7 @@ void Application::prepare_Order_Independent_Transparency() {
   // Bind it to a texture (for use as a TBO)
   glGenTextures(1, &main_linked_list_texture);
   glBindTexture(GL_TEXTURE_BUFFER, main_linked_list_texture);
-  glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32UI, main_linked_list_texture);
+  glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32UI, main_linked_list_buffer);
   glBindTexture(GL_TEXTURE_BUFFER, 0);
 
   glBindImageTexture(1, main_linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
@@ -621,27 +631,29 @@ void Application::combine_Lists_Order_Independent_Transparency() {
     glBindImageTexture(0, main_head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
 
     // Bind linked-list buffer for write
-    glBindImageTexture(1, main_linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
+    glBindImageTexture(1, main_linked_list_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32UI);
 
     // Bind head-pointer image for read-write
     glBindImageTexture(2, head_pointer_texture[i], 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI);
 
     // Bind linked-list buffer for write
-    glBindImageTexture(4, linked_list_texture[i], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32UI);
+    glBindImageTexture(3, linked_list_texture[i], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32UI);
 
     glBindVertexArray(quad_vao);
     glUseProgram(combine_order_independence_lists_program);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    glFinish();
   }
 }
 
 void Application::apply_transparency() {
   glDisable(GL_DEPTH_TEST);
 
-  glBindImageTexture(0, head_pointer_texture[1], 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI);
+  glBindImageTexture(0, main_head_pointer_texture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI);
 
   // Bind linked-list buffer for write
-  glBindImageTexture(1, linked_list_texture[1], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32UI);
+  glBindImageTexture(1, main_linked_list_texture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32UI);
 
   glBindVertexArray(quad_vao);
   glUseProgram(blend_order_independence_buffers_program);

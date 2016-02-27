@@ -9,9 +9,9 @@ layout (binding = 0, offset = 0) uniform atomic_uint list_counter;
 
 // New buffer:
 // The per-pixel image containing the head pointers
-layout (binding = 2, r32ui) uniform uimage2D new_head_pointer_image;
+layout (binding = 2, r32ui) uniform readonly uimage2D new_head_pointer_image;
 // Buffer containing linked lists of fragments
-layout (binding = 4, rgba32ui) uniform uimageBuffer new_list_buffer;
+layout (binding = 3, rgba32ui) uniform readonly uimageBuffer new_list_buffer;
 
 layout(std140, binding = 3) uniform GeneralBlock {
     float color_multiplier;
@@ -65,7 +65,6 @@ void main(void) {
     float new_depth = uintBitsToFloat(new_fragment.z);
     float old_depth = uintBitsToFloat(fragment.z);
        
-    bool v = new_depth >= old_depth;    
     if(new_depth >= old_depth){ 
       j++;
     } else {
@@ -92,7 +91,8 @@ void main(void) {
 
   // append the remaining new elements to the fragments list
   uint prev_fragment_idx, link_fragment_idx;
-  for(uint i_prime = i; i_prime < new_fragments_count; i_prime++){
+  uint i_prime = i;
+  for(; i_prime < new_fragments_count; i_prime++){
     uvec4 new_fragment = new_fragments_list[i_prime];
     new_fragment_idx = atomicCounterIncrement( list_counter );
     if(i_prime > i)
@@ -110,7 +110,7 @@ void main(void) {
     
   // If any of the new fragments are appended to the fragment buffer list, head pointer should changed.
   if(i < new_fragments_count){
-    uint old_head = imageAtomicExchange(head_pointer_image, ivec2(gl_FragCoord.xy), int(new_fragment_idx));
+    uint old_head = imageAtomicExchange(head_pointer_image, ivec2(gl_FragCoord.xy), uint(new_fragment_idx));
     
     new_fragments_list[i].x = old_head;
     imageStore(list_buffer, int(link_fragment_idx), new_fragments_list[i]);

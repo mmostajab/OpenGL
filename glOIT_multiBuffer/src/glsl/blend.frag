@@ -3,7 +3,7 @@
 // The per-pixel image containing the head pointers
 layout (binding = 0, r32ui) uniform uimage2D head_pointer_image;
 // Buffer containing linked lists of fragments
-layout (binding = 1, rgba32ui) uniform uimageBuffer list_buffer;
+layout (binding = 1, rgba32ui) uniform readonly uimageBuffer list_buffer;
 
 layout(std140, binding = 3) uniform GeneralBlock {
     float color_multiplier;
@@ -35,14 +35,14 @@ void main(void) {
         fragment_count++;
     }
 
+	color = vec4(0.0f);
     vec4 final_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
     vec4 frag_color = vec4(1, 0, 0, 0);
     for (int i = 0; i < fragment_count; i++){
         frag_color = unpackUnorm4x8(fragment_list[i].y);
-		    vec4 frag_specularity = unpackUnorm4x8(fragment_list[i].w);
+		vec4 frag_specularity = unpackUnorm4x8(fragment_list[i].w);
         final_color.rgb = final_color.a * (frag_color.a * frag_color.rgb) + final_color.rgb;
         final_color.a   = 0.0f + (1 - frag_color.a) * final_color.a;
-        
     }
 
   color		 = final_color.a * color_background + final_color;
