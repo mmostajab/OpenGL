@@ -40,6 +40,7 @@ void main(void) {
     vec4 frag_color = vec4(1, 0, 0, 0);
     for (int i = 0; i < fragment_count; i++){
         frag_color = unpackUnorm4x8(fragment_list[i].y);
+		if(i == 0) color = frag_color;
 		vec4 frag_specularity = unpackUnorm4x8(fragment_list[i].w);
         final_color.rgb = final_color.a * (frag_color.a * frag_color.rgb) + final_color.rgb;
         final_color.a   = 0.0f + (1 - frag_color.a) * final_color.a;

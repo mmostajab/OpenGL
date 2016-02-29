@@ -2,6 +2,12 @@
 
 //layout (early_fragment_tests) in;
 
+layout(std140, binding = 0) uniform TransformBlock {
+    mat4 proj_mat;
+    mat4 view_mat;
+    mat4 world_mat;
+} ;
+
 layout (binding = 0, r32ui) uniform uimage2D head_pointer_image;
 layout (binding = 1, rgba32ui) uniform writeonly uimageBuffer list_buffer;
 layout (binding = 0, offset = 0) uniform atomic_uint list_counter;
@@ -77,4 +83,5 @@ void main(void)
 
     color = frag_color;
     normal_depth = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+	normal_depth = vec4(fs_in.normal_view, -(view_mat * world_mat * fs_in.world_pos).z);
 }

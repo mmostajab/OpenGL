@@ -35,6 +35,7 @@ int                   Application::rendering_state      = 0;
 Camera				        Application::m_camera;
 float                 Application::transparency_value   = 0.5f;
 int                   Application::comp_shaders            = 1;
+int                   Application::render_fbo_idx = 0;
 
 Application::Application() {
 }
@@ -123,8 +124,8 @@ void Application::create() {
 
     PlyDataReader::getSingletonPtr()->renew();
 
-#define aaa
-#ifdef aaa
+#define PORSCHE
+#ifdef PORSCHE
     PlyDataReader::getSingletonPtr()->readDataInfo("big_porsche.ply", nullptr, 0);
 #else
     PlyDataReader::getSingletonPtr()->readDataInfo("happy.ply", nullptr, 0);
@@ -133,9 +134,14 @@ void Application::create() {
     unsigned int nVertices = PlyDataReader::getSingletonPtr()->getNumVertices();
     unsigned int nFaces = PlyDataReader::getSingletonPtr()->getNumFaces();
 
-
+//#define GROUND
+#ifdef GROUND
     vertices[idx].resize(nVertices + 4);
     indices[idx].resize(nFaces * 3 + 6);
+#else
+    vertices[idx].resize(nVertices);
+    indices[idx].resize(nFaces * 3);
+#endif
 
     PlyDataReader::getSingletonPtr()->readData(vertices[idx].data(), indices[idx].data());
 
@@ -148,6 +154,7 @@ void Application::create() {
     }
     center /= vertices[idx].size();
 
+#ifdef GROUND
     vertices[idx][nVertices + 0].pos = glm::vec3(-width, min_y, -width) + offset_scale * offset;
     vertices[idx][nVertices + 0].normal = glm::vec3(0, 1, 0);
     vertices[idx][nVertices + 1].pos = glm::vec3(-width, min_y, width) + offset_scale * offset;
@@ -163,6 +170,7 @@ void Application::create() {
     indices[idx][3 * nFaces + 3] = nVertices + 2;
     indices[idx][3 * nFaces + 4] = nVertices + 1;
     indices[idx][3 * nFaces + 5] = nVertices + 3;
+#endif
 
     for (size_t i = 0; i < vertices[idx].size(); i++) {
       vertices[idx][i].pos -= center;
@@ -171,7 +179,7 @@ void Application::create() {
     for (size_t i = 0; i < vertices[idx].size(); i++) {
 
       //vertices[i].pos *= 30.0;
-#ifdef aaa
+#ifdef PORSCHE
       vertices[idx][i].pos *= 0.4;
 #else
       vertices[i].pos *= 1.0;
@@ -257,6 +265,8 @@ void Application::draw() {
 
     draw_framebuffer(i);
     draw_Order_Independent_Transparency(i);
+
+    glFinish();
   }
     //drawPly2();
   
@@ -595,20 +605,23 @@ void Application::draw_framebuffer(const int& idx) {
   glUniform1i(5, 0);
 
   drawPly(idx);
+  glFinish();
 }
 
 void Application::draw_Order_Independent_Transparency(const int& idx) {
   glDisable(GL_DEPTH_TEST);
 
   // Bind head-pointer image for read-write
-  glBindImageTexture(0, head_pointer_texture[idx], 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
+  glBindImageTexture(0, head_pointer_texture[idx], 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32UI);
 
   // Bind linked-list buffer for write
-  glBindImageTexture(1, linked_list_texture[idx], 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
+  glBindImageTexture(1, linked_list_texture[idx], 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32UI);
 
   glBindVertexArray(quad_vao);
   glUseProgram(resolve_order_independence_program);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+  glFinish();
 }
 
 void Application::combine_Lists_Order_Independent_Transparency() {
@@ -626,7 +639,15 @@ void Application::combine_Lists_Order_Independent_Transparency() {
   glBindTexture(GL_TEXTURE_2D, 0);
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-  for (int i = 0; i < NUM_FRAME_BUFFERS; i++){
+  int beg_fbo = 0;
+  int end_fbo = NUM_FRAME_BUFFERS;
+
+  if (render_fbo_idx > 0){
+    beg_fbo = render_fbo_idx-1;
+    end_fbo = render_fbo_idx;
+  }
+
+  for (int i = beg_fbo; i < end_fbo; i++){
     // Bind head-pointer image for read-write
     glBindImageTexture(0, main_head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
 
@@ -658,6 +679,7 @@ void Application::apply_transparency() {
   glBindVertexArray(quad_vao);
   glUseProgram(blend_order_independence_buffers_program);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glFinish();
 }
 
 
@@ -731,6 +753,9 @@ void Application::EventKey(GLFWwindow* window, int key, int scancode, int action
     if (key == GLFW_KEY_M) {
       rendering_state = ++rendering_state % 3;
     }
+
+    if (key == GLFW_KEY_Y)
+      render_fbo_idx = ++render_fbo_idx % (NUM_FRAME_BUFFERS + 1);
 
     if (key == GLFW_KEY_P)
       comp_shaders = 1;

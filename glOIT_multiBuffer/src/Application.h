@@ -82,6 +82,7 @@ private:
 
     // Rendering buffer
     static int  rendering_state;
+    static int  render_fbo_idx;
     GLuint      combine_program;
     GLuint      ssao_program;
     GLuint      render_fbo[NUM_FRAME_BUFFERS];
