@@ -8,10 +8,6 @@ layout( location = 0 ) in vec3 position;
 layout( location = 1 ) in vec3 control_point0;
 layout( location = 2 ) in vec3 control_point1;
 
-layout(std140, binding = 0) uniform TransformBlock {
-    vec3 points[];
-};
-
 out VS_OUT{
 	vec4 color;
 	vec4 control_point0;

@@ -33,6 +33,7 @@ public:
 private:
   void create();
   void update(float time, float elapsedTime);
+  void updateBSpline(float time);
   void draw();
   void draw_controlpoints();
   void draw_bspline();
