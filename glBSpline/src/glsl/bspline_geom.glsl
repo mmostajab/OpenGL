@@ -26,13 +26,20 @@ vec4 evaluateBezierPosition( vec4 v[4], float t )
     return b0*v[0] + b1*v[1] + b2*v[2] + b3*v[3];
 }
 
-mat4 u_mat = mat4( vec4( -1, 3, -3, 1), vec4(3, -6, 3, 0), vec4(-3, 0, 3, 0), vec4(1, 4, 1, 0) );
+
+//mat4 u_mat = mat4( vec4( -1, 3, -3, 1), vec4(3, -6, 3, 0), vec4(-3, 0, 3, 0), vec4(1, 4, 1, 0) );
+mat4 norm_mat  = mat4( vec4( -1, 3, -3, 1), vec4(3, -6, 3, 0), vec4(-3, 0, 3, 0), vec4(1, 4, 1, 0) );
+mat4 first_mat = mat4( vec4( -1.0f, 7.0f/6.0f, -1.0f/3.0f, 1.0f/6.0f), vec4(+3.0f, -3.0f, 0, 0), vec4(-3.0f, 2.0f, 1.0f, 0.0f), vec4(1.0f, 0.0f, 0.0f, 0.0f) );
+mat4 last_mat  = mat4( vec4( -1.0f/6.0f, 1.0f/3.0f, -7.0f/6.0f, 1.0f), vec4(1.0f/2.0f, -1.0f, +1.0f/2.0f, 0), vec4(-1.0f/2.0f, 0, +1.0f/2.0f, 0.0f), vec4(1.0f/6.0f, 2.0f/3.0f, 1.0f/6.0f, 0.0f) );
 
 vec4 evaluateBSplinePosition( vec4 v[4], float t )
 {
-	return 1.0f/6.0f * mat4(v[0], v[1], v[2], v[3]) * u_mat *  vec4(t*t*t, t*t, t, 1);
+	// first curve
+	if(gl_PrimitiveIDIn == 0) return 1 / 6.0f * mat4(v[0], v[1], v[2], v[3]) * first_mat *  vec4(t*t*t, t*t, t, 1);
+	if(gl_PrimitiveIDIn == 15) return 1 / 6.0f * mat4(v[0], v[1], v[2], v[3]) * last_mat *  vec4(t*t*t, t*t, t, 1);
+	return 1 / 6.0f * mat4(v[0], v[1], v[2], v[3]) * norm_mat *  vec4(t*t*t, t*t, t, 1);
 }
- 
+
 void main()
 {
 
@@ -56,7 +63,7 @@ void main()
     pos[1] = gs_in[0].control_point0;
     pos[2] = gs_in[0].control_point1;
     pos[3] = gl_in[1].gl_Position;
-    float OneOverDetail = 1.0 / float(curve_detail-1.0);
+    float OneOverDetail = 1.0f / float(curve_detail-1.0f);
     for( int i=0; i<curve_detail; i++ )
     {
         float t = i * OneOverDetail;

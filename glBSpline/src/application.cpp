@@ -209,14 +209,18 @@ void Application::init() {
 void Application::create() {
   compileShaders();
   srand(clock());
-  const int num_points = 21;
+  const int num_points = 19;
   std::vector<glm::vec3> vertex_positions, vertex_colors;
 
   std::vector<glm::vec3> bspline_positions, bspline_control0_points, bspline_control1_points;
 
   for (int i = -(num_points - 1)/2; i <= (num_points - 1)/2; i++){
 
-    glm::vec3 bspline_point = glm::vec3(i, 4 * sin(i * glm::pi<float>() / 2.0f), 0.5f);
+    glm::vec3 bspline_point;
+    if (i == -(num_points - 1) / 2 + 1)
+      bspline_point = glm::vec3(i-1, 2 * cos(i * glm::pi<float>() / 2.0f), 0.5f /*+ i % 2 == 0 ? i * i / 6.0f : -i * i / 6.0f*/);
+    else
+      bspline_point = glm::vec3(i, 4 * sin(i * glm::pi<float>() / 2.0f), 0.5f /*+ i % 2 == 0 ? i * i / 6.0f : -i * i / 6.0f*/);
 
     vertex_positions.push_back(bspline_point);
     vertex_colors.push_back(glm::vec3(rand() % 10000 / 10000.0f, rand() % 10000 / 10000.0f, rand() % 10000 / 10000.0f));
@@ -226,6 +230,19 @@ void Application::create() {
     //if ((i + (num_points - 1) / 2) % 3 == 2) bspline_control1_points.push_back(bspline_point);
 
   }
+
+  /*vertex_positions.push_back(glm::vec3(+2, -2, 0.0f));
+  vertex_colors.push_back(glm::vec3(1.0f));
+  vertex_positions.push_back(glm::vec3(+0, -0, 0.0f));
+  vertex_colors.push_back(glm::vec3(1.0f));
+  vertex_positions.push_back(glm::vec3(-2, 2, 0.0f));
+  vertex_colors.push_back(glm::vec3(1.0f));
+  vertex_positions.push_back(glm::vec3(+2, 2, 0.0f));
+  vertex_colors.push_back(glm::vec3(1.0f));
+  vertex_positions.push_back(glm::vec3(+0, 0, 0.0f));
+  vertex_colors.push_back(glm::vec3(1.0f));
+  vertex_positions.push_back(glm::vec3(-2, -2, 0.0f));
+  vertex_colors.push_back(glm::vec3(1.0f));*/
 
   for (size_t i = 0; i < vertex_positions.size() - 3; i++){
     bspline_positions.push_back(vertex_positions[i]);
@@ -266,7 +283,7 @@ void Application::update(float time, float timeSinceLastFrame) {
   float v = (float)clock() / 3000.0f * glm::pi<float>();
   float r = 4.0f;
   //m_cam_pos = glm::vec3(r * sin(v), r, r * cos(v));
-  m_cam_pos = glm::vec3(r * sin(v), r * cos(v), 20.0f);
+  m_cam_pos = glm::vec3(r * sin(v), r * cos(v), 30.0f);
   m_viewmat = glm::lookAt(m_cam_pos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
   m_inv_viewmat = glm::inverse(m_viewmat);
   m_projmat = glm::perspective(glm::pi<float>() / 3.0f, (float)m_width / m_height, 0.1f, 1000.0f);
@@ -332,8 +349,6 @@ void Application::draw_bspline() {
   //std::cout << "Camera Position = " << m_cam_pos.x << " " << m_cam_pos.y << " " << m_cam_pos.z << std::endl;
   glUniform3fv(cam_pos, 1, (float*)&m_cam_pos);
   glUniform1i(bsplineDetail, bspline_detail);
-
-  glBindBufferBase(GL_UNIFORM_BUFFER, 0, bspline_controlpoints_buffer);
 
   e = glGetError();
   glEnableVertexAttribArray(0);
