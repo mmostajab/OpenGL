@@ -11,8 +11,12 @@ layout(std140, binding = 1) uniform LightBlock {
     vec4 pos;
 } ;
 
-layout( location = 0 ) in vec3 position;
+in vec3 position;
+in vec3 color;
+
+out vec4 pixel_color;
 
 void main() {
     gl_Position = proj_mat * view_mat * world_mat * vec4(position, 1.0f);
+	pixel_color = vec4(color, 1.0f);
 }
