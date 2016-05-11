@@ -83,7 +83,7 @@ void Application::init() {
 
     m_camera.SetMode(MODELVIEWER);
     //m_camera.SetMode(FREE);
-    m_camera.SetPosition(glm::vec3(3.0f, 3.0f, 3.0f));
+    m_camera.SetPosition(glm::vec3(6.0f, 6.0f, 6.0f));
     m_camera.SetLookAt(glm::vec3(0.0f, 0.0f, 0.0f));
     m_camera.SetClipping(0.01f, 100.0f);
     m_camera.SetFOV(60);
@@ -106,8 +106,17 @@ void Application::init() {
 void Application::create() {
    compileShaders();
 
-   const float vertices[] = { -0.0f, -0.0f, 0.0f, 1.3f, 0.0f, 0.4f };
-   const float colors[] = { 0.9f, 0.2f, 0.1f, 0.1f, 0.1f, 0.9f };
+   const float vertices[] = { 
+	    1.0f, -0.5f, -0.5f, 
+	    1.0f, -0.5f,  0.5f, 
+	    1.0f,  0.5f,  0.0f 
+   };
+   
+   const float colors[]   = {  
+	   1.0f,  0.0f, 0.0f, 
+	   0.0f,  1.0f, 0.0f, 
+	   0.0f, 0.0f, 1.0f 
+   };
 
    glGenBuffers(1, &vertices_buffer);
    glBindBuffer(GL_ARRAY_BUFFER, vertices_buffer);
@@ -116,6 +125,27 @@ void Application::create() {
    glGenBuffers(1, &colors_buffer);
    glBindBuffer(GL_ARRAY_BUFFER, colors_buffer);
    glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+
+   const float mirror_vertices[] = {
+	   0.0f, -1.0f,-1.0f,
+	   0.0f, -1.0f, 1.0f,
+	   0.0f,  1.0f,-1.0f,
+	   0.0f,  1.0f, 1.0f
+   };
+   const float mirror_colors[]   = { 
+	   1.0f,  0.0f, 0.0f, 
+	   0.0f,  1.0f, 0.0f,
+	   0.0f,  0.0f, 1.0f,
+	   0.4f,  0.7f, 0.1f
+   };
+
+   glGenBuffers(1, &mirror_vertices_buffer);
+   glBindBuffer(GL_ARRAY_BUFFER, mirror_vertices_buffer);
+   glBufferData(GL_ARRAY_BUFFER, sizeof(mirror_vertices), mirror_vertices, GL_STATIC_DRAW);
+
+   glGenBuffers(1, &mirror_colors_buffer);
+   glBindBuffer(GL_ARRAY_BUFFER, mirror_colors_buffer);
+   glBufferData(GL_ARRAY_BUFFER, sizeof(mirror_colors), mirror_colors, GL_STATIC_DRAW);
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
@@ -146,7 +176,11 @@ void Application::update(float time, float timeSinceLastFrame) {
     glm::mat4* transform_matrices = (glm::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 3 * sizeof(glm::mat4), GL_MAP_WRITE_BIT);
     transform_matrices[0] = m_projmat;
     transform_matrices[1] = m_viewmat;
-    transform_matrices[2] = m_worldmat;
+    transform_matrices[2] = m_worldmat * glm::mat4(
+		5.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 5.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 5.0f, 0.0f,
+		0.0f, 0.0f,  0.0f, 1.0f);
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 
     // updating the lighting info
@@ -162,9 +196,12 @@ void Application::update(float time, float timeSinceLastFrame) {
     glBindBufferBase(GL_UNIFORM_BUFFER, 3, m_general_buffer);
     glm::vec4* general_info = (glm::vec4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 2 * sizeof(glm::vec4), GL_MAP_WRITE_BIT);
     glUnmapBuffer(GL_UNIFORM_BUFFER);
+
+	global_time = time;
 }
 
 void Application::draw() {
+  GLenum err;
 
   glViewport(0, 0, m_width, m_height);
 
@@ -173,37 +210,176 @@ void Application::draw() {
   float back_color[] = { 1, 1, 1, 1 };
   float one = 1.0f;
 
-  glPointSize(10.0f);
-
   glClearColor(back_color[0], back_color[1], back_color[2], back_color[3]);
   glClearDepth(one);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-  GLint position_loc = glGetAttribLocation(simple_program, "position");
-  GLint color_loc    = glGetAttribLocation(simple_program, "color");
+  glm::mat4* transform_matrices = nullptr;
 
-  glUseProgram(simple_program);
+  GL_ERROR
 
-  glEnableVertexAttribArray(position_loc);
-  glEnableVertexAttribArray(color_loc);
+  // =====================================================================
+  // =====================================================================
+  // == Rendering the mirror contents 
+  // =====================================================================
+  // =====================================================================
 
-  glBindBuffer(GL_ARRAY_BUFFER, vertices_buffer);
-  glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-  glBindBuffer(GL_ARRAY_BUFFER, colors_buffer);
-  glVertexAttribPointer(color_loc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-  glDrawArrays(GL_POINTS, 0, 2);
+#define RENDER_MIRROR
+#ifdef RENDER_MIRROR
+  glEnable(GL_STENCIL_TEST);
+  glStencilFunc(GL_ALWAYS, 1, 1);
+  glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
   
-  glDisableVertexAttribArray(position_loc);
-  glDisableVertexAttribArray(color_loc);
+  GL_ERROR
 
+  // Do Masking
+  //glColorMask(0, 0, 0, 0);
+  glEnable(GL_STENCIL_TEST);
+  glStencilFunc(GL_ALWAYS, 1, 1);
+  glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+  glDepthMask(GL_TRUE);
+  glEnable(GL_DEPTH_TEST);
+
+  GL_ERROR
+
+  // Apply the mirror
+  glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_transformation_buffer);
+  transform_matrices = (glm::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 3 * sizeof(glm::mat4), GL_MAP_WRITE_BIT);
+  transform_matrices[0] = m_projmat;
+  transform_matrices[1] = m_viewmat;
+  transform_matrices[2] =
+	  m_worldmat *
+	  glm::mat4(
+		  5.0f, 0.0f, 0.0f, 0.0f,
+		  0.0f, 5.0f, 0.0f, 0.0f,
+		  0.0f, 0.0f, 5.0f, 0.0f,
+		  0.0f, 0.0f, 0.0f, 1.0f
+	  );
+  glUnmapBuffer(GL_UNIFORM_BUFFER);
+
+  drawMirror();
+
+  // Render Mirrored Triangle
+  glDepthMask(GL_FALSE);
+  glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_GREATER);
+  glColorMask(1, 1, 1, 1);
+  glStencilFunc(GL_EQUAL, 1, 1);
+  glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+  // Apply the mirror
+  glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_transformation_buffer);
+  transform_matrices = (glm::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 3 * sizeof(glm::mat4), GL_MAP_WRITE_BIT);
+  transform_matrices[0] = m_projmat;
+  transform_matrices[1] = m_viewmat;
+  transform_matrices[2] =
+	  m_worldmat *
+	  glm::mat4(
+		  5.0f, 0.0f, 0.0f, 0.0f,
+		  0.0f, 5.0f, 0.0f, 0.0f,
+		  0.0f, 0.0f, -5.0f, 0.0f,
+		  0.0f, 0.0f, 0.0f, 1.0f
+	  );
+  glUnmapBuffer(GL_UNIFORM_BUFFER);
+  drawTriangle();
+
+  GL_ERROR
+
+#endif
+  // ===================================================================
+  // ===================================================================
+  // Render main triangle
+  // ===================================================================
+  // ===================================================================
+
+  glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_transformation_buffer);
+  transform_matrices = (glm::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 3 * sizeof(glm::mat4), GL_MAP_WRITE_BIT);
+  transform_matrices[0] = m_projmat;
+  transform_matrices[1] = m_viewmat;
+  transform_matrices[2] =
+	  m_worldmat *
+	  glm::mat4(
+		  5.0f, 0.0f, 0.0f, 0.0f,
+		  0.0f, 5.0f, 0.0f, 0.0f,
+		  0.0f, 0.0f, 5.0f, 0.0f,
+		  0.0f, 0.0f, 0.0f, 1.0f
+	  );
+  glUnmapBuffer(GL_UNIFORM_BUFFER);
+  glDepthFunc(GL_LESS);
+  glEnable(GL_DEPTH_TEST);
+  glDepthMask(GL_TRUE);
+  glDisable(GL_STENCIL_TEST);
+  drawTriangle();
   
-  
+  GL_ERROR
+
+  glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_transformation_buffer);
+  transform_matrices = (glm::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 3 * sizeof(glm::mat4), GL_MAP_WRITE_BIT);
+  transform_matrices[0] = m_projmat;
+  transform_matrices[1] = m_viewmat;
+  transform_matrices[2] =
+	  m_worldmat;
+  glUnmapBuffer(GL_UNIFORM_BUFFER);
+
+  GL_ERROR
+
   // Draw the world coordinate system
+  //glDisable(GL_STENCIL_BUFFER);
+  glStencilFunc(GL_ALWAYS, 1, 1);
   glViewport(0, 0, 100, 100);
   glUseProgram(m_coord_system_program);
   glDrawArrays(GL_LINES, 0, 6);
+
+  GL_ERROR
+}
+
+void Application::drawTriangle() {
+	GLint position_loc = glGetAttribLocation(simple_program, "position");
+	GLint color_loc = glGetAttribLocation(simple_program, "color");
+	GLint time_loc = glGetUniformLocation(simple_program, "time");
+
+	glUseProgram(simple_program);
+
+	//float time = 1 * glm::pi<float>() / 8.0f;
+	glUniform1f(time_loc, global_time);
+
+	glEnableVertexAttribArray(position_loc);
+	glEnableVertexAttribArray(color_loc);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vertices_buffer);
+	glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+	glBindBuffer(GL_ARRAY_BUFFER, colors_buffer);
+	glVertexAttribPointer(color_loc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	glDisableVertexAttribArray(position_loc);
+	glDisableVertexAttribArray(color_loc);
+}
+
+void Application::drawMirror() {
+	GLint position_loc = glGetAttribLocation(simple_program, "position");
+	GLint color_loc = glGetAttribLocation(simple_program, "color");
+	GLint time_loc = glGetUniformLocation(simple_program, "time");
+
+	glUseProgram(simple_program);
+
+	glUniform1f(time_loc, 0);
+
+	glEnableVertexAttribArray(position_loc);
+	glEnableVertexAttribArray(color_loc);
+
+	glBindBuffer(GL_ARRAY_BUFFER, mirror_vertices_buffer);
+	glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+	glBindBuffer(GL_ARRAY_BUFFER, mirror_colors_buffer);
+	glVertexAttribPointer(color_loc, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	glDisableVertexAttribArray(position_loc);
+	glDisableVertexAttribArray(color_loc);
 }
 
 void Application::run() {
