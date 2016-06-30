@@ -24,7 +24,10 @@ int main(int argc, char** argv) {
   for (int i = 1; i < nArgs; i++)
     arguments[i-1] = argv[i];
 
-  Application app(arguments[0], atof(arguments[1].c_str()), atof(arguments[2].c_str()), atof(arguments[3].c_str()), atof(arguments[4].c_str()), atof(arguments[5].c_str()), atof(arguments[6].c_str()));
+  Application app(arguments[0], static_cast<float>(atof(arguments[1].c_str())), 
+    static_cast<float>(atof(arguments[2].c_str())), static_cast<float>(atof(arguments[3].c_str())), 
+    static_cast<float>(atof(arguments[4].c_str())), static_cast<float>(atof(arguments[5].c_str())), 
+    static_cast<float>(atof(arguments[6].c_str())));
 
   app.init(800, 600);
 

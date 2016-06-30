@@ -257,7 +257,7 @@ void Application::create() {
 
   //n_control_points = num_points;
   n_control_points = num_points;
-  bspline_num_draws = bspline_positions.size();
+  bspline_num_draws = static_cast<int>(bspline_positions.size());
   
   glGenBuffers(1, &vertex_buffer);
   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
@@ -352,7 +352,7 @@ void Application::updateBSpline(float time){
 
   //n_control_points = num_points;
   n_control_points = num_points;
-  bspline_num_draws = bspline_positions.size();
+  bspline_num_draws = static_cast<int>(bspline_positions.size());
 
   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
   glBufferSubData(GL_ARRAY_BUFFER, 0, vertex_positions.size() * sizeof(glm::vec3), vertex_positions.data());
@@ -459,7 +459,7 @@ void Application::draw() {
   GLenum e = glGetError();
   glViewport(0, 0, m_width, m_height);
   e = glGetError();
-  float back_color[] = { 0, 0.2, 0.7 };
+  float back_color[] = { 0.0f, 0.2f, 0.7f };
   float zero[] = { 0.0f, 0.0f, 0.0f, 0.0f };
   float one = 1.0f;
   e = glGetError();
@@ -494,7 +494,7 @@ void Application::run() {
 
     start_frame = glfwGetTime();
 
-    update(elapsed_since_start, elapsed_since_last_frame);
+    update(static_cast<float>(elapsed_since_start), static_cast<float>(elapsed_since_last_frame));
   }
 }
 
