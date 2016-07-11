@@ -64,11 +64,16 @@ public:
   /// Returns the largest spatial extent
   AABB_INLINE uint32_t maxExtentAxis() const;
 
+  /// uninitialize the AABB
+  AABB_INLINE void uninit();
+
+  /// adds a point to the bounding box
+  AABB_INLINE void addpoint(glm::vec3 p);
+  
 	/// Bounding min and max vectors.
 	glm::vec3 min;
 	glm::vec3 max;
 };
-
 
 AABB_INLINE AABB::AABB()
 {
@@ -187,6 +192,16 @@ AABB_INLINE uint32_t AABB::maxExtentAxis() const
     return 2;
 
   return 3;
+}
+
+AABB_INLINE void AABB::uninit() {
+  min = glm::vec3(+1.0f *std::numeric_limits<float>::max());
+  max = glm::vec3(-1.0f * std::numeric_limits<float>::max());
+}
+
+AABB_INLINE void AABB::addpoint(glm::vec3 p) {
+  min = glm::min(p, min);
+  max = glm::max(p, max);
 }
 
 #endif

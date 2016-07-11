@@ -2,6 +2,7 @@
 #define __APPLICATION_H__
 
 #include "helper.h"
+#include "shapes.h"
 
 #include <gl/glew.h>
 #include <GLFW/glfw3.h>
@@ -95,6 +96,15 @@ private:
     GLuint atomic_counter_buffer;
     GLuint render_opaque_fbo;
     GLuint fbo_opaque_texture;
+
+    // CST 
+    void loadCST();
+    std::vector<Cylinder>     cylinders;
+    std::vector<Box>          boxes;
+    std::vector<DirectedBox>  directedBoxes;
+    std::vector<PolygonShape> polygons;
+    std::vector<glm::vec3>    polygonPoints;
+    std::vector<glm::vec3>    shapeColors;
 };
 
 #endif

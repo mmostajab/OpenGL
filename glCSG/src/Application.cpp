@@ -3,6 +3,7 @@
 #endif
 
 #include "application.h"
+#include "cst_reader.h"
 
 // STD
 #include <iostream>
@@ -109,8 +110,175 @@ void Application::init() {
     glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), NULL, GL_DYNAMIC_DRAW);
 }
 
+void Application::loadCST() {
+  std::vector<CSTPrimitive> cstPrimitives;
+  readModelCST(cstPrimitives, "plasma.cst");
+
+//#define SPLIT_POLYGONS
+#ifdef  SPLIT_POLYGONS
+  PolygonSplitter splitter(5, 1000, false);
+  std::vector<CSTPrimitive> newcstPrimitives;
+  for (auto& p : cstPrimitives)
+    if (p.type == "POLYGON") {
+      PolygonSplitter::Polygon polygon;
+
+      for (auto &vertex : p.vertices)
+      {
+        PolygonSplitter::Point point;
+        point.x = vertex.x;
+        point.y = vertex.y;
+
+        polygon.push_back(point);
+      }
+
+      PolygonSplitter::Polygons polygons = splitter.SplitPolygon(polygon);
+
+      for (auto &polygon : polygons)
+      {
+        CSTPrimitive primitive = p;
+        primitive.vertices.clear();
+
+        AABB bbox;
+        bbox.min = embree::Vec3f(+FLT_MAX);
+        bbox.max = embree::Vec3f(-FLT_MAX);
+        for (auto &point : polygon) {
+          bbox.min = embree::min(bbox.min, embree::Vec3f());
+          primitive.vertices.push_back(Vec2f(point.x, point.y));
+        }
+
+        newcstPrimitives.push_back(primitive);
+      }
+    }
+    else {
+      newcstPrimitives.push_back(p);
+    }
+
+    cstPrimitives = newcstPrimitives;
+#endif
+
+    int max_shapeId = 0;
+
+    size_t n_cylinders = 0;
+    size_t n_boxes = 0;
+    size_t n_directedBoxes = 0;
+    size_t n_polygons = 0;
+    size_t n_polygon_points = 0;
+    for (auto& p : cstPrimitives) {
+      if (p.type == "CYLINDER")
+        n_cylinders++;
+      else if (p.type == "BOX")
+        n_boxes++;
+      else if (p.type == "DIRECTED_BOX")
+        n_directedBoxes++;
+      else if (p.type == "POLYGON") {
+        n_polygons++;
+        n_polygon_points += p.vertices.size();
+      }
+
+      max_shapeId = glm::max(max_shapeId, p.shape);
+    }
+
+    /* Log scene contents*/
+    std::cout << "Number of cylinders = " << n_cylinders << std::endl;
+    std::cout << "Number of boxes = " << n_boxes << std::endl;
+    std::cout << "Number of directed boxes = " << n_directedBoxes << std::endl;
+    std::cout << "Number of polygons = " << n_polygons << std::endl;
+    std::cout << "Maximum shape Id = " << max_shapeId << std::endl;
+
+    //g_scene = rtcDeviceNewScene(g_device, RTC_SCENE_STATIC, aflags);
+    //createGroundPlane(g_scene);
+    //g_cylinders = createAnalyticCylinders(g_scene, n_cylinders);
+    //g_boxes = createAnalyticBoxes(g_scene, n_boxes);
+    //g_directedBoxes = createAnalyticDirectedBoxes(g_scene, n_directedBoxes);
+    //g_polygons = createAnalyticPolygons(g_scene, n_polygons);
+
+    cylinders.resize(n_cylinders);
+    boxes.resize(n_boxes);
+    directedBoxes.resize(n_directedBoxes);
+    polygons.resize(n_polygons);
+
+    polygonPoints.resize(n_polygon_points);
+    shapeColors.resize(max_shapeId + 1);
+
+    size_t v_polygon = 0, i_polygon = 0;
+    size_t c = 0, b = 0, d = 0, p = 0;
+    for (size_t i = 0; i < cstPrimitives.size(); i++) {
+      if (cstPrimitives[i].type == "CYLINDER") {
+        cylinders[c].set(cstPrimitives[i].bbox);
+        cylinders[c].sign = cstPrimitives[i].sign;
+        cylinders[c].shapeID = cstPrimitives[i].shape;
+        c++;
+      }
+      else if (cstPrimitives[i].type == "BOX") {
+        boxes[b].set(cstPrimitives[i].bbox);
+        boxes[b].sign = cstPrimitives[i].sign;
+        boxes[b].shapeID = cstPrimitives[i].shape;
+        b++;
+      }
+      else if (cstPrimitives[i].type == "DIRECTED_BOX") {
+        directedBoxes[d].set(cstPrimitives[i].bbox);
+        directedBoxes[d].width = cstPrimitives[i].meta[0];
+        directedBoxes[d].height = cstPrimitives[i].meta[1];
+        directedBoxes[d].shapeID = cstPrimitives[i].shape;
+        d++;
+      }
+      else if (cstPrimitives[i].type == "POLYGON") {
+        AABB bbox;
+
+        if (cstPrimitives[i].sign < 0) {
+          polygons[p].start_idx = static_cast<int>(v_polygon);
+          polygons[p].size = -static_cast<int>(cstPrimitives[i].vertices.size());
+        }
+        else {
+          polygons[p].start_idx = static_cast<int>(v_polygon);
+          polygons[p].size = +static_cast<int>(cstPrimitives[i].vertices.size());
+        }
+        i_polygon += 2;
+
+        float h = 50;
+
+        if (cstPrimitives[i].sign < 0) {
+
+          bbox.min = bbox.max = glm::vec3(cstPrimitives[i].vertices[0].x, 50/*i_polygon * 10*/, cstPrimitives[i].vertices[0].y);
+          for (size_t t = 0; t < cstPrimitives[i].vertices.size(); t++) {
+            glm::vec3 v(cstPrimitives[i].vertices[t].x, 50/*i_polygon * 10*/, cstPrimitives[i].vertices[t].y);
+            polygonPoints[v_polygon++] = v;
+            bbox.min = glm::min(bbox.min, v);
+            bbox.max = glm::max(bbox.max, v);
+          }
+        }
+        else
+        {
+          bbox.min = bbox.max = glm::vec3(cstPrimitives[i].vertices[0].x, h, cstPrimitives[i].vertices[0].y);
+          for (size_t t = 0; t < cstPrimitives[i].vertices.size(); t++) {
+            glm::vec3 v(cstPrimitives[i].vertices[t].x, h, cstPrimitives[i].vertices[t].y);
+            polygonPoints[v_polygon++] = v;
+            bbox.min = glm::min(bbox.min, v);
+            bbox.max = glm::max(bbox.max, v);
+          }
+        }
+
+
+        bbox.min.y = 0;
+        /*min -= make_float3(scene_epsilon);
+        max += make_float3(scene_epsilon);*/
+
+        polygons[p].sign = cstPrimitives[i].sign;
+        polygons[p].shapeID = cstPrimitives[i].shape;
+        polygons[p].bbox = bbox;
+        p++;
+      }
+
+      // TODO ShapeColors buggy!
+      //shapeColors[cstPrimitives[i].shape] = cstPrimitives[i].color;
+    }
+
+}
+
 void Application::create() {
   compileShaders();
+
+  loadCST();
 
 }
 
@@ -335,19 +503,19 @@ void Application::draw_CSG() {
   glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
 
   // Clear head-pointer image
-  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, head_pointer_clear_buffer);
-  glBindTexture(GL_TEXTURE_2D, head_pointer_texture);
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER,    head_pointer_clear_buffer);
+  glBindTexture(GL_TEXTURE_2D,            head_pointer_texture);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
-  glBindTexture(GL_TEXTURE_2D, 0);
-  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+  glBindTexture(GL_TEXTURE_2D,          0);
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER,  0);
 
   // Bind head-pointer image for read-write
   glBindImageTexture(0, head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
 
   // Bind linked-list buffer for write
   glBindImageTexture(1, linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
- // glUseProgram(render_oreder_independece_linked_list_program);
- // glUseProgram(ply_program);
+ 
+  glUseProgram(collect_fragments);
 
   glUniform1f(0, transparency_value);
   glUniform1i(2, 0);
@@ -355,10 +523,6 @@ void Application::draw_CSG() {
   // disable constant color
   glUniform1i(5, 0);
   
-  // drawPly();
-  // drawPly2();
-  
-
   // Bind head-pointer image for read-write
   glBindImageTexture(0, head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
 
