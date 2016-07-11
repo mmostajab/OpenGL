@@ -15,8 +15,9 @@
 
 #include "Camera.h"
 
-#define MAX_FRAMEBUFFER_WIDTH 2048
-#define MAX_FRAMEBUFFER_HEIGHT 2048
+#define MAX_FRAMEBUFFER_WIDTH   2048
+#define MAX_FRAMEBUFFER_HEIGHT  2048
+#define FRAMEBUFFER_MULTIPLIER  5           
 
 struct PlyObjVertex
 {
@@ -43,8 +44,8 @@ private:
     void compileShaders();
 
     void prepare_framebuffer();
-    void prepare_Order_Independent_Transparency();
-    void draw_Order_Independent_Transparency();
+    void prepare_fragment_collecting();
+    void draw_CSG();
 
     GLuint simple_program;
 
@@ -85,7 +86,8 @@ private:
     // Order Independence Transparency
     static int  comp_shaders;
     static float transparency_value;
-    GLuint resolve_order_independence_program;
+	  GLuint collect_fragments;
+	  GLuint resolve_csg_operations;
     size_t total_pixels;
     GLuint head_pointer_texture;
     GLuint head_pointer_clear_buffer;
@@ -93,15 +95,6 @@ private:
     GLuint atomic_counter_buffer;
     GLuint render_opaque_fbo;
     GLuint fbo_opaque_texture;
-
-    // Ply buffers
-    GLuint ply_program;
-    std::vector<PlyObjVertex> vertices, vertices2;
-    std::vector<unsigned int> indices, indices2;
-    GLuint vertices_buffer, indices_buffer;
-    GLuint vertices_buffer2, indices_buffer2;
-    void drawPly();
-    void drawPly2();
 };
 
 #endif

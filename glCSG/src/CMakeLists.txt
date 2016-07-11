@@ -13,6 +13,7 @@ FILE(GLOB CSG-OpenGLSources RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
   glsl/*.vert
   cl/*.cl
   *.cpp
+  *.c
 )
 
 FILE(GLOB CSG-OpenGLHeaders RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}

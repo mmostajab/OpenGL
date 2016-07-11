@@ -3,7 +3,6 @@
 #endif
 
 #include "application.h"
-#include "plydatareader.h"
 
 // STD
 #include <iostream>
@@ -17,24 +16,24 @@
 #include <GL/glew.h>
 
 // Static Members
-GLFWwindow*				    Application::m_window = 0;
-unsigned int			    Application::m_width              = 0;
-unsigned int			    Application::m_height             = 0;
-bool					        Application::m_controlKeyHold     = false;
-bool					        Application::m_altKeyHold         = false;
-bool					        Application::m_w_pressed          = false;
-bool					        Application::m_s_pressed          = false;
-bool					        Application::m_a_pressed          = false;
-bool					        Application::m_d_pressed          = false;
-bool					        Application::m_q_pressed          = false;
-bool					        Application::m_e_pressed          = false;
-bool                  Application::m_mouse_left_drag    = false;
-bool                  Application::m_mouse_middle_drag  = false;
-bool                  Application::m_mouse_right_drag   = false;
-int                   Application::rendering_state      = 0;
-Camera				        Application::m_camera;
-float                 Application::transparency_value   = 0.2f;
-int                   Application::comp_shaders            = 1;
+GLFWwindow*			  Application::m_window				      = 0;
+unsigned int		  Application::m_width              = 0;
+unsigned int		  Application::m_height             = 0;
+bool				      Application::m_controlKeyHold     = false;
+bool				      Application::m_altKeyHold         = false;
+bool				      Application::m_w_pressed          = false;
+bool				      Application::m_s_pressed          = false;
+bool				      Application::m_a_pressed          = false;
+bool				      Application::m_d_pressed          = false;
+bool				      Application::m_q_pressed          = false;
+bool				      Application::m_e_pressed          = false;
+bool              Application::m_mouse_left_drag    = false;
+bool              Application::m_mouse_middle_drag  = false;
+bool              Application::m_mouse_right_drag   = false;
+int               Application::rendering_state      = 0;
+Camera				    Application::m_camera;
+float             Application::transparency_value   = 0.2f;
+int               Application::comp_shaders         = 1;
 
 Application::Application() {
 }
@@ -95,7 +94,7 @@ void Application::init() {
     m_camera.camera_scale = 0.01f;
 
     prepare_framebuffer();
-    prepare_Order_Independent_Transparency();
+    prepare_fragment_collecting();
 
     glGenBuffers(1, &m_transformation_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, m_transformation_buffer);
@@ -112,103 +111,7 @@ void Application::init() {
 
 void Application::create() {
   compileShaders();
-#define aaa
-  {
-#ifdef aaa
-    PlyDataReader::getSingletonPtr()->readDataInfo("big_porsche.ply", nullptr, 0);
-#else
-    PlyDataReader::getSingletonPtr()->readDataInfo("tetrahedron.ply", nullptr, 0);
-#endif
 
-    unsigned int nVertices = PlyDataReader::getSingletonPtr()->getNumVertices();
-    unsigned int nFaces = PlyDataReader::getSingletonPtr()->getNumFaces();
-
-
-    vertices.resize(nVertices);
-    indices.resize(nFaces * 3);
-
-    PlyDataReader::getSingletonPtr()->readData(vertices.data(), indices.data());
-
-    glm::vec3 center;
-    glm::float32 min_y = vertices[0].pos.y;
-    size_t i = 0;
-    for (; i < vertices.size() - 4; i++) {
-      center += vertices[i].pos;
-      min_y = glm::min(min_y, vertices[i].pos.y);
-    }
-    center /= vertices.size();
-
-    for (size_t i = 0; i < vertices.size(); i++) {
-      vertices[i].pos -= center;
-    }
-
-    for (size_t i = 0; i < vertices.size(); i++) {
-
-      //vertices[i].pos *= 30.0;
-#ifdef aaa
-      vertices[i].pos *= 0.4;
-#else
-      vertices[i].pos *= 1.0;
-#endif
-    }
-
-    glGenBuffers(1, &vertices_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertices_buffer);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(PlyObjVertex), vertices.data(), GL_STATIC_DRAW);
-
-    glGenBuffers(1, &indices_buffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-  }
-
-  {
-    PlyDataReader::getSingletonPtr()->renew();
-#ifdef aaa
-    PlyDataReader::getSingletonPtr()->readDataInfo("cow.ply", nullptr, 0);
-#else
-    PlyDataReader::getSingletonPtr()->readDataInfo("tetrahedron.ply", nullptr, 0);
-#endif
-
-    unsigned int nVertices = PlyDataReader::getSingletonPtr()->getNumVertices();
-    unsigned int nFaces = PlyDataReader::getSingletonPtr()->getNumFaces();
-
-
-    vertices2.resize(nVertices);
-    indices2.resize(nFaces * 3);
-
-    PlyDataReader::getSingletonPtr()->readData(vertices2.data(), indices2.data());
-
-    glm::vec3 center;
-    glm::float32 min_y = vertices2[0].pos.y;
-    size_t i = 0;
-    for (; i < vertices2.size() - 4; i++) {
-      center += vertices2[i].pos;
-      min_y = glm::min(min_y, vertices2[i].pos.y);
-    }
-    center /= vertices2.size();
-
-    for (size_t i = 0; i < vertices2.size(); i++) {
-      vertices2[i].pos -= center;
-    }
-
-    for (size_t i = 0; i < vertices2.size(); i++) {
-
-      //vertices[i].pos *= 30.0;
-#ifdef aaa
-      vertices2[i].pos *= 0.4;
-#else
-      vertices2[i].pos *= 1.0;
-#endif
-    }
-
-    glGenBuffers(1, &vertices_buffer2);
-    glBindBuffer(GL_ARRAY_BUFFER, vertices_buffer2);
-    glBufferData(GL_ARRAY_BUFFER, vertices2.size() * sizeof(PlyObjVertex), vertices2.data(), GL_STATIC_DRAW);
-
-    glGenBuffers(1, &indices_buffer2);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_buffer2);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices2.size() * sizeof(unsigned int), indices2.data(), GL_STATIC_DRAW);
-  }
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
@@ -279,7 +182,7 @@ void Application::draw() {
     
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  draw_Order_Independent_Transparency();
+  draw_CSG();
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   
@@ -294,80 +197,10 @@ void Application::draw() {
   glBindVertexArray(quad_vao);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-  
-
   // Draw the world coordinate system
   glViewport(0, 0, 100, 100);
   glUseProgram(m_coord_system_program);
   glDrawArrays(GL_LINES, 0, 6);
-}
-
-void Application::drawPly() {
-
-  
-
-  bool use_const_color = false;
-  float const_color[] = { 1.0f, 1.0f, 1.0f };
-  if (use_const_color) {
-    glUniform1i(5, 1);
-    glUniform3fv(6, 1, const_color);
-  }
-  else {
-    glUniform1i(5, 0);
-  }
-
-  //glUniform1i(0, 1);
-
-  glEnableVertexAttribArray(0);
-  glEnableVertexAttribArray(1);
-
-  int stride = sizeof(PlyObjVertex);
-  glBindBuffer(GL_ARRAY_BUFFER, vertices_buffer);
-  glVertexAttribPointer((GLint)0, 3, GL_FLOAT, GL_FALSE, stride, 0);
-  glVertexAttribPointer((GLint)1, 3, GL_FLOAT, GL_FALSE, stride, (char*)0 + 12);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_buffer);
-
-  //std::cout << "Try to draw...\n";
-  glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
-  // std::cout << "Drawing done...\n";
-
-  glDisableVertexAttribArray(0);
-  glDisableVertexAttribArray(1);
-}
-
-void Application::drawPly2() {
-
-
-
-  bool use_const_color = false;
-  float const_color[] = { 1.0f, 1.0f, 1.0f };
-  if (use_const_color) {
-    glUniform1i(5, 1);
-    glUniform3fv(6, 1, const_color);
-  }
-  else {
-    glUniform1i(5, 0);
-  }
-
-  //glUniform1i(0, 1);
-
-  glEnableVertexAttribArray(0);
-  glEnableVertexAttribArray(1);
-
-  int stride = sizeof(PlyObjVertex);
-  glBindBuffer(GL_ARRAY_BUFFER, vertices_buffer2);
-  glVertexAttribPointer((GLint)0, 3, GL_FLOAT, GL_FALSE, stride, 0);
-  glVertexAttribPointer((GLint)1, 3, GL_FLOAT, GL_FALSE, stride, (char*)0 + 12);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices_buffer2);
-
-  //std::cout << "Try to draw...\n";
-  glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices2.size()), GL_UNSIGNED_INT, 0);
-  // std::cout << "Drawing done...\n";
-
-  glDisableVertexAttribArray(0);
-  glDisableVertexAttribArray(1);
 }
 
 void Application::run() {
@@ -405,12 +238,9 @@ Application::~Application() {
 }
 
 void Application::compileShaders() { 
-  ssao_program = compile_link_vs_fs("../../src/glsl/ssao.vert", "../../src/glsl/ssao.frag");
-  m_coord_system_program = compile_link_vs_fs("../../src/glsl/coord_sys.vert", "../../src/glsl/coord_sys.frag");
-  resolve_order_independence_program = compile_link_vs_fs("../../src/glsl/oit.vert", "../../src/glsl/oit.frag");
-  ply_program = compile_link_vs_fs("../../src/glsl/ply_oit.vert", "../../src/glsl/ply_oit.frag");
-  //render_oreder_independece_linked_list_program = compile_link_vs_fs("../../src/glsl/OIT_build_list.vert", "../../src/glsl/OIT_build_list.frag");
-  //resolve_order_independence_program = compile_link_vs_fs("../../src/glsl/OIT_resolve.vert", "../../src/glsl/OIT_resolve.frag");
+  m_coord_system_program  = compile_link_vs_fs("../../src/glsl/coord_sys.vert",           "../../src/glsl/coord_sys.frag");
+  collect_fragments       = compile_link_vs_fs("../../src/glsl/fragmentCollecting.vert",  "../../src/glsl/fragmentCollecting.frag");
+  resolve_csg_operations	= compile_link_vs_fs("../../src/glsl/quad.vert",                "../../src/glsl/csg.frag");
 }
 
 void Application::prepare_framebuffer() {
@@ -419,17 +249,17 @@ void Application::prepare_framebuffer() {
   glGenTextures(3, fbo_textures);
 
   glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
-  glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB16F, 2048, 2048);
+  glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB16F, MAX_FRAMEBUFFER_WIDTH, MAX_FRAMEBUFFER_HEIGHT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
   glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
-  glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, 2048, 2048);
+  glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, MAX_FRAMEBUFFER_WIDTH, MAX_FRAMEBUFFER_HEIGHT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
   glBindTexture(GL_TEXTURE_2D, fbo_textures[2]);
-  glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 2048, 2048);
+  glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, MAX_FRAMEBUFFER_WIDTH, MAX_FRAMEBUFFER_HEIGHT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -449,7 +279,7 @@ void Application::prepare_framebuffer() {
   glBindVertexArray(quad_vao);
 }
 
-void Application::prepare_Order_Independent_Transparency() {
+void Application::prepare_fragment_collecting() {
   GLuint* data;
 
   // Create head pointer texture
@@ -480,7 +310,7 @@ void Application::prepare_Order_Independent_Transparency() {
   // Create the linked list storage buffer
   glGenBuffers(1, &linked_list_buffer);
   glBindBuffer(GL_TEXTURE_BUFFER, linked_list_buffer);
-  glBufferData(GL_TEXTURE_BUFFER, MAX_FRAMEBUFFER_WIDTH * MAX_FRAMEBUFFER_HEIGHT * 6 * sizeof(glm::vec4), NULL, GL_DYNAMIC_COPY);
+  glBufferData(GL_TEXTURE_BUFFER, FRAMEBUFFER_MULTIPLIER * MAX_FRAMEBUFFER_WIDTH * MAX_FRAMEBUFFER_HEIGHT * sizeof(glm::vec4), NULL, GL_DYNAMIC_COPY);
   glBindBuffer(GL_TEXTURE_BUFFER, 0);
 
   // Bind it to a texture (for use as a TBO)
@@ -492,7 +322,7 @@ void Application::prepare_Order_Independent_Transparency() {
   glBindImageTexture(1, linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
 }
 
-void Application::draw_Order_Independent_Transparency() {
+void Application::draw_CSG() {
   GLuint * data;
 
   glDisable(GL_DEPTH_TEST);
@@ -516,8 +346,8 @@ void Application::draw_Order_Independent_Transparency() {
 
   // Bind linked-list buffer for write
   glBindImageTexture(1, linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
-//  glUseProgram(render_oreder_independece_linked_list_program);
-  glUseProgram(ply_program);
+ // glUseProgram(render_oreder_independece_linked_list_program);
+ // glUseProgram(ply_program);
 
   glUniform1f(0, transparency_value);
   glUniform1i(2, 0);
@@ -525,8 +355,8 @@ void Application::draw_Order_Independent_Transparency() {
   // disable constant color
   glUniform1i(5, 0);
   
-  drawPly();
-  //drawPly2();
+  // drawPly();
+  // drawPly2();
   
 
   // Bind head-pointer image for read-write
@@ -536,7 +366,7 @@ void Application::draw_Order_Independent_Transparency() {
   glBindImageTexture(1, linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
 
   glBindVertexArray(quad_vao);
-  glUseProgram(resolve_order_independence_program);
+  glUseProgram(resolve_csg_operations);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
