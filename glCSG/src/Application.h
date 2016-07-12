@@ -3,6 +3,7 @@
 
 #include "helper.h"
 #include "shapes.h"
+#include "GLshapes.h"
 
 #include <gl/glew.h>
 #include <GLFW/glfw3.h>
@@ -76,6 +77,8 @@ private:
    
 	  // scene objects
 	  static Camera m_camera;
+    glm::mat4     mvp;
+    glm::mat4     mv;
 
     // Rendering buffer
     static int  rendering_state;
@@ -105,6 +108,8 @@ private:
     std::vector<PolygonShape> polygons;
     std::vector<glm::vec3>    polygonPoints;
     std::vector<glm::vec3>    shapeColors;
+
+    Graphics::Cylinders       glCylinders;
 };
 
 #endif

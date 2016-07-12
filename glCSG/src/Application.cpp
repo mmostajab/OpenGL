@@ -280,6 +280,16 @@ void Application::create() {
 
   loadCST();
 
+  for (Cylinder& c : cylinders) {
+    glCylinders.addCylinder(c.center(), c.radius(), c.height());
+  }
+  glCylinders.createGLBuffer();
+  glCylinders.gl_shader_program = compile_link_vs_fs(
+    "../../src/glsl/cylinder/cylinder.vert", 
+    //"../../src/glsl/cylinder/cylinder.geom", 
+    "../../src/glsl/cylinder/cylinder.frag"
+  );
+
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
@@ -311,26 +321,11 @@ void Application::update(float time, float timeSinceLastFrame) {
     m_camera.Update();
     m_camera.GetMatricies(m_projmat, m_viewmat, m_worldmat);
     m_inv_viewmat = glm::inverse(m_viewmat);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_transformation_buffer);
-    glm::mat4* transform_matrices = (glm::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 3 * sizeof(glm::mat4), GL_MAP_WRITE_BIT);
-    transform_matrices[0] = m_projmat;
-    transform_matrices[1] = m_viewmat;
-    transform_matrices[2] = m_worldmat;
-    glUnmapBuffer(GL_UNIFORM_BUFFER);
 
-    // updating the lighting info
-    glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_lighting_buffer);
-    glm::vec4* light_info = (glm::vec4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 2 * sizeof(glm::vec4), GL_MAP_WRITE_BIT);
-    light_info[0] = glm::vec4(-1, -1, -1, 0);
-    light_info[1] = glm::vec4(m_camera.getPosition(), 1.0f);
-    glUnmapBuffer(GL_UNIFORM_BUFFER);
+    mvp   = m_projmat * m_viewmat * m_worldmat;
+    
+    mv = m_viewmat * m_worldmat;
 
-    // Buffer 2 is reserved for the sample points of the Ambient Occlusion Rendering
-
-    // updating the general information for every object
-    glBindBufferBase(GL_UNIFORM_BUFFER, 3, m_general_buffer);
-    glm::vec4* general_info = (glm::vec4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 2 * sizeof(glm::vec4), GL_MAP_WRITE_BIT);
-    glUnmapBuffer(GL_UNIFORM_BUFFER);
 }
 
 void Application::draw() {
@@ -347,12 +342,15 @@ void Application::draw() {
   glClearBufferfv(GL_COLOR, 0, back_color);
   glClearBufferfv(GL_COLOR, 1, zero);
   glClearBufferfv(GL_DEPTH, 0, &one);
-    
+  glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   draw_CSG();
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   
   GLint rendering_state_loc = glGetUniformLocation(ssao_program, "rendering_state");
   glUniform1i(rendering_state_loc, rendering_state);
@@ -363,11 +361,24 @@ void Application::draw() {
   glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
   glDisable(GL_DEPTH_TEST);
   glBindVertexArray(quad_vao);
+
+  glCylinders.draw(mvp);
+
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+  GLfloat m[16] = {
+    1.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, 1.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 1.0f, 0.0f,
+    0.0f, 0.0f, 0.0f, 1.0f
+  };
 
   // Draw the world coordinate system
   glViewport(0, 0, 100, 100);
+  //glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+  //glClear(GL_COLOR_BUFFER_BIT);
   glUseProgram(m_coord_system_program);
+  glUniformMatrix4fv(0, 1, GL_FALSE, (GLfloat*)&mv);
   glDrawArrays(GL_LINES, 0, 6);
 }
 
