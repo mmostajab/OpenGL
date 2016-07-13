@@ -3,7 +3,10 @@
 layout(location = 0) out vec4 color;
 
 in GS_OUT {
+
 	vec3 normal;
+	float sign;
+
 } fs_in;
 
 void main(){

@@ -284,12 +284,60 @@ void Application::create() {
     glCylinders.addCylinder(c.center(), c.radius(), c.height());
   }
   glCylinders.createGLBuffer();
-  glCylinders.gl_shader_program = compile_link_vs_fs(
-    "../../src/glsl/cylinder/cylinder.vert", 
-    //"../../src/glsl/cylinder/cylinder.geom", 
+  glCylinders.gl_shader_program = 
+  
+//#define CYLINDER_AS_POINTS
+#define CYLINDER_AS_BOXES
+//#define CYLINDER_TESSELATED
+#if defined(CYLINDER_AS_POINTS)
+  compile_link_vs_fs(
+    "../../src/glsl/cylinder/cylinder.vert",
     "../../src/glsl/cylinder/cylinder.frag"
   );
+#elif defined(CYLINDER_AS_BOXES)
+  compile_link_vs_gs_fs(
+    "../../src/glsl/cylinder/cylinder.vert", 
+    "../../src/glsl/cylinder/cylinder.geom", 
+    "../../src/glsl/cylinder/cylinder.frag"
+  );
+#elif defined(CYLINDER_TESSELATED)
+#endif
 
+  glPolygons.setPoints(polygonPoints);
+  for (PolygonShape& p : polygons) {
+    glPolygons.addDrawElementsIndirectCommand(p.start_idx, p.size);
+  }
+  glPolygons.createGLBuffer();
+  glPolygons.gl_shader_program =
+    compile_link_vs_fs(
+      "../../src/glsl/polygon/polygon.vert",
+      "../../src/glsl/polygon/polygon.frag"
+    );
+
+  for (Box& b : boxes) {
+    glBoxes.addBox(b.center(), b.dims());
+  }
+  glBoxes.createGLBuffer();
+  glBoxes.gl_shader_program = 
+    compile_link_vs_gs_fs(
+      "../../src/glsl/box/box.vert",
+      "../../src/glsl/box/box.geom",
+      "../../src/glsl/box/box.frag"
+    );
+
+  for (DirectedBox& b : directedBoxes) {
+    glDirectedBoxes.addDirectedBox(b.start, b.end, b.width, b.height);
+  }
+  /*float testVal = 1000.0f;
+  glDirectedBoxes.addDirectedBox(glm::vec3(-testVal, -testVal, 0.0f), glm::vec3(testVal, testVal, 0.0f), 100.0f, 1000.0f);*/
+  glDirectedBoxes.createGLBuffer();
+  glDirectedBoxes.gl_shader_program =
+    compile_link_vs_gs_fs(
+      "../../src/glsl/directedbox/directedbox.vert",
+      "../../src/glsl/directedbox/directedbox.geom",
+      "../../src/glsl/directedbox/directedbox.frag"
+    );
+  
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
@@ -323,7 +371,6 @@ void Application::update(float time, float timeSinceLastFrame) {
     m_inv_viewmat = glm::inverse(m_viewmat);
 
     mvp   = m_projmat * m_viewmat * m_worldmat;
-    
     mv = m_viewmat * m_worldmat;
 
 }
@@ -362,21 +409,17 @@ void Application::draw() {
   glDisable(GL_DEPTH_TEST);
   glBindVertexArray(quad_vao);
 
+  glEnable(GL_DEPTH_TEST);
+  glPolygons.draw(mvp);
   glCylinders.draw(mvp);
+  glBoxes.draw(mvp);
+  glDirectedBoxes.draw(mvp);
+  
 
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-  GLfloat m[16] = {
-    1.0f, 0.0f, 0.0f, 0.0f,
-    0.0f, 1.0f, 0.0f, 0.0f,
-    0.0f, 0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f
-  };
-
   // Draw the world coordinate system
   glViewport(0, 0, 100, 100);
-  //glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-  //glClear(GL_COLOR_BUFFER_BIT);
   glUseProgram(m_coord_system_program);
   glUniformMatrix4fv(0, 1, GL_FALSE, (GLfloat*)&mv);
   glDrawArrays(GL_LINES, 0, 6);

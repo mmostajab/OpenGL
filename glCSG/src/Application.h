@@ -110,6 +110,9 @@ private:
     std::vector<glm::vec3>    shapeColors;
 
     Graphics::Cylinders       glCylinders;
+    Graphics::Polygons        glPolygons;
+    Graphics::Boxes           glBoxes;
+    Graphics::DirectedBox     glDirectedBoxes;
 };
 
 #endif

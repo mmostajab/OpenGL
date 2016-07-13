@@ -7,30 +7,30 @@ layout(triangle_strip, max_vertices=24) out;
 
 in VS_OUT {
 
-	float radius;
-	float height;
+	vec3  dims;
+	float sign;
 
 } gs_in[];
 
 out GS_OUT {
 	vec3 normal;
+	float sign;
 } gs_out;
 
 void main(){
 	vec4  center = gl_in[0].gl_Position;
-	float radius = gs_in[0].radius;
-	float height = gs_in[0].height;
+	vec4  dims   = vec4(gs_in[0].dims, 0.0f);
 
 	vec4 points[8] = {
-		center + vec4( radius,  height,  radius, 0.0f),  // 0
-		center + vec4(-radius,  height,  radius, 0.0f),  // 1
-		center + vec4(-radius,  height, -radius, 0.0f),  // 2
-		center + vec4( radius,  height, -radius, 0.0f),  // 3
+		center + vec4( 1.0f,  1.0f,  1.0f, 0.0f) * dims / 2.0f,  // 0
+		center + vec4(-1.0f,  1.0f,  1.0f, 0.0f) * dims / 2.0f,  // 1
+		center + vec4(-1.0f,  1.0f, -1.0f, 0.0f) * dims / 2.0f,  // 2
+		center + vec4( 1.0f,  1.0f, -1.0f, 0.0f) * dims / 2.0f,  // 3
 
-		center + vec4( radius, -height,  radius, 0.0f),  // 4
-		center + vec4(-radius, -height,  radius, 0.0f),  // 5
-		center + vec4(-radius, -height, -radius, 0.0f),  // 6
-		center + vec4( radius, -height, -radius, 0.0f)   // 7
+		center + vec4( 1.0f, -1.0f,  1.0f, 0.0f) * dims / 2.0f,  // 4
+		center + vec4(-1.0f, -1.0f,  1.0f, 0.0f) * dims / 2.0f,  // 5
+		center + vec4(-1.0f, -1.0f, -1.0f, 0.0f) * dims / 2.0f,  // 6
+		center + vec4( 1.0f, -1.0f, -1.0f, 0.0f) * dims / 2.0f  // 7
 	};
 
 	vec3 normals[8] = {
