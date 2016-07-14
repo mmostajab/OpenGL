@@ -281,7 +281,7 @@ void Application::create() {
   loadCST();
 
   for (Cylinder& c : cylinders) {
-    glCylinders.addCylinder(c.center(), c.radius(), c.height());
+    glCylinders.addCylinder(c.center(), c.radius(), c.height(), c.sign);
   }
   glCylinders.createGLBuffer();
   glCylinders.gl_shader_program = 
@@ -409,11 +409,13 @@ void Application::draw() {
   glDisable(GL_DEPTH_TEST);
   glBindVertexArray(quad_vao);
 
+#ifdef TEST_PRIMITVES_DRAW
   glEnable(GL_DEPTH_TEST);
   glPolygons.draw(mvp);
   glCylinders.draw(mvp);
   glBoxes.draw(mvp);
   glDirectedBoxes.draw(mvp);
+#endif
   
 
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

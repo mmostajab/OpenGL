@@ -218,11 +218,13 @@ namespace Graphics {
     std::vector<glm::vec3>    centers_buffer;
     std::vector<glm::float32> radiuses_buffer;
     std::vector<glm::float32> heights_buffer;
+    std::vector<int>          signs_buffer;
 
     GLuint           gl_shader_program;
     GLuint           gl_centers_buffer;
     GLuint           gl_radiuses_buffer;
     GLuint           gl_heights_buffer;
+    GLuint           gl_signs_buffer;
 
     /// constructor
     Cylinders() {
@@ -230,6 +232,7 @@ namespace Graphics {
       gl_centers_buffer   = 0;
       gl_radiuses_buffer  = 0;
       gl_heights_buffer   = 0;
+      gl_signs_buffer     = 0;
 
       centers_buffer.clear();
       radiuses_buffer.clear();
@@ -242,19 +245,22 @@ namespace Graphics {
       if (gl_centers_buffer  > 0) glDeleteBuffers(1, &gl_centers_buffer);
       if (gl_radiuses_buffer > 0) glDeleteBuffers(1, &gl_radiuses_buffer);
       if (gl_heights_buffer  > 0) glDeleteBuffers(1, &gl_heights_buffer);
+      if (gl_signs_buffer    > 0) glDeleteBuffers(1, &gl_signs_buffer);
 
-      gl_shader_program  = 0;
-      gl_centers_buffer  = 0;
-      gl_radiuses_buffer = 0;
-      gl_heights_buffer  = 0;
+      gl_shader_program   = 0;
+      gl_centers_buffer   = 0;
+      gl_radiuses_buffer  = 0;
+      gl_heights_buffer   = 0;
+      gl_signs_buffer     = 0;
     }
 
     /// adds a cylinder to the CPU side buffer
-    void addCylinder(const glm::vec3& center, const glm::float32& radius, const glm::float32& height) {
+    void addCylinder(const glm::vec3& center, const glm::float32& radius, const glm::float32& height, int sign = 1) {
       const float scale = 0.0002f;
       centers_buffer.push_back(center * scale);
       radiuses_buffer.push_back(radius * scale);
       heights_buffer.push_back(height * scale);
+      signs_buffer.push_back(sign);
     }
 
     /// recreates the opengl buffers
@@ -263,6 +269,7 @@ namespace Graphics {
       if (gl_centers_buffer  > 0) glDeleteBuffers(1, &gl_centers_buffer);
       if (gl_radiuses_buffer > 0) glDeleteBuffers(1, &gl_radiuses_buffer);
       if (gl_heights_buffer  > 0) glDeleteBuffers(1, &gl_heights_buffer);
+      if (gl_signs_buffer    > 0) glDeleteBuffers(1, &gl_signs_buffer);
 
       glGenBuffers(1, &gl_centers_buffer);
       glGenBuffers(1, &gl_radiuses_buffer);
@@ -276,17 +283,22 @@ namespace Graphics {
 
       glBindBuffer(GL_ARRAY_BUFFER, gl_heights_buffer);
       glBufferData(GL_ARRAY_BUFFER, heights_buffer.size() * sizeof(glm::float32), heights_buffer.data(), GL_STATIC_DRAW);
+
+      glBindBuffer(GL_ARRAY_BUFFER, gl_signs_buffer);
+      glBufferData(GL_ARRAY_BUFFER, signs_buffer.size() * sizeof(glm::int32), signs_buffer.data(), GL_STATIC_DRAW);
     }
 
     /// create cpu side and gpu buffers from array of centers, radiuses and heights.
-    void create(const std::vector<glm::vec3>& centers, const std::vector<glm::float32>& radiuses, const std::vector<glm::float32> heights) {
+    void create(const std::vector<glm::vec3>& centers, const std::vector<glm::float32>& radiuses, const std::vector<glm::float32>& heights, const std::vector<glm::int32>& signs) {
       centers_buffer = centers;
       radiuses_buffer = radiuses;
       heights_buffer = heights;
+      signs_buffer = signs;
 
       if (gl_centers_buffer  > 0) glDeleteBuffers(1, &gl_centers_buffer);
       if (gl_radiuses_buffer > 0) glDeleteBuffers(1, &gl_radiuses_buffer);
       if (gl_heights_buffer  > 0) glDeleteBuffers(1, &gl_heights_buffer);
+      if (gl_signs_buffer    > 0) glDeleteBuffers(1, &gl_signs_buffer);
 
       glGenBuffers(1, &gl_centers_buffer);
       glGenBuffers(1, &gl_radiuses_buffer);
@@ -300,6 +312,9 @@ namespace Graphics {
 
       glBindBuffer(GL_ARRAY_BUFFER, gl_heights_buffer);
       glBufferData(GL_ARRAY_BUFFER, heights_buffer.size() * sizeof(glm::float32),   heights_buffer.data(), GL_STATIC_DRAW);
+
+      glBindBuffer(GL_ARRAY_BUFFER, gl_signs_buffer);
+      glBufferData(GL_ARRAY_BUFFER, signs_buffer.size() * sizeof(glm::int32), signs_buffer.data(), GL_STATIC_DRAW);
 
     }
 
@@ -317,6 +332,10 @@ namespace Graphics {
       glBindBuffer(GL_ARRAY_BUFFER, gl_heights_buffer);
       glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, NULL, nullptr);
 
+      glEnableVertexAttribArray(3);
+      glBindBuffer(GL_ARRAY_BUFFER, gl_heights_buffer);
+      glVertexAttribPointer(3, 1, GL_INT, GL_FALSE, NULL, nullptr);
+
       glUseProgram( gl_shader_program );
       glUniformMatrix4fv(0, 1, GL_FALSE, (GLfloat*)&mvp);
 
@@ -325,6 +344,7 @@ namespace Graphics {
       glDisableVertexAttribArray(0);
       glDisableVertexAttribArray(1);
       glDisableVertexAttribArray(2);
+      glDisableVertexAttribArray(3);
     }
   };
 }

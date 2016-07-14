@@ -9,11 +9,13 @@ in VS_OUT {
 
 	float radius;
 	float height;
+	float sign;
 
 } gs_in[];
 
 out GS_OUT {
-	vec3 normal;
+	vec3  normal;
+	float sign;
 } gs_out;
 
 void main(){
@@ -58,6 +60,7 @@ void main(){
 		for(int j = 0; j < 4; j++){
 			gl_Position   = mvp * points[indices[4*i+j]];	
 			gs_out.normal = normals[indices[4*i+j]]; 
+			gs_out.sign   = gs_in[0].sign;
 			EmitVertex();	
 		}
 		EndPrimitive();
