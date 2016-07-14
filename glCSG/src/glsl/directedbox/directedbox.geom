@@ -70,7 +70,8 @@ void main(){
 	for(int i = 0; i < 6; i++){
 		for(int j = 0; j < 4; j++){
 			gl_Position   = mvp * vec4(points[indices[4*i+j]], 1.0f);	
-			gs_out.normal = normals[indices[4*i+j]]; 
+			gs_out.normal = normals[indices[4*i+j]];
+			gs_out.sign   = sign;
 			EmitVertex();	
 		}
 		EndPrimitive();

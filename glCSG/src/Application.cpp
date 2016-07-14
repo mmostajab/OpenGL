@@ -5,6 +5,12 @@
 #include "application.h"
 #include "cst_reader.h"
 
+//#define SPLIT_POLYGONS
+#ifdef  SPLIT_POLYGONS
+#include "AABB2D.h"
+#include "PolygonSplitter.h"
+#endif
+
 // STD
 #include <iostream>
 #include <fstream>
@@ -96,27 +102,14 @@ void Application::init() {
 
     prepare_framebuffer();
     prepare_fragment_collecting();
-
-    glGenBuffers(1, &m_transformation_buffer);
-    glBindBuffer(GL_UNIFORM_BUFFER, m_transformation_buffer);
-    glBufferData(GL_UNIFORM_BUFFER, 3 * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
-
-    glGenBuffers(1, &m_lighting_buffer);
-    glBindBuffer(GL_UNIFORM_BUFFER, m_lighting_buffer);
-    glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), NULL, GL_DYNAMIC_DRAW);
-
-    glGenBuffers(1, &m_general_buffer);
-    glBindBuffer(GL_UNIFORM_BUFFER, m_general_buffer);
-    glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), NULL, GL_DYNAMIC_DRAW);
 }
 
 void Application::loadCST() {
   std::vector<CSTPrimitive> cstPrimitives;
   readModelCST(cstPrimitives, "plasma.cst");
 
-//#define SPLIT_POLYGONS
 #ifdef  SPLIT_POLYGONS
-  PolygonSplitter splitter(5, 1000, false);
+  PolygonSplitter splitter(150, 1000, false);
   std::vector<CSTPrimitive> newcstPrimitives;
   for (auto& p : cstPrimitives)
     if (p.type == "POLYGON") {
@@ -138,12 +131,12 @@ void Application::loadCST() {
         CSTPrimitive primitive = p;
         primitive.vertices.clear();
 
-        AABB bbox;
-        bbox.min = embree::Vec3f(+FLT_MAX);
-        bbox.max = embree::Vec3f(-FLT_MAX);
+        //AABB bbox;
+        //bbox.min = glm::vec3(+FLT_MAX);
+        //bbox.max = glm::vec3(-FLT_MAX);
         for (auto &point : polygon) {
-          bbox.min = embree::min(bbox.min, embree::Vec3f());
-          primitive.vertices.push_back(Vec2f(point.x, point.y));
+          //bbox.min = glm::min(bbox.min, glm::vec3(point.x, point.y ::Vec3f());
+          primitive.vertices.push_back(glm::vec2(point.x, point.y));
         }
 
         newcstPrimitives.push_back(primitive);
@@ -184,13 +177,6 @@ void Application::loadCST() {
     std::cout << "Number of directed boxes = " << n_directedBoxes << std::endl;
     std::cout << "Number of polygons = " << n_polygons << std::endl;
     std::cout << "Maximum shape Id = " << max_shapeId << std::endl;
-
-    //g_scene = rtcDeviceNewScene(g_device, RTC_SCENE_STATIC, aflags);
-    //createGroundPlane(g_scene);
-    //g_cylinders = createAnalyticCylinders(g_scene, n_cylinders);
-    //g_boxes = createAnalyticBoxes(g_scene, n_boxes);
-    //g_directedBoxes = createAnalyticDirectedBoxes(g_scene, n_directedBoxes);
-    //g_polygons = createAnalyticPolygons(g_scene, n_polygons);
 
     cylinders.resize(n_cylinders);
     boxes.resize(n_boxes);
@@ -239,9 +225,9 @@ void Application::loadCST() {
 
         if (cstPrimitives[i].sign < 0) {
 
-          bbox.min = bbox.max = glm::vec3(cstPrimitives[i].vertices[0].x, 50/*i_polygon * 10*/, cstPrimitives[i].vertices[0].y);
+          bbox.min = bbox.max = glm::vec3(cstPrimitives[i].vertices[0].x, 50 + i_polygon * 10.1f, cstPrimitives[i].vertices[0].y);
           for (size_t t = 0; t < cstPrimitives[i].vertices.size(); t++) {
-            glm::vec3 v(cstPrimitives[i].vertices[t].x, 50/*i_polygon * 10*/, cstPrimitives[i].vertices[t].y);
+            glm::vec3 v(cstPrimitives[i].vertices[t].x, 50 + i_polygon * 10.1f, cstPrimitives[i].vertices[t].y);
             polygonPoints[v_polygon++] = v;
             bbox.min = glm::min(bbox.min, v);
             bbox.max = glm::max(bbox.max, v);
@@ -249,9 +235,9 @@ void Application::loadCST() {
         }
         else
         {
-          bbox.min = bbox.max = glm::vec3(cstPrimitives[i].vertices[0].x, h, cstPrimitives[i].vertices[0].y);
+          bbox.min = bbox.max = glm::vec3(cstPrimitives[i].vertices[0].x, h + i_polygon * 10.1f, cstPrimitives[i].vertices[0].y);
           for (size_t t = 0; t < cstPrimitives[i].vertices.size(); t++) {
-            glm::vec3 v(cstPrimitives[i].vertices[t].x, h, cstPrimitives[i].vertices[t].y);
+            glm::vec3 v(cstPrimitives[i].vertices[t].x, h + i_polygon * 10.1f, cstPrimitives[i].vertices[t].y);
             polygonPoints[v_polygon++] = v;
             bbox.min = glm::min(bbox.min, v);
             bbox.max = glm::max(bbox.max, v);
@@ -315,7 +301,7 @@ void Application::create() {
     );
 
   for (Box& b : boxes) {
-    glBoxes.addBox(b.center(), b.dims());
+    glBoxes.addBox(b.center(), b.dims(), b.sign);
   }
   glBoxes.createGLBuffer();
   glBoxes.gl_shader_program = 
@@ -326,7 +312,7 @@ void Application::create() {
     );
 
   for (DirectedBox& b : directedBoxes) {
-    glDirectedBoxes.addDirectedBox(b.start, b.end, b.width, b.height);
+    glDirectedBoxes.addDirectedBox(b.start, b.end, b.width, b.height, b.sign);
   }
   /*float testVal = 1000.0f;
   glDirectedBoxes.addDirectedBox(glm::vec3(-testVal, -testVal, 0.0f), glm::vec3(testVal, testVal, 0.0f), 100.0f, 1000.0f);*/
@@ -398,16 +384,16 @@ void Application::draw() {
 
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  
-  GLint rendering_state_loc = glGetUniformLocation(ssao_program, "rendering_state");
-  glUniform1i(rendering_state_loc, rendering_state);
+  //
+  //GLint rendering_state_loc = glGetUniformLocation(ssao_program, "rendering_state");
+  //glUniform1i(rendering_state_loc, rendering_state);
 
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
-  glActiveTexture(GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
-  glDisable(GL_DEPTH_TEST);
-  glBindVertexArray(quad_vao);
+  //glActiveTexture(GL_TEXTURE0);
+  //glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
+  //glActiveTexture(GL_TEXTURE1);
+  //glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
+  //glDisable(GL_DEPTH_TEST);
+  //glBindVertexArray(quad_vao);
 
 #ifdef TEST_PRIMITVES_DRAW
   glEnable(GL_DEPTH_TEST);
@@ -425,6 +411,59 @@ void Application::draw() {
   glUseProgram(m_coord_system_program);
   glUniformMatrix4fv(0, 1, GL_FALSE, (GLfloat*)&mv);
   glDrawArrays(GL_LINES, 0, 6);
+}
+
+void Application::draw_CSG() {
+  GLuint * data;
+
+  // No depth test to collect all the fragments
+  // Culling is required to check the entry and exit points.
+  glDisable   (GL_DEPTH_TEST);
+  glEnable    (GL_CULL_FACE);
+  glCullFace  (GL_BACK);
+
+  // Reset atomic counter
+  glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_counter_buffer);
+  data = (GLuint *)glMapBuffer(GL_ATOMIC_COUNTER_BUFFER, GL_WRITE_ONLY);
+  data[0] = 0;
+  glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
+
+  // Clear head-pointer image
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, head_pointer_clear_buffer);
+  glBindTexture(GL_TEXTURE_2D, head_pointer_texture);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+  // Bind head-pointer image for read-write
+  glBindImageTexture(0, head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
+
+  // Bind linked-list buffer for write
+  glBindImageTexture(1, linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
+
+  glDisable(GL_DEPTH_TEST);
+  glCylinders.draw(mvp);
+  glBoxes.draw(mvp);
+  glDirectedBoxes.draw(mvp);
+
+  //glEnable(GL_DEPTH_TEST);
+  glPolygons.draw(mvp);
+
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  // Bind head-pointer image for read-write
+  glBindImageTexture(0, head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
+
+  // Bind linked-list buffer for write
+  glBindImageTexture(1, linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
+
+  glBindVertexArray(quad_vao);
+  glUseProgram(resolve_csg_operations);
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
 void Application::run() {
@@ -534,7 +573,7 @@ void Application::prepare_fragment_collecting() {
   // Create the linked list storage buffer
   glGenBuffers(1, &linked_list_buffer);
   glBindBuffer(GL_TEXTURE_BUFFER, linked_list_buffer);
-  glBufferData(GL_TEXTURE_BUFFER, FRAMEBUFFER_MULTIPLIER * MAX_FRAMEBUFFER_WIDTH * MAX_FRAMEBUFFER_HEIGHT * sizeof(glm::vec4), NULL, GL_DYNAMIC_COPY);
+  glBufferData(GL_TEXTURE_BUFFER, FRAMEBUFFER_MULTIPLIER * MAX_FRAMEBUFFER_WIDTH * MAX_FRAMEBUFFER_HEIGHT * sizeof(glm::uvec4), NULL, GL_DYNAMIC_COPY);
   glBindBuffer(GL_TEXTURE_BUFFER, 0);
 
   // Bind it to a texture (for use as a TBO)
@@ -544,50 +583,6 @@ void Application::prepare_fragment_collecting() {
   glBindTexture(GL_TEXTURE_BUFFER, 0);
 
   glBindImageTexture(1, linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
-}
-
-void Application::draw_CSG() {
-  GLuint * data;
-
-  glDisable(GL_DEPTH_TEST);
-  glDisable(GL_CULL_FACE);
-
-  // Reset atomic counter
-  glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_counter_buffer);
-  data = (GLuint *)glMapBuffer(GL_ATOMIC_COUNTER_BUFFER, GL_WRITE_ONLY);
-  data[0] = 0;
-  glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
-
-  // Clear head-pointer image
-  glBindBuffer(GL_PIXEL_UNPACK_BUFFER,    head_pointer_clear_buffer);
-  glBindTexture(GL_TEXTURE_2D,            head_pointer_texture);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
-  glBindTexture(GL_TEXTURE_2D,          0);
-  glBindBuffer(GL_PIXEL_UNPACK_BUFFER,  0);
-
-  // Bind head-pointer image for read-write
-  glBindImageTexture(0, head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
-
-  // Bind linked-list buffer for write
-  glBindImageTexture(1, linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
- 
-  glUseProgram(collect_fragments);
-
-  glUniform1f(0, transparency_value);
-  glUniform1i(2, 0);
-
-  // disable constant color
-  glUniform1i(5, 0);
-  
-  // Bind head-pointer image for read-write
-  glBindImageTexture(0, head_pointer_texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R32UI);
-
-  // Bind linked-list buffer for write
-  glBindImageTexture(1, linked_list_texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32UI);
-
-  glBindVertexArray(quad_vao);
-  glUseProgram(resolve_csg_operations);
-  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
 void Application::EventMouseButton(GLFWwindow* window, int button, int action, int mods) {

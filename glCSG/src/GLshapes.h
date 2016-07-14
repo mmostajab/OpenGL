@@ -218,7 +218,7 @@ namespace Graphics {
     std::vector<glm::vec3>    centers_buffer;
     std::vector<glm::float32> radiuses_buffer;
     std::vector<glm::float32> heights_buffer;
-    std::vector<int>          signs_buffer;
+    std::vector<glm::int32>   signs_buffer;
 
     GLuint           gl_shader_program;
     GLuint           gl_centers_buffer;
@@ -274,6 +274,7 @@ namespace Graphics {
       glGenBuffers(1, &gl_centers_buffer);
       glGenBuffers(1, &gl_radiuses_buffer);
       glGenBuffers(1, &gl_heights_buffer);
+      glGenBuffers(1, &gl_signs_buffer);
 
       glBindBuffer(GL_ARRAY_BUFFER, gl_centers_buffer);
       glBufferData(GL_ARRAY_BUFFER, centers_buffer.size() * sizeof(glm::vec3), centers_buffer.data(), GL_STATIC_DRAW);
@@ -303,6 +304,7 @@ namespace Graphics {
       glGenBuffers(1, &gl_centers_buffer);
       glGenBuffers(1, &gl_radiuses_buffer);
       glGenBuffers(1, &gl_heights_buffer);
+      glGenBuffers(1, &gl_signs_buffer);
 
       glBindBuffer(GL_ARRAY_BUFFER, gl_centers_buffer);
       glBufferData(GL_ARRAY_BUFFER, centers_buffer.size() * sizeof(glm::vec3),      centers_buffer.data(), GL_STATIC_DRAW);
@@ -383,7 +385,7 @@ namespace Graphics {
 
       int sign = count >= 0 ? +1 : -1;
       for (size_t i = 0; i < sign * count; i++) {
-        signs[firstIndex + i] += sign;
+        signs[firstIndex + i] = sign;
       }
 
       indirectCommand.first         = firstIndex;

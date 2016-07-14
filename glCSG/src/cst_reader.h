@@ -252,7 +252,7 @@ void createBox(glm::vec3 center, glm::vec3 radius, glm::vec3 color, int shape, i
 	bbox.min = min;
 	bbox.max = max;
 
-	createPrimitive(bbox, color, "BOX", sign, shape, _primitives);
+	createPrimitive(bbox, color, "BOX", shape, sign, _primitives);
 }
 
 void createDirectedBox(glm::vec3 start, glm::vec3 end, glm::vec3 radius, glm::vec3 color, int shape, int sign, std::vector<CSTPrimitive>& _primitives) {
@@ -281,7 +281,7 @@ void createCylinder(
 	bbox.min = center - radius;
 	bbox.max = center + radius;
 
-	createPrimitive(bbox, color, "CYLINDER", sign, shape, _primitives);
+	createPrimitive(bbox, color, "CYLINDER", shape, sign, _primitives);
 }
 
 void createRoundedLine(

@@ -19,13 +19,7 @@
 
 #define MAX_FRAMEBUFFER_WIDTH   2048
 #define MAX_FRAMEBUFFER_HEIGHT  2048
-#define FRAMEBUFFER_MULTIPLIER  5           
-
-struct PlyObjVertex
-{
-  glm::vec3 pos;
-  glm::vec3 normal;
-};
+#define FRAMEBUFFER_MULTIPLIER  10           
 
 class Application {
 public:
@@ -73,7 +67,6 @@ private:
     glm::mat4 m_projmat, m_viewmat, m_worldmat, m_inv_viewmat;
     static unsigned int m_width, m_height;
     GLuint m_coord_system_program;
-    GLuint m_transformation_buffer, m_lighting_buffer, m_general_buffer;
    
 	  // scene objects
 	  static Camera m_camera;

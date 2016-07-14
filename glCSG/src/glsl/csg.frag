@@ -17,12 +17,13 @@ layout (location = 1) out vec4 normal_depth;
 layout( location = 10 ) uniform int obj_order = 0;
 
 // This is the maximum number of overlapping fragments allowed
-#define MAX_FRAGMENTS 40
+#define MAX_FRAGMENTS 60
 
 // Temporary array used for sorting fragments
 uvec4 fragment_list[MAX_FRAGMENTS];
 
 void main(void) {
+
     uint current_index;
     uint fragment_count = 0;
 
@@ -56,11 +57,38 @@ void main(void) {
 
     }
 
+	color = vec4(0.0f);
+	for (i = 0; i < fragment_count; i++){
+		vec4   frag_color =  unpackUnorm4x8(fragment_list[i].y);
+		vec4 meta_data = unpackSnorm4x8(fragment_list[i].w);
+		if(meta_data.x > 0.0f){
+			color = frag_color * vec4(1.0f, 0.0f, 0.0f, 1.0f);
+		} else {
+			color = frag_color * vec4(0.4f, 1.0f, 0.2f, 1.0f);
+		}
+	}
+	return;
+
+    if(fragment_count > 0) {
+        //color = unpackUnorm4x8(fragment_list[0].y);
+		vec4 test = unpackUnorm4x8(fragment_list[0].y);
+		float depth = uintBitsToFloat(fragment_list[0].z);
+		vec4  w_component = unpackUnorm4x8(fragment_list[0].w);
+		float sign = w_component.x;
+		if(test.x > 0)
+			color = vec4(0, 1, 0, 1);
+		else
+			color = vec4(1, 0, 0, 1);
+    }
+    else
+        color = vec4(0.0f);
+    return;
+
     vec4 final_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
     for (i = 0; i < fragment_count; i++){
         vec4 frag_color = unpackUnorm4x8(fragment_list[i].y);
-		    vec4 frag_specularity = unpackUnorm4x8(fragment_list[i].w);
+		    vec4 frag_specularity = unpackUnorm4x8((fragment_list[i].w).x);
         //final_color = (1.0f - final_color.a) * frag_color + final_color + frag_specularity ;//  = mix(frag_color, final_color,final_color.a);// 
         final_color.rgb = final_color.a * (frag_color.a * frag_color.rgb) + final_color.rgb;
         final_color.a   = 0 + (1 - frag_color.a) * final_color.a;
