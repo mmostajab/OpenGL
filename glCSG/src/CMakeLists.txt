@@ -11,6 +11,23 @@ MESSAGE(STATUS "Configuring CSG-OpenGL Source")
 FILE(GLOB CSG-OpenGLSources RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
   glsl/*.frag
   glsl/*.vert
+
+  glsl/box/*.vert
+  glsl/box/*.geom
+  glsl/box/*.frag
+
+  glsl/directedbox/*.vert
+  glsl/directedbox/*.geom
+  glsl/directedbox/*.frag
+
+  glsl/cylinder/*.vert
+  glsl/cylinder/*.geom
+  glsl/cylinder/*.frag
+  glsl/cylinder/*.shader
+
+  glsl/polygon/*.vert
+  glsl/polygon/*.frag
+
   cl/*.cl
   *.cpp
   *.c
