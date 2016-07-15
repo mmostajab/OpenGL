@@ -383,6 +383,8 @@ namespace Graphics {
     void addDrawElementsIndirectCommand(GLint firstIndex, GLint count) {
       DrawArraysIndirectCommand indirectCommand;
 
+      if (count < 0) return;
+
       int sign = count >= 0 ? +1 : -1;
       for (size_t i = 0; i < sign * count; i++) {
         signs[firstIndex + i] = sign;

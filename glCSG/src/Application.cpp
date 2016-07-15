@@ -235,9 +235,9 @@ void Application::loadCST() {
         }
         else
         {
-          bbox.min = bbox.max = glm::vec3(cstPrimitives[i].vertices[0].x, h + i_polygon * 10.1f, cstPrimitives[i].vertices[0].y);
+          bbox.min = bbox.max = glm::vec3(cstPrimitives[i].vertices[0].x, h, cstPrimitives[i].vertices[0].y);
           for (size_t t = 0; t < cstPrimitives[i].vertices.size(); t++) {
-            glm::vec3 v(cstPrimitives[i].vertices[t].x, h + i_polygon * 10.1f, cstPrimitives[i].vertices[t].y);
+            glm::vec3 v(cstPrimitives[i].vertices[t].x, h, cstPrimitives[i].vertices[t].y);
             polygonPoints[v_polygon++] = v;
             bbox.min = glm::min(bbox.min, v);
             bbox.max = glm::max(bbox.max, v);
@@ -419,8 +419,8 @@ void Application::draw_CSG() {
   // No depth test to collect all the fragments
   // Culling is required to check the entry and exit points.
   glDisable   (GL_DEPTH_TEST);
-  glEnable    (GL_CULL_FACE);
-  glCullFace  (GL_BACK);
+  //glEnable    (GL_CULL_FACE);
+  //glCullFace  (GL_NONE);
 
   // Reset atomic counter
   glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomic_counter_buffer);
