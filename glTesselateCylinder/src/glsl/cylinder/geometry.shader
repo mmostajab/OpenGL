@@ -24,15 +24,15 @@ void main(){
 	float height = gs_in[0].height;
 
 	vec4 points[8] = {
-		center + vec4( radius,  height,  radius, 0.0f),  // 0
-		center + vec4(-radius,  height,  radius, 0.0f),  // 1
-		center + vec4(-radius,  height, -radius, 0.0f),  // 2
-		center + vec4( radius,  height, -radius, 0.0f),  // 3
+		center + vec4( radius,  height / 2.0f,  radius, 0.0f),  // 0
+		center + vec4(-radius,  height / 2.0f,  radius, 0.0f),  // 1
+		center + vec4(-radius,  height / 2.0f, -radius, 0.0f),  // 2
+		center + vec4( radius,  height / 2.0f, -radius, 0.0f),  // 3
 
-		center + vec4( radius, -height,  radius, 0.0f),  // 4
-		center + vec4(-radius, -height,  radius, 0.0f),  // 5
-		center + vec4(-radius, -height, -radius, 0.0f),  // 6
-		center + vec4( radius, -height, -radius, 0.0f)   // 7
+		center + vec4( radius, -height / 2.0f,  radius, 0.0f),  // 4
+		center + vec4(-radius, -height / 2.0f,  radius, 0.0f),  // 5
+		center + vec4(-radius, -height / 2.0f, -radius, 0.0f),  // 6
+		center + vec4( radius, -height / 2.0f, -radius, 0.0f)   // 7
 	};
 
 	vec3 normals[8] = {
@@ -48,12 +48,15 @@ void main(){
 	};
 
 	const int indices[24] = {
-		0, 1, 3, 2,
+		// Front facing - CCW
+		0, 3, 1, 2,
+		0, 1, 4, 5,
+		1, 2, 5, 6,
+
+		// Back Facing - CW
 		4, 5, 7, 6,
-		0, 3, 4, 7,
-		3, 2, 7, 6,
-		1, 0, 5, 4,
-		2, 1, 6, 5
+		3, 7, 2, 6,
+		3, 0, 7, 4
 	};
 
 	for(int i = 0; i < 6; i++){

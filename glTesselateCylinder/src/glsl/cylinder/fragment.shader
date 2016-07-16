@@ -31,4 +31,9 @@ void main(){
     imageStore(list_buffer, int(index), item);
 
     color = frag_color;
+	color *= front_facing;
+	color += vec4(1.0f);
+	color /= 2.0f;
+
+	if (front_facing < 0.0f) discard;
 }

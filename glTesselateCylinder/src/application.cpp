@@ -120,7 +120,7 @@ void Application::create() {
 void Application::update(float time, float timeSinceLastFrame) {
   float v = (float)clock() / 3000.0f * glm::pi<float>();
   m_inv_viewmat = glm::inverse(m_viewmat);
-  m_viewmat = glm::lookAt(2.0f * glm::vec3(sin(v), 1.0f, cos(v)), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+  m_viewmat = glm::lookAt(1.0f * glm::vec3(sin(v), 1.0f, cos(v)), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
   m_projmat = glm::perspective(glm::pi<float>() / 3.0f, (float)m_width / m_height, 0.1f, 1000.0f);
 }
 
@@ -138,8 +138,8 @@ void Application::draw() {
   glUseProgram(shader);
   e = glGetError();
 
-  //glFrontFace(GL_CW);
-  glFrontFace(GL_CCW);
+  glFrontFace(GL_CW);
+  //glFrontFace(GL_CCW);
 
 #ifndef CULL_FACES
   glDisable(GL_CULL_FACE);
