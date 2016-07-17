@@ -157,17 +157,43 @@ void Application::create() {
   compileShaders();
 
   const GLfloat vertex_positions[] = {
-	 1.0f,  0.0f,  -0.25f, // 0
-	 0.2f,  0.45f, -0.25f, // 1
-	 0.3f,  0.95f, -0.25f, // 2
-	 0.0f,  0.4f,  -0.25f, // 3
-	-0.8f,  0.58f, -0.25f, // 4
-	-0.4f,  0.0f,  -0.25f, // 5
-	-0.8f, -0.58f, -0.25f, // 6
-	 0.0f, -0.4f,  -0.25f, // 7
-	 0.3f, -0.95f, -0.25f, // 8
-	 0.2f, -0.45f, -0.25f  // 9
+	 0.0f, -2.0f,  -0.25f, // 0
+	 0.0f,  0.0f,  -0.25f, // 1
+	 2.0f,  0.0f,  -0.25f, // 2
+	 2.0f,  2.0f,  -0.25f, // 3
+	-2.0f,  2.0f,  -0.25f, // 4
+	-2.0f, -2.0f,  -0.25f, // 5
+	
+	 -1.5f, -0.5f, -0.25f, // 6
+	 -1.5f, -1.5f, -0.25f, // 7
+	 -0.5f, -1.5f, -0.25f, // 8
+	 -0.5f, -0.5f, -0.25f,  // 9
+
+	  1.5f, 0.5f, -0.25f, // 10
+	  1.5f, 1.5f, -0.25f, // 11
+	  0.5f, 1.5f, -0.25f, // 12
+	  0.5f, 0.5f, -0.25f,  // 13
+
+	  -1.5f, 0.5f, -0.25f, // 14
+	  -1.5f, 1.5f, -0.25f, // 15
+	  -0.5f, 1.5f, -0.25f, // 16
+	  -0.5f, 0.5f, -0.25f,  // 17
   };
+  //const GLfloat vertex_positions[] = {
+  // 0.0f, 0.0f, -0.25f,
+  //
+  //-2.0f, -2.0f,  -0.25f, // 0
+  // 2.0f, -2.0f,  -0.25f, // 1
+  // 2.0f,  2.0f,  -0.25f, // 2
+  //-2.0f,  2.0f,  -0.25f, // 3
+  //-2.0f, -2.0f,  -0.25f, // 0
+
+  //-1.0f, -1.0f,  -0.25f, // 4
+  // 1.0f, -1.0f,  -0.25f, // 5
+  // 1.0f,  1.0f,  -0.25f, // 6
+  //-1.0f,  1.0f,  -0.25f, // 7
+  //-1.0f, -1.0f,  -0.25f, // 8
+  //};
 
   const int num_vertices = sizeof(vertex_positions) / (3 * sizeof(GLfloat));
 
@@ -175,7 +201,10 @@ void Application::create() {
   for (int i = 0; i < num_vertices; i++)
 	  points.push_back(glm::vec3(vertex_positions[3 * i + 0], vertex_positions[3 * i + 1], vertex_positions[3 * i + 2]));
   glPolygons.setPoints(points);
-  glPolygons.addDrawElementsIndirectCommand(0, 10);
+  glPolygons.addDrawElementsIndirectCommand(0, 6);
+  glPolygons.addDrawElementsIndirectCommand(6, 4);
+  glPolygons.addDrawElementsIndirectCommand(10, 4);
+  glPolygons.addDrawElementsIndirectCommand(14, 4);
   glPolygons.createGLBuffer();
   glPolygons.gl_shader_program = compile_link_vs_fs("../../src/glsl/polygon/vertex.shader", "../../src/glsl/polygon/fragment.shader");
 }
@@ -226,22 +255,6 @@ void Application::draw() {
 
   glm::mat4 mvp = m_projmat * m_viewmat * m_worldmat;
   glPolygons.draw(mvp);
-
-  glm::mat4 mvp2 = mvp;
-  mvp2 *= glm::translate(glm::mat4(1.0f), glm::vec3(-2, 0, 0));
-  glPolygons.draw(mvp2);
-
-  glm::mat4 mvp3 = mvp;
-  mvp3 *= glm::translate(glm::mat4(1.0f), glm::vec3(2, 0, 0));
-  glPolygons.draw(mvp3);
-
-  glm::mat4 mvp4 = mvp;
-  mvp4 *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, 2, 0));
-  glPolygons.draw(mvp4);
-
-  glm::mat4 mvp5 = mvp;
-  mvp5 *= glm::translate(glm::mat4(1.0f), glm::vec3(1, -2, 0));
-  glPolygons.draw(mvp5);
 
   //glPolygons.drawOutline(mvp);
 
