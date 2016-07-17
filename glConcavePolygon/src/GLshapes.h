@@ -10,6 +10,7 @@
 
 // GLM
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
 
 // ===================================================================
 // ===================================================================
@@ -152,6 +153,7 @@ namespace Graphics {
 			glStencilFunc(GL_ALWAYS, 1, 1);
 			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 			drawPolygon(mvp);
+
 		}
 		else {
 			glEnable(GL_STENCIL_TEST);

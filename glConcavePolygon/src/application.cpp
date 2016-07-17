@@ -186,7 +186,7 @@ void Application::update(float time, float timeSinceLastFrame) {
 
 	float v = (float)clock() / 3000.0f * glm::pi<float>();
 	m_inv_viewmat = glm::inverse(m_viewmat);
-	m_viewmat = glm::lookAt(1.5f * glm::vec3(sin(v), 1.0f, cos(v)), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	m_viewmat = glm::lookAt(4.5f * glm::vec3(sin(v), 1.0f, cos(v)), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	m_projmat = glm::perspective(glm::pi<float>() / 3.0f, (float)m_width / m_height, 0.1f, 1000.0f);
   }
 
@@ -226,6 +226,23 @@ void Application::draw() {
 
   glm::mat4 mvp = m_projmat * m_viewmat * m_worldmat;
   glPolygons.draw(mvp);
+
+  glm::mat4 mvp2 = mvp;
+  mvp2 *= glm::translate(glm::mat4(1.0f), glm::vec3(-2, 0, 0));
+  glPolygons.draw(mvp2);
+
+  glm::mat4 mvp3 = mvp;
+  mvp3 *= glm::translate(glm::mat4(1.0f), glm::vec3(2, 0, 0));
+  glPolygons.draw(mvp3);
+
+  glm::mat4 mvp4 = mvp;
+  mvp4 *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, 2, 0));
+  glPolygons.draw(mvp4);
+
+  glm::mat4 mvp5 = mvp;
+  mvp5 *= glm::translate(glm::mat4(1.0f), glm::vec3(1, -2, 0));
+  glPolygons.draw(mvp5);
+
   //glPolygons.drawOutline(mvp);
 
 }
