@@ -15,22 +15,5 @@ in VS_OUT {
 
 void main(){
 	vec4 frag_color = vec4( (fs_in.normal + vec3(1.0f)) / 2.0f, 1.0f );
-
-	uint index = atomicCounterIncrement(list_counter);
-	uint old_head   = imageAtomicExchange(head_pointer_image, ivec2(gl_FragCoord.xy), uint(index));
-
-	float front_facing = +1.0f;
-	if(!gl_FrontFacing) front_facing = -1.0f;
-
-	vec4 meta_data = vec4(fs_in.sign, front_facing, 0, 0);
-
-	uvec4 item;
-    item.x = old_head;
-    item.y = packUnorm4x8(frag_color);
-    item.z = floatBitsToUint(gl_FragCoord.z);
-    item.w = packSnorm4x8(meta_data);
-
-    imageStore(list_buffer, int(index), item);
-
-    color = frag_color;
+  color = frag_color;
 }
