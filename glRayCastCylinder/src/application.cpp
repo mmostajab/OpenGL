@@ -127,7 +127,7 @@ void Application::create() {
 
 void Application::update(float time, float timeSinceLastFrame) {
   float v = (float)clock() / 3000.0f * glm::pi<float>();
-  m_eye     = 12.5f * glm::vec3(sin(v), 2 * cos(v), cos(v));
+  m_eye     = 12.5f * glm::vec3(sin(v), cos(v), cos(v));
   m_inv_viewmat = glm::inverse(m_viewmat);
   m_viewmat = glm::lookAt(m_eye, glm::vec3(12.5f, 0.0f, 12.5f), glm::vec3(0.0f, 1.0f, 0.0f));
   m_projmat = glm::perspective(glm::pi<float>() / 3.0f, (float)m_width / m_height, 0.1f, 1000.0f);
