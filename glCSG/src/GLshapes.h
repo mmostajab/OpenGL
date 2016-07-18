@@ -335,7 +335,7 @@ namespace Graphics {
       glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, NULL, nullptr);
 
       glEnableVertexAttribArray(3);
-      glBindBuffer(GL_ARRAY_BUFFER, gl_heights_buffer);
+      glBindBuffer(GL_ARRAY_BUFFER, gl_signs_buffer);
       glVertexAttribPointer(3, 1, GL_INT, GL_FALSE, NULL, nullptr);
 
       glUseProgram( gl_shader_program );

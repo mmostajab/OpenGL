@@ -63,7 +63,7 @@ void main(void) {
 	vec4 final_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
 	for (i = 0; i < fragment_count; i++){
-		vec4   frag_color =  unpackUnorm4x8(fragment_list[i].y);
+		vec4 frag_color =  unpackUnorm4x8(fragment_list[i].y);
 		vec4 meta_data = unpackSnorm4x8(fragment_list[i].w);
 
 		if(meta_data.y >= 0.0f)
@@ -77,23 +77,24 @@ void main(void) {
 			negDepth += delta;
 		}
 
-		// if(posDepth > 0 && negDepth <= 0){
-		//	found = 1;
-		//	break;
-		//}
+		if(posDepth > 0 && negDepth <= 0){
+			final_color = frag_color;
+			found = 1;
+			break;
+		}
 
-		final_color.rgb = final_color.a * (0.3f * frag_color.rgb) + final_color.rgb;
-        final_color.a   = 0 + 0.7f * final_color.a;
+		//final_color.rgb = final_color.a * (0.3f * frag_color.rgb) + final_color.rgb;
+        //final_color.a   = 0 + 0.7f * final_color.a;
 
 	}
 
-	color = final_color;
-	return;
-	
 	if(found == 0) {
 		discard;
 		return;
 	}
+
+	color = final_color;
+	return;
 
     color		 = mix(color_background, final_color, final_color.a) ;
     normal_depth = vec4(0.0f);

@@ -264,6 +264,35 @@ void Application::loadCST() {
 void Application::create() {
   compileShaders();
 
+#define TEST_SCENE
+#ifdef  TEST_SCENE
+
+  glCylinders.addCylinder(glm::vec3(0.0f, -2500.0f, 0.0f), 100000.0f, 1.0f, 1);
+  int grid_size[2] = { 10, 10 };
+  for(int i = 0; i < grid_size[0]; i++)
+    for (int j = 0; j < grid_size[1]; j++) {
+      glCylinders.addCylinder(glm::vec3(i * 1200.0f, 0.0f, j * 1200.0f), 500.0f, 2000.0f, +1);
+      glCylinders.addCylinder(glm::vec3(i * 1200.0f, 0.0f, j * 1200.0f), 250.0f, 2250.0f, -1);
+    }
+  glCylinders.createGLBuffer();
+  glCylinders.gl_shader_program =
+    //#define CYLINDER_AS_POINTS
+#define CYLINDER_AS_BOXES
+    //#define CYLINDER_TESSELATED
+#if defined(CYLINDER_AS_POINTS)
+    compile_link_vs_fs(
+      "../../src/glsl/cylinder/cylinder.vert",
+      "../../src/glsl/cylinder/cylinder.frag"
+    );
+#elif defined(CYLINDER_AS_BOXES)
+    compile_link_vs_gs_fs(
+      "../../src/glsl/cylinder/cylinder.vert",
+      "../../src/glsl/cylinder/cylinder.geom",
+      "../../src/glsl/cylinder/cylinder.frag"
+    );
+#elif defined(CYLINDER_TESSELATED)
+#endif
+#else
   loadCST();
 
   for (Cylinder& c : cylinders) {
@@ -323,7 +352,7 @@ void Application::create() {
       "../../src/glsl/directedbox/directedbox.geom",
       "../../src/glsl/directedbox/directedbox.frag"
     );
-  
+#endif
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
