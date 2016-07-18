@@ -1,0 +1,197 @@
+#ifndef __HELPER_H__
+#define __HELPER_H__
+
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <GL/glew.h>
+#include <glm/glm.hpp>
+
+
+static std::string convertFileToString(const std::string& filename);
+static void show_compiler_error(GLuint shader);
+
+// read the file content and generate a string from it.
+static std::string convertFileToString(const std::string& filename) {
+	std::ifstream ifile(filename);
+	if (!ifile) {
+		return std::string("");
+	}
+
+	return std::string(std::istreambuf_iterator<char>(ifile), (std::istreambuf_iterator<char>()));
+
+}
+
+static void show_compiler_error(GLuint shader) {
+	GLint isCompiled;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
+	if (isCompiled != GL_TRUE)
+	{
+		GLint maxLength = 0;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
+
+		// The maxLength includes the NULL character
+		std::vector<GLchar> errorLog(maxLength);
+		glGetShaderInfoLog(shader, maxLength, &maxLength, &errorLog[0]);
+
+		std::cout << "Shader " << shader << " Log: \n";
+		std::cout << ((char*)&errorLog[0]);
+
+		// Provide the infolog in whatever manor you deem best.
+		// Exit with failure.
+		glDeleteShader(shader); // Don't leak the shader.
+		return;
+	}
+}
+
+static GLuint compile_link_vs_fs(const std::string& vert_shader_file, const std::string& frag_shader_file) {
+	GLuint vertex_shader, fragment_shader;
+	std::string vertex_shader_source = convertFileToString(vert_shader_file);
+	std::string coord_sys_shader_fragment_source = convertFileToString(frag_shader_file);
+
+	if (vertex_shader_source.size() == 0 || coord_sys_shader_fragment_source.size() == 0) {
+		std::cout << "Problem in finding " << vert_shader_file << " or " << frag_shader_file << std::endl;
+		return -1;
+	}
+
+
+	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+	fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+
+	const GLchar* vertex_shader_sourcePtr = vertex_shader_source.c_str();
+	const GLchar* fragment_shader_sourcePtr = coord_sys_shader_fragment_source.c_str();
+
+	glShaderSource(vertex_shader, 1, &vertex_shader_sourcePtr, NULL);
+	glShaderSource(fragment_shader, 1, &fragment_shader_sourcePtr, NULL);
+
+	glCompileShader(vertex_shader);
+	glCompileShader(fragment_shader);
+
+	show_compiler_error(vertex_shader);
+	show_compiler_error(fragment_shader);
+
+	GLuint shader_program = glCreateProgram();
+	glAttachShader(shader_program, vertex_shader);
+	glAttachShader(shader_program, fragment_shader);
+	glLinkProgramARB(shader_program);
+
+	glDeleteShader(vertex_shader);
+	glDeleteShader(fragment_shader);
+
+	return shader_program;
+}
+
+
+static GLuint compile_link_vs_gs_fs(const std::string& vert_shader_file, const std::string& geom_shader_file, const std::string& frag_shader_file) {
+	GLuint vertex_shader, geometry_shader, fragment_shader;
+	std::string vertex_shader_source = convertFileToString(vert_shader_file);
+	std::string geometry_shader_source = convertFileToString(geom_shader_file);
+	std::string fragment_shader_source = convertFileToString(frag_shader_file);
+
+	if (vertex_shader_source.size() == 0 || geometry_shader_source.size() == 0 || fragment_shader_source.size() == 0) {
+		std::cout << "Problem in finding " << vert_shader_file << " or " << frag_shader_file << std::endl;
+		return -1;
+	}
+
+
+	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+	geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
+	fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+
+	const GLchar* vertex_shader_sourcePtr = vertex_shader_source.c_str();
+	const GLchar* geometry_shader_sourcePtr = geometry_shader_source.c_str();
+	const GLchar* fragment_shader_sourcePtr = fragment_shader_source.c_str();
+
+	glShaderSource(vertex_shader, 1, &vertex_shader_sourcePtr, NULL);
+	glShaderSource(geometry_shader, 1, &geometry_shader_sourcePtr, NULL);
+	glShaderSource(fragment_shader, 1, &fragment_shader_sourcePtr, NULL);
+
+	glCompileShader(vertex_shader);
+	glCompileShader(geometry_shader);
+	glCompileShader(fragment_shader);
+
+	show_compiler_error(vertex_shader);
+	show_compiler_error(geometry_shader);
+	show_compiler_error(fragment_shader);
+
+	GLuint shader_program = glCreateProgram();
+	glAttachShader(shader_program, vertex_shader);
+	glAttachShader(shader_program, geometry_shader);
+	glAttachShader(shader_program, fragment_shader);
+	glLinkProgramARB(shader_program);
+
+	glDeleteShader(vertex_shader);
+	glDeleteShader(geometry_shader);
+	glDeleteShader(fragment_shader);
+
+	return shader_program;
+}
+
+static GLuint compile_link_vs_gs_ts_fs(const std::string& vert_shader_file, const std::string& geom_shader_file, const std::string& tess_controlpoints_shader_file, const std::string& tess_evaluation_shader_file, const std::string& frag_shader_file) {
+	GLuint vertex_shader, geometry_shader, tess_control_shader, tess_eval_shader, fragment_shader;
+	std::string vertex_shader_source = convertFileToString(vert_shader_file);
+	std::string geometry_shader_source = convertFileToString(geom_shader_file);
+	std::string tesselation_controlpoints_shader_source = convertFileToString(tess_controlpoints_shader_file);
+	std::string tesselation_evaluation_shader_source = convertFileToString(tess_evaluation_shader_file);
+	std::string fragment_shader_source = convertFileToString(frag_shader_file);
+
+	if (
+		vertex_shader_source.size() == 0 ||
+		geometry_shader_source.size() == 0 ||
+		tess_controlpoints_shader_file.size() == 0 ||
+		tess_evaluation_shader_file.size() == 0 ||
+		fragment_shader_source.size() == 0) {
+		std::cout << "Problem in finding " << vert_shader_file << " or " << frag_shader_file << std::endl;
+		return -1;
+	}
+
+
+	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+	geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
+	tess_control_shader = glCreateShader(GL_TESS_CONTROL_SHADER);
+	tess_eval_shader = glCreateShader(GL_TESS_EVALUATION_SHADER);
+	fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+
+	const GLchar* vertex_shader_sourcePtr = vertex_shader_source.c_str();
+	const GLchar* geometry_shader_sourcePtr = geometry_shader_source.c_str();
+	const GLchar* tess_controlpoints_shader_sourcePtr = tesselation_controlpoints_shader_source.c_str();
+	const GLchar* tess_eval_shader_sourcePtr = tess_evaluation_shader_file.c_str();
+	const GLchar* fragment_shader_sourcePtr = fragment_shader_source.c_str();
+
+	glShaderSource(vertex_shader, 1, &vertex_shader_sourcePtr, NULL);
+	glShaderSource(geometry_shader, 1, &geometry_shader_sourcePtr, NULL);
+	glShaderSource(tess_control_shader, 1, &tess_controlpoints_shader_sourcePtr, NULL);
+	glShaderSource(tess_eval_shader, 1, &tess_eval_shader_sourcePtr, NULL);
+	glShaderSource(fragment_shader, 1, &fragment_shader_sourcePtr, NULL);
+
+	glCompileShader(vertex_shader);
+	glCompileShader(geometry_shader);
+	glCompileShader(tess_control_shader);
+	glCompileShader(tess_eval_shader);
+	glCompileShader(fragment_shader);
+
+	show_compiler_error(vertex_shader);
+	show_compiler_error(geometry_shader);
+	show_compiler_error(tess_control_shader);
+	show_compiler_error(tess_eval_shader);
+	show_compiler_error(fragment_shader);
+
+	GLuint shader_program = glCreateProgram();
+	glAttachShader(shader_program, vertex_shader);
+	glAttachShader(shader_program, geometry_shader);
+	glAttachShader(shader_program, tess_control_shader);
+	glAttachShader(shader_program, tess_eval_shader);
+	glAttachShader(shader_program, fragment_shader);
+	glLinkProgramARB(shader_program);
+
+	glDeleteShader(vertex_shader);
+	glDeleteShader(geometry_shader);
+	glDeleteShader(tess_control_shader);
+	glDeleteShader(tess_eval_shader);
+	glDeleteShader(fragment_shader);
+
+	return shader_program;
+}
+
+#endif
