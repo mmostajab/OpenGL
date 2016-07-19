@@ -46,7 +46,7 @@ void Application::init(const unsigned int& width, const unsigned int& height) {
   if (!glfwInit())
     exit(EXIT_FAILURE);
 
-  m_window = glfwCreateWindow(width, height, "Stream Surface Generator (Demo): Beta", NULL, NULL);
+  m_window = glfwCreateWindow(width, height, "Ray casting cylinders", NULL, NULL);
   if (!m_window)
   {
     glfwTerminate();
@@ -89,11 +89,11 @@ void Application::create() {
 
   //glCylinders.addCylinder(glm::vec3(0.0f, 0.0f, 0.0f), 0.25f, 1.0f, +1);
 
-  int grid_size[2] = { 25, 25 };
+  int grid_size[2] = { 400, 400 };
   for (int i = 0; i < grid_size[0]; i++)
     for (int j = 0; j < grid_size[1]; j++) {
-      glCylinders.addCylinder(glm::vec3(i * 1.0f, 0.0f, j * 1.0f), 0.25f, 1.0f, +1);
-      glCylinders.addCylinder(glm::vec3(i * 1.0f, 0.0f, j * 1.0f), 0.25f, 1.0f, -1);
+      glCylinders.addCylinder(glm::vec3(i * 1.0f, 1.5f * (rand() % 1000) / 1000.0f, j * 1.0f), 0.6f, 2.0f, +1);
+      //glCylinders.addCylinder(glm::vec3(i * 1.0f, 0.0f, j * 1.0f), 1.5f, 1.0f, -1);
     }
   
   glCylinders.createGLBuffer();
@@ -126,10 +126,12 @@ void Application::create() {
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
-  float v = (float)clock() / 3000.0f * glm::pi<float>();
-  m_eye     = 12.5f * glm::vec3(sin(v), cos(v), cos(v));
+  float v = (float)clock() / 100000.0f * glm::pi<float>();
+  float val = 200.0f;
+  //m_eye     = glm::vec3(val, 0.0f, val) + val * glm::vec3(0.0f/*sin(v)*/, 1.0f, 0.0f/*cos(v)*/);
+  m_eye = glm::vec3(val, 0.0f, val) + val * glm::vec3(sin(v), 0.02f, cos(v));
   m_inv_viewmat = glm::inverse(m_viewmat);
-  m_viewmat = glm::lookAt(m_eye, glm::vec3(12.5f, 0.0f, 12.5f), glm::vec3(0.0f, 1.0f, 0.0f));
+  m_viewmat = glm::lookAt(m_eye, glm::vec3(val, 0.0f, val), glm::vec3(0.0f, 1.0f, 0.0f));
   m_projmat = glm::perspective(glm::pi<float>() / 3.0f, (float)m_width / m_height, 0.1f, 1000.0f);
 }
 
@@ -147,7 +149,7 @@ void Application::draw() {
   glUseProgram(shader);
   e = glGetError();
 
-  glFrontFace(GL_CW);
+  //glFrontFace(GL_CW);
   //glFrontFace(GL_CCW);
 
 #ifndef CULL_FACES
@@ -156,6 +158,7 @@ void Application::draw() {
   glEnable(GL_CULL_FACE);
   glCullFace(GL_NONE);
 #endif
+  glEnable(GL_DEPTH_TEST);
   glm::mat4 mvp = m_projmat * m_viewmat * m_worldmat;
   glCylinders.draw(m_eye, mvp);
 }
