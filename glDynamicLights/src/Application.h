@@ -2,7 +2,7 @@
 #define __APPLICATION_H__
 
 #include "helper.h"
-#include "UniformDefinitions.h"
+#include "Light.h"
 
 #include <gl/glew.h>
 #include <GLFW/glfw3.h>
