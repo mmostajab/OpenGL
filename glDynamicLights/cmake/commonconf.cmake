@@ -3,22 +3,22 @@ IF(NOT CommonconfProcessed)
 CMAKE_POLICY(SET CMP0005 NEW)
 CMAKE_POLICY(SET CMP0011 NEW)
 
-SET(StreamSurfaceGeneratorHome ${CMAKE_CURRENT_SOURCE_DIR})
-SET(StreamSurfaceGeneratorBinaryDir ${CMAKE_BINARY_DIR})
+SET(DynamicLightsHome ${CMAKE_CURRENT_SOURCE_DIR})
+SET(DynamicLightsBinaryDir ${CMAKE_BINARY_DIR})
 
 SET(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} "D:/Dependencies/boost/boost_1_57_0")
 SET(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "D:/Dependencies/boost/boost_1_57_0/lib64-msvc-12.0")
 
-MESSAGE(STATUS "StreamSurfaceGenerator Source Directory: ${StreamSurfaceGeneratorHome}")
-MESSAGE(STATUS "StreamSurfaceGenerator Binary Directory: ${StreamSurfaceGeneratorBinaryDir}")
+MESSAGE(STATUS "DynamicLights Source Directory: ${DynamicLightsHome}")
+MESSAGE(STATUS "DynamicLights Binary Directory: ${DynamicLightsBinaryDir}")
 
 # include macros
-INCLUDE(${StreamSurfaceGeneratorHome}/cmake/macros.cmake)
+INCLUDE(${DynamicLightsHome}/cmake/macros.cmake)
 
 # detect compiler and architecture
 IF(${CMAKE_GENERATOR} STREQUAL "Visual Studio 12 2013")
-    SET(StreamSurfaceGenerator_MSVC2013 TRUE)
-    SET(StreamSurfaceGenerator_WIN32 TRUE)
+    SET(DynamicLights_MSVC2013 TRUE)
+    SET(DynamicLights_WIN32 TRUE)
     MESSAGE(STATUS "Visual Studio 2013 Build (32 Bit)")
 ELSE()
     MESSAGE(WARNING "Unsupported or unknown generator: ${CMAKE_GENERATOR}")
@@ -32,13 +32,13 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 # common include directories
-LIST(APPEND StreamSurfaceGeneratorIncludeDirs ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}) 
+LIST(APPEND DynamicLightsIncludeDirs ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}) 
 
-LIST(APPEND StreamSurfaceGeneratorGlobalDefinitions "-DMOBIRFIDVIS_SOURCE_DIR=\"${StreamSurfaceGeneratorHome}\"")
+LIST(APPEND DynamicLightsGlobalDefinitions "-DMOBIRFIDVIS_SOURCE_DIR=\"${DynamicLightsHome}\"")
 
 # platform-dependent configuration
 IF(WIN32)
-    LIST(APPEND StreamSurfaceGeneratorGlobalDefinitions "-DNOMINMAX" "-D_CRT_SECURE_NO_DEPRECATE")
+    LIST(APPEND DynamicLightsGlobalDefinitions "-DNOMINMAX" "-D_CRT_SECURE_NO_DEPRECATE")
 
     # Disable warnings for Microsoft compiler:
     # C4290: C++ exception specification ignored except to indicate a function is
@@ -48,16 +48,16 @@ IF(WIN32)
     # C4503: The decorated name was longer than the compiler limit (4096), and was truncated.
     #        Occurs in AutoEvaluatePipeline due to some nested nested map-iterator-map. Could
     #        not be deactivated locally...
-    LIST(APPEND StreamSurfaceGeneratorGlobalDefinitions /wd4290 /wd4390 /wd4503)
+    LIST(APPEND DynamicLightsGlobalDefinitions /wd4290 /wd4390 /wd4503)
 
     # prevent error: number of sections exceeded object file format limit
-    LIST(APPEND StreamSurfaceGeneratorGlobalDefinitions /bigobj)
+    LIST(APPEND DynamicLightsGlobalDefinitions /bigobj)
     
     # allows 32 Bit builds to use more than 2GB RAM (VC++ only)
     SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /LARGEADDRESSAWARE")
     SET(CMAKE_EXE_LINKER_FLAGS    "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
     
-    LIST(APPEND StreamSurfaceGenerator_GlobalExternalLibs netapi32 version)
+    LIST(APPEND DynamicLights_GlobalExternalLibs netapi32 version)
 ENDIF(WIN32)
 
 ADD_DEFINITIONS(/WX)
@@ -82,7 +82,7 @@ IF(STREAM_SURFACE_GENERATOR)
 
 ENDIF(STREAM_SURFACE_GENERATOR)
 
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${StreamSurfaceGeneratorHome}/cmake")
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${DynamicLightsHome}/cmake")
 
 SET(CommonconfProcessed TRUE)
 

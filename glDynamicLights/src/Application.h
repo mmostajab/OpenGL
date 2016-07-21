@@ -2,7 +2,7 @@
 #define __APPLICATION_H__
 
 #include "helper.h"
-#include "lights.h"
+#include "UniformDefinitions.h"
 
 #include <gl/glew.h>
 #include <GLFW/glfw3.h>
@@ -15,20 +15,6 @@
 #include <stdio.h>
 
 #include "Camera.h"
-
-struct SAMPLE_POINTS {
-    glm::vec4     point[256];
-    glm::vec4     random_vectors[256];
-};
-
-#define MAX_FRAMEBUFFER_WIDTH 2048
-#define MAX_FRAMEBUFFER_HEIGHT 2048
-
-struct PlyObjVertex
-{
-  glm::vec3 pos;
-  glm::vec3 normal;
-};
 
 class Application {
 public:
@@ -47,9 +33,6 @@ private:
     void draw();
 
     void compileShaders();
-
-    void prepare_framebuffer();
-    void prepare_ssao();
 
     GLuint simple_program;
 
@@ -80,33 +63,15 @@ private:
 	  // scene objects
 	  static Camera m_camera;
 
-    // Screen Space Ambient Occlusion
-    static int         rendering_state;
-    GLuint      ssao_program;
-    GLuint      render_fbo;
-    GLuint      fbo_textures[3];
-    GLuint      quad_vao;
-    GLuint      points_buffer;
-
-    // Order Independence Transparency
-    GLuint render_oreder_independece_linked_list_program, resolve_order_independence_program;
-    size_t total_pixels;
-    GLuint head_pointer_texture;
-    GLuint head_pointer_clear_buffer;
-    GLuint linked_list_buffer, linked_list_texture;
-    GLuint atomic_counter_buffer;
-    GLuint render_opaque_fbo;
-    GLuint fbo_opaque_texture;
-
     // Ply buffers
     GLuint ply_program;
-    std::vector<PlyObjVertex> vertices;
+    std::vector<Vertex>       vertices;
     std::vector<unsigned int> indices;
     GLuint vertices_buffer, indices_buffer;
     void drawPly();
 
-	// lights array
-	std::vector<Light::PointLight> pointLights;
+	  // lights array
+    std::vector<Light>           lights;
 };
 
 #endif
