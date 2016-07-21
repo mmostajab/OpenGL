@@ -1,10 +1,7 @@
-"#version 330 compatibility
+#version 330 compatibility
 
 #extension GL_ARB_separate_shader_objects: enable
 #extension GL_ARB_uniform_buffer_object:   enable
-
-smooth in vec3 vNormalES;         // eye space normal
-smooth in vec3 vPositionES;       // eye space position
 
 const int num_lights    =   1;
 const int num_materials = 100;
@@ -26,7 +23,8 @@ struct Light
 	float spot_exponent;    // [0-128]
 };
 
-layout (std140, binding = 1) uniform Lights
+//layout (std140, binding = 1) uniform Lights
+layout (std140) uniform Lights
 {
 	Light light[num_lights];
 } lights;
@@ -42,13 +40,15 @@ struct Material
 	float shininess;
 };
 
-layout (std140, binding = 2) uniform Materials
+//layout (std140, binding = 2) uniform Materials
+layout (std140) uniform Materials
 {
 	Material material[num_materials];
 } materials;
 
 
-layout (std140, binding = 3) uniform GeomState
+//layout (std140, binding = 3) uniform GeomState
+layout (std140) uniform GeomState
 {
 	int material_index;
 } geom_state;
@@ -227,8 +227,8 @@ void main()
 	vec3 color = vec3(0.0, 0.0, 0.0);
 	for (int i = 0; i < num_lights; ++i) {
 		color += directionalLight(i, geom_state.material_index, N, V) 
-			  +        pointLight(i, geom_state.material_index, N, V, vPositionES) 
-			  +         spotLight(i, geom_state.material_index, N, V, vPositionES);
+			  +        pointLight(i, geom_state.material_index, N, V, fs_in.positionViewSpace) 
+			  +         spotLight(i, geom_state.material_index, N, V, fs_in.positionViewSpace);
 	}
 	outColor = vec4(color, materials.material[geom_state.material_index  ].opacity);
 }

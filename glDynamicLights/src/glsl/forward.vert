@@ -3,7 +3,8 @@
 #extension GL_ARB_separate_shader_objects: enable
 #extension GL_ARB_uniform_buffer_object:   enable
 
-layout(std140, binding = 0) uniform TransformBlock {
+//layout(std140, binding = 0) uniform TransformBlock {
+layout(std140) uniform TransformBlock {
     mat4 proj_mat;			// projection matrix
     mat4 view_mat;			// view matrix
     mat4 world_mat;			// world matrix
@@ -18,7 +19,7 @@ struct Vertex {
 	vec3 normal;
 };
 
-layout ( location = 0 ) Vertex vertex;
+layout ( location = 0 ) in Vertex vertex;
 
 out VS_OUT {
 	vec3 positionViewSpace;			// view space position
@@ -31,17 +32,17 @@ void main()
 	// multiply the object space vertex position with the modelview matrix 
 	// to get the eye space vertex position
 	//
-	vs_out.positionViewSpace = (modelView_mat * vertex.position).xyz;
+	vs_out.positionViewSpace = (mat3(modelView_mat) * vertex.position).xyz;
 
 	//
 	// multiply the object space normal with the normal matrix (transpose of the inverse 
 	// model view matrix) to get the eye space normal
 	//
-	vs_out.normalViewSpace   = normal_mat * vertex.normal;
+	vs_out.normalViewSpace   = mat3(normal_mat) * vertex.normal;
 
 	//
 	// multiply the combiend modelview projection matrix with the object space vertex
 	// position to get the clip space position
 	//
-	gl_Position = mvp * vertex. position;
+	gl_Position = mvp_mat * vec4(vertex. position, 1.0f);
 }
