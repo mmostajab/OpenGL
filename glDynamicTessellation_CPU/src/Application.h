@@ -49,7 +49,7 @@ struct ArcSegment
 		
 		if (_nSegs == nSegs) return;
 
-		std::cout << "Number of segments changed from " << nSegs << " to " << _nSegs << std::endl;
+		//std::cout << "Number of segments changed from " << nSegs << " to " << _nSegs << std::endl;
 
 		nSegs = _nSegs;
 

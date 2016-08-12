@@ -129,7 +129,7 @@ void Application::init() {
 
     m_camera.SetMode(MODELVIEWER);
     //m_camera.SetMode(FREE);
-    m_camera.SetPosition(glm::vec3(3.0f, 3.0f, 3.0f));
+    m_camera.SetPosition(glm::vec3(0.0f, 0.0f, 3.0f));
     m_camera.SetLookAt(glm::vec3(0.0f, 0.0f, 0.0f));
     m_camera.SetClipping(0.01f, 100.0f);
     m_camera.SetFOV(60);
@@ -154,13 +154,29 @@ void Application::init() {
 void Application::create() {
   compileShaders();
 
+#ifdef ONE_ARC_SEGMENT
   ArcSegment arcSegment;
   arcSegment.p1 = glm::vec3(-1, 0, 0);
   arcSegment.p2 = glm::vec3( 0, 1, 0);
   arcSegment.alpha = glm::pi<double>() / 2.0;
   arcSegment.createBuffer(5);
-
   arcSegments.push_back(arcSegment);
+#endif
+
+#define MULTI_ARC_SEGMENT
+#ifdef  MULTI_ARC_SEGMENT
+  for (size_t i = 0; i < 10; i++) {
+	  for (size_t j = 0; j < 10; j++) {
+		  ArcSegment arcSegment;
+		  glm::vec3 translate(2 * i, 2 * j, 0.0f);
+		  arcSegment.p1 = glm::vec3(-1, 0, 0) + translate;
+		  arcSegment.p2 = glm::vec3(0, 1, 0) + translate;
+		  arcSegment.alpha = glm::pi<double>() / 2.0;
+		  arcSegment.createBuffer(5);
+		  arcSegments.push_back(arcSegment);
+	  }
+  }
+#endif
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
@@ -217,7 +233,7 @@ void Application::draw() {
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-  glClearColor(1, 1, 1, 1);
+  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   
   glUseProgram(simple_program);
