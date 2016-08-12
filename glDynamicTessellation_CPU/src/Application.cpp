@@ -154,7 +154,7 @@ void Application::init() {
 void Application::create() {
   compileShaders();
 
-//#define ONE_ARC_SEGMENT
+#define ONE_ARC_SEGMENT
 #ifdef ONE_ARC_SEGMENT
   ArcSegment arcSegment;
   arcSegment.p1 = glm::vec3(-1, 0, 0);
@@ -165,7 +165,7 @@ void Application::create() {
   arcSegments.push_back(arcSegment);
 #endif
 
-#define MULTI_ARC_SEGMENT
+//#define MULTI_ARC_SEGMENT
 #ifdef  MULTI_ARC_SEGMENT
   for (size_t i = 0; i < 10; i++) {
 	  for (size_t j = 0; j < 10; j++) {
@@ -213,8 +213,11 @@ void Application::update(float time, float timeSinceLastFrame) {
     transform_matrices[2] = m_worldmat;
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 
+	clock_t start_time = clock();
 	m_mvp_mat = m_projmat * m_viewmat * m_worldmat;
 	for (auto& arc : arcSegments) arc.updateBuffer(m_mvp_mat, m_width, m_height);
+	clock_t end_time = clock();
+	//std::cout << "Tesselation time = " << (end_time - start_time) / CLOCKS_PER_SEC << std::endl;
 
     // updating the lighting info
     glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_lighting_buffer);
