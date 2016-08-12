@@ -18,6 +18,7 @@
 #include <string>
 #include <stdlib.h>
 #include <stdio.h>
+#include <complex>
 
 #include "Camera.h"
 
@@ -28,7 +29,8 @@ struct ArcSegment
 {									//      ___       ;
 	glm::vec3 	p1;                 //    /     \     ;
 	glm::vec3 	p2;                 // p1 ------- p2  ;
-	double	    alpha; // arc angle in rad
+	//double	    alpha; // arc angle in rad
+	glm::vec3   center;
 
 	struct Vertex {
 		glm::vec3 position;
@@ -38,10 +40,16 @@ struct ArcSegment
 	GLint  nVertices;
 	int    nSegs  = -1;
 
-	ArcSegment(glm::vec3 _p1 = glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3 _p2 = glm::vec3(0.0f, 1.0f, 0.0f), double _alpha = glm::pi<double>() / 2.0f, int _nSegs = 5) {
-		p1 = _p1;
-		p2 = _p2;
-		alpha = _alpha;
+	ArcSegment(
+		glm::vec3 _p1 = glm::vec3(1.0f, 0.0f, 0.0f), 
+		glm::vec3 _p2 = glm::vec3(0.0f, 1.0f, 0.0f), 
+		glm::vec3 _center = glm::vec3(0.0f)/*double _alpha = glm::pi<double>() / 2.0f*/, 
+		int _nSegs = 5) {
+
+		p1		= _p1;
+		p2		= _p2;
+		center	= _center;
+		//alpha = _alpha;
 		createBuffer(_nSegs);
 	}
 
@@ -49,7 +57,7 @@ struct ArcSegment
 		
 		if (_nSegs == nSegs) return;
 
-		//std::cout << "Number of segments changed from " << nSegs << " to " << _nSegs << std::endl;
+		// std::cout << "Number of segments changed from " << nSegs << " to " << _nSegs << std::endl;
 
 		nSegs = _nSegs;
 
@@ -61,14 +69,28 @@ struct ArcSegment
 		std::vector<Vertex> vertices;
 
 		Vertex v;
-		glm::vec3 center = (p1 + p2) / 2.0f;
-		v.position = center;
+		glm::vec3 center_of_arc = (p1 + p2) / 2.0f;
+		v.position = center_of_arc;
 		vertices.push_back(v);
+
+		glm::vec3 a = p1 - center;
+		glm::vec3 b = p2 - center;
+		float cos_alpha = glm::clamp(glm::dot(a, b) / (glm::length(a) * glm::length(b)), -1.0f, 1.0f);
+		float alpha = acosf(cos_alpha);
 
 		for (int i = 0; i < nSegs + 1; i++) {
 			float t = static_cast<float>(i) / static_cast<float>(nSegs);
-			glm::vec3 p = sinf((1.0f - t) * static_cast<float>(alpha)) / sinf(static_cast<float>(alpha)) * p1 + sinf(t * static_cast<float>(alpha)) / sinf(static_cast<float>(alpha)) * p2;
-			v.position = p;
+			float thetha = t * alpha;
+			glm::vec3 p = 
+				sinf(alpha - thetha) / sinf(static_cast<float>(alpha)) * a + 
+				sinf(thetha)         / sinf(static_cast<float>(alpha)) * b;
+			
+			//std::complex<float> numerator = (1.f - std::exp(std::complex<float>(0.0f, -thetha)));
+			//std::complex<float> divisor   = (1.f - std::exp(std::complex<float>(0.0f, -alpha)));
+			//std::complex<float> w = numerator / divisor;
+			//v.position = w.real() * p2 + (1 - w.real()) * p1;
+
+			v.position = p + center;
 			vertices.push_back(v);
 		}
 
@@ -83,14 +105,19 @@ struct ArcSegment
 
 		glm::vec4 p1_proj = mvp * glm::vec4(p1, 1.0f);
 		glm::vec4 p2_proj = mvp * glm::vec4(p2, 1.0f);
+		glm::vec4 center_proj = mvp * glm::vec4(center, 1.0f);
 
 		p1_proj.x /= p1_proj.z;	p1_proj.y /= p1_proj.z;
 		p2_proj.x /= p2_proj.z;	p2_proj.y /= p2_proj.z;
+		center_proj.x /= center_proj.z; center_proj.y /= center_proj.z;
 
-		glm::vec2 len = glm::vec2((p1_proj.x - p2_proj.x) * w, (p1_proj.y - p2_proj.y) * h);
+		//glm::vec2 len = glm::vec2((p1_proj.x - p2_proj.x) * w, (p1_proj.y - p2_proj.y) * h);
 		//std::cout << "Length = " << glm::length(len) << std::endl;
 
-		float radius = glm::length(len) / (2 * sin(static_cast<float>(alpha)));
+		float radius = glm::max( glm::length(p1_proj - center_proj) * w, glm::length(p2_proj - center_proj) * h ); //glm::length(len) / (2 * sin(static_cast<float>(alpha)));
+		float alpha = 
+			acosf(glm::dot(p1_proj - center_proj, p2_proj - center_proj) 
+				/ (glm::length(p1_proj - center_proj) * glm::length(p1_proj - center_proj)));
 
 		int curve_length = static_cast<int>(radius * static_cast<float>(alpha)) + 1;
 		createBuffer(curve_length);

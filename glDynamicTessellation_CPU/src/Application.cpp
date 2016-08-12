@@ -154,11 +154,13 @@ void Application::init() {
 void Application::create() {
   compileShaders();
 
+//#define ONE_ARC_SEGMENT
 #ifdef ONE_ARC_SEGMENT
   ArcSegment arcSegment;
   arcSegment.p1 = glm::vec3(-1, 0, 0);
   arcSegment.p2 = glm::vec3( 0, 1, 0);
-  arcSegment.alpha = glm::pi<double>() / 2.0;
+  //arcSegment.alpha = glm::pi<double>() / 2.0;
+  arcSegment.center = glm::vec3(0.0f);
   arcSegment.createBuffer(5);
   arcSegments.push_back(arcSegment);
 #endif
@@ -168,10 +170,11 @@ void Application::create() {
   for (size_t i = 0; i < 10; i++) {
 	  for (size_t j = 0; j < 10; j++) {
 		  ArcSegment arcSegment;
-		  glm::vec3 translate(2 * i, 2 * j, 0.0f);
-		  arcSegment.p1 = glm::vec3(-1, 0, 0) + translate;
-		  arcSegment.p2 = glm::vec3(0, 1, 0) + translate;
-		  arcSegment.alpha = glm::pi<double>() / 2.0;
+		  glm::vec3 center(2 * i, 2 * j, 0.0f);
+		  arcSegment.p1 = glm::vec3(-static_cast<float>(rand() % 1000) / 2000.0f - 0.5f, 0, 0) + center;
+		  arcSegment.p2 = glm::vec3( 0, static_cast<float>(rand() % 1000) / 2000.0f + 0.5f, 0) + center;
+		  //arcSegment.alpha = glm::pi<double>() / 2.0;
+		  arcSegment.center = center;// glm::vec3(0.0f);
 		  arcSegment.createBuffer(5);
 		  arcSegments.push_back(arcSegment);
 	  }
