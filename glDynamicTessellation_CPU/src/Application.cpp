@@ -153,14 +153,14 @@ void Application::init() {
 
 void Application::create() {
   compileShaders();
-
+#ifdef ARC_SEGMENT
 #define ONE_ARC_SEGMENT
 #ifdef ONE_ARC_SEGMENT
   ArcSegment arcSegment;
-  arcSegment.p1 = glm::vec3(-1, 0, 0);
-  arcSegment.p2 = glm::vec3( 0, 1, 0);
+  arcSegment.p1 = glm::vec3(-1.0f, -1.0f, 0);
+  arcSegment.p2 = glm::vec3( 1.0f,  1.0f, 0);
   //arcSegment.alpha = glm::pi<double>() / 2.0;
-  arcSegment.center = glm::vec3(0.0f);
+  arcSegment.center = glm::vec3(1.0f, -1.0f, 0.0f);
   arcSegment.createBuffer(5);
   arcSegments.push_back(arcSegment);
 #endif
@@ -180,6 +180,20 @@ void Application::create() {
 	  }
   }
 #endif
+#endif
+
+#define ARC_TRIANGLE
+#ifdef  ARC_TRIANGLE
+  ArcTriangle arcTriangle;
+  arcTriangle.p1 = glm::vec3(-1.0f, -1.0f, 0);
+  arcTriangle.p2 = glm::vec3( 1.0f,  1.0f, 0);
+  arcTriangle.p3 = glm::vec3(-1.0f, 1.0f, 0);
+  //arcSegment.alpha = glm::pi<double>() / 2.0;
+  arcTriangle.center = glm::vec3(1.0f, -1.0f, 0.0f);
+  arcTriangle.createBuffer(5);
+  arcTriangles.push_back(arcTriangle);
+#endif
+
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
@@ -196,11 +210,20 @@ void Application::update(float time, float timeSinceLastFrame) {
     if (m_d_pressed)
         m_camera.Move(CameraDirection::RIGHT);
 
-    if (m_q_pressed)
-        m_camera.Move(CameraDirection::UP);
+    if (m_q_pressed) {
+      if (clock() - last_change_clock > 300) {
+        mult *= 2.0f;
+        last_change_clock = clock();
+      }
+      //m_camera.Move(CameraDirection::UP);
+    }
 
-    if (m_e_pressed)
-        m_camera.Move(CameraDirection::DOWN);
+    if (m_e_pressed) {
+      if(clock() - last_change_clock > 300)
+        mult /= 2.0f;
+      last_change_clock = clock();
+      //m_camera.Move(CameraDirection::DOWN);
+    }
 
     // Updating the camera matrices
     m_camera.Update();
@@ -215,7 +238,8 @@ void Application::update(float time, float timeSinceLastFrame) {
 
 	clock_t start_time = clock();
 	m_mvp_mat = m_projmat * m_viewmat * m_worldmat;
-	for (auto& arc : arcSegments) arc.updateBuffer(m_mvp_mat, m_width, m_height);
+	for (auto& arc : arcSegments)  arc.updateBuffer(m_mvp_mat, m_width, m_height);
+  for (auto& arc : arcTriangles) arc.updateBuffer(m_mvp_mat, m_width, m_height);
 	clock_t end_time = clock();
 	//std::cout << "Tesselation time = " << (end_time - start_time) / CLOCKS_PER_SEC << std::endl;
 
@@ -244,7 +268,8 @@ void Application::draw() {
   
   glUseProgram(simple_program);
 
-  for (auto& arc : arcSegments) arc.drawBuffer();
+  for (auto& arc : arcSegments)  arc.drawBuffer();
+  for (auto& arc : arcTriangles) arc.drawBuffer();
 
   // Draw the world coordinate system
   glViewport(0, 0, 100, 100);
