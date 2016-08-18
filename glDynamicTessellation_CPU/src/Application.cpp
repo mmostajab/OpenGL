@@ -32,6 +32,7 @@ bool                  Application::m_mouse_middle_drag  = false;
 bool                  Application::m_mouse_right_drag   = false;
 int                   Application::rendering_state      = 0;
 Camera				        Application::m_camera;
+bool                 Application::wireframe = false;
 
 Application::Application() {
 }
@@ -130,7 +131,7 @@ void Application::init() {
     m_camera.SetMode(MODELVIEWER);
     //m_camera.SetMode(FREE);
     m_camera.SetPosition(glm::vec3(0.0f, 0.0f, 3.0f));
-    m_camera.SetLookAt(glm::vec3(0.0f, 0.0f, 0.0f));
+    m_camera.SetLookAt(glm::vec3(0.0f, 0.0f, -3.0f));
     m_camera.SetClipping(0.01f, 100.0f);
     m_camera.SetFOV(60);
     m_camera.SetViewport(0, 0, m_width, m_height);
@@ -153,6 +154,7 @@ void Application::init() {
 
 void Application::create() {
   compileShaders();
+  #define ARC_SEGMENT
 #ifdef ARC_SEGMENT
 #define ONE_ARC_SEGMENT
 #ifdef ONE_ARC_SEGMENT
@@ -182,7 +184,7 @@ void Application::create() {
 #endif
 #endif
 
-#define ARC_TRIANGLE
+//#define ARC_TRIANGLE
 #ifdef  ARC_TRIANGLE
   ArcTriangle arcTriangle;
   arcTriangle.p1 = glm::vec3(-1.0f, -1.0f, 0);
@@ -198,8 +200,19 @@ void Application::create() {
 
 void Application::update(float time, float timeSinceLastFrame) {
 
-    if (m_w_pressed)
-        m_camera.Move(CameraDirection::FORWARD);
+  if (m_w_pressed) {
+    if (clock() - last_change_clock > 300) {
+      wireframe = !wireframe;
+      last_change_clock = clock();
+    }
+  }
+
+  if (wireframe) 
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+
+    /*    m_camera.Move(CameraDirection::FORWARD);
 
     if (m_s_pressed)
         m_camera.Move(CameraDirection::BACK);
@@ -209,7 +222,7 @@ void Application::update(float time, float timeSinceLastFrame) {
 
     if (m_d_pressed)
         m_camera.Move(CameraDirection::RIGHT);
-
+        */
     if (m_q_pressed) {
       if (clock() - last_change_clock > 300) {
         mult *= 2.0f;
@@ -219,9 +232,10 @@ void Application::update(float time, float timeSinceLastFrame) {
     }
 
     if (m_e_pressed) {
-      if(clock() - last_change_clock > 300)
+      if (clock() - last_change_clock > 300) {
         mult /= 2.0f;
-      last_change_clock = clock();
+        last_change_clock = clock();
+      }
       //m_camera.Move(CameraDirection::DOWN);
     }
 
@@ -272,9 +286,9 @@ void Application::draw() {
   for (auto& arc : arcTriangles) arc.drawBuffer();
 
   // Draw the world coordinate system
-  glViewport(0, 0, 100, 100);
-  glUseProgram(m_coord_system_program);
-  glDrawArrays(GL_LINES, 0, 6);
+  //glViewport(0, 0, 100, 100);
+  //glUseProgram(m_coord_system_program);
+  //glDrawArrays(GL_LINES, 0, 6);
 }
 
 void Application::run() {
