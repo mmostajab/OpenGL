@@ -68,12 +68,16 @@ struct ArcTriangle
         sinf(alpha - thetha) / sinf(static_cast<float>(alpha)) * a +
         sinf(thetha) / sinf(static_cast<float>(alpha)) * b;
 
-      //std::complex<float> numerator = (1.f - std::exp(std::complex<float>(0.0f, -thetha)));
-      //std::complex<float> divisor   = (1.f - std::exp(std::complex<float>(0.0f, -alpha)));
-      //std::complex<float> w = numerator / divisor;
-      //v.position = w.real() * p2 + (1 - w.real()) * p1;
+      //std::complex<float> numerator = (1.f - (std::complex<float>(cos(thetha), sin(thetha))));
+      //std::complex<float> divisor   = (1.f - std::complex<float>(cos(alpha), sin(alpha)));
+      //std::complex<float> w         = numerator / divisor;
+      //glm::vec3       w_vec         = glm::vec3(w.real(), w.imag(), 0.0f);
 
-      v.position = p + center;
+      //glm::vec3 p = glm::vec3(w_vec) * b + (glm::vec3(1.0f) - glm::length(w_vec)) * a;
+
+      //glm::vec3 p(w.real(), w.imag(), 0.0f);
+
+      v.position = p +center;
       vertices.push_back(v);
     }
 

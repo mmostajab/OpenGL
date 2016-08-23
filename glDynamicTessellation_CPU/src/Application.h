@@ -24,6 +24,7 @@
 #include "Camera.h"
 #include "ArcSegment.h"
 #include "ArcTriangle.h"
+#include "ArcQuad.h"
 
 #define MAX_FRAMEBUFFER_WIDTH 2048
 #define MAX_FRAMEBUFFER_HEIGHT 2048
@@ -94,6 +95,7 @@ public:
 
 	std::vector<ArcSegment>  arcSegments;
   std::vector<ArcTriangle> arcTriangles;
+  std::vector<ArcQuad>     arcQuads;
 };
 
 #endif

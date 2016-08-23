@@ -154,9 +154,11 @@ void Application::init() {
 
 void Application::create() {
   compileShaders();
-  #define ARC_SEGMENT
+
+  //#define ARC_SEGMENT
 #ifdef ARC_SEGMENT
-#define ONE_ARC_SEGMENT
+
+//#define ONE_ARC_SEGMENT
 #ifdef ONE_ARC_SEGMENT
   ArcSegment arcSegment;
   arcSegment.p1 = glm::vec3(-1.0f, -1.0f, 0);
@@ -184,16 +186,31 @@ void Application::create() {
 #endif
 #endif
 
-//#define ARC_TRIANGLE
+#define ARC_TRIANGLE
 #ifdef  ARC_TRIANGLE
   ArcTriangle arcTriangle;
   arcTriangle.p1 = glm::vec3(-1.0f, -1.0f, 0);
-  arcTriangle.p2 = glm::vec3( 1.0f,  1.0f, 0);
+  arcTriangle.p2 = glm::vec3(0.0f,  1.0f, 0);
   arcTriangle.p3 = glm::vec3(-1.0f, 1.0f, 0);
   //arcSegment.alpha = glm::pi<double>() / 2.0;
   arcTriangle.center = glm::vec3(1.0f, -1.0f, 0.0f);
   arcTriangle.createBuffer(5);
   arcTriangles.push_back(arcTriangle);
+#endif
+
+//#define ARC_QUAD
+#ifdef ARC_QUAD
+  ArcQuad arcQuad;
+  arcQuad.halfArcQuad[0].p0 = glm::vec3(-1.0f, -0.25f, 0);
+  arcQuad.halfArcQuad[0].p1 = glm::vec3(1.0f, -0.25f, 0);
+  arcQuad.halfArcQuad[0].center = glm::vec3(0.0f, -2.0f, 0);
+
+  arcQuad.halfArcQuad[1].p0 = glm::vec3(-1.0f, 0.25f, 0);
+  arcQuad.halfArcQuad[1].p1 = glm::vec3(1.0f, 0.25f, 0);
+  arcQuad.halfArcQuad[1].center = glm::vec3(0.0f, -2.0f, 0);
+
+  arcQuad.createBuffer(5);
+  arcQuads.push_back(arcQuad);
 #endif
 
 }
@@ -254,6 +271,8 @@ void Application::update(float time, float timeSinceLastFrame) {
 	m_mvp_mat = m_projmat * m_viewmat * m_worldmat;
 	for (auto& arc : arcSegments)  arc.updateBuffer(m_mvp_mat, m_width, m_height);
   for (auto& arc : arcTriangles) arc.updateBuffer(m_mvp_mat, m_width, m_height);
+  for (auto& arc : arcQuads)     arc.updateBuffer(m_mvp_mat, m_width, m_height);
+
 	clock_t end_time = clock();
 	//std::cout << "Tesselation time = " << (end_time - start_time) / CLOCKS_PER_SEC << std::endl;
 
@@ -284,6 +303,7 @@ void Application::draw() {
 
   for (auto& arc : arcSegments)  arc.drawBuffer();
   for (auto& arc : arcTriangles) arc.drawBuffer();
+  for (auto& arc : arcQuads)     arc.drawBuffer();
 
   // Draw the world coordinate system
   //glViewport(0, 0, 100, 100);
