@@ -15,6 +15,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <GL/glew.h>
 
+#include "SampleDataGenerator.h"
+
 // Static Members
 GLFWwindow*				    Application::m_window = 0;
 unsigned int			    Application::m_width              = 0;
@@ -186,11 +188,14 @@ void Application::create() {
 #endif
 #endif
 
-#define ARC_TRIANGLE
+
+//  addLogo(glm::vec3(0.0f), 0.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
+
+//#define ARC_TRIANGLE
 #ifdef  ARC_TRIANGLE
   ArcTriangle arcTriangle;
   arcTriangle.p1 = glm::vec3(-1.0f, -1.0f, 0);
-  arcTriangle.p2 = glm::vec3(0.0f,  1.0f, 0);
+  arcTriangle.p2 = glm::vec3(1.0f,  1.0f, 0);
   arcTriangle.p3 = glm::vec3(-1.0f, 1.0f, 0);
   //arcSegment.alpha = glm::pi<double>() / 2.0;
   arcTriangle.center = glm::vec3(1.0f, -1.0f, 0.0f);
@@ -198,19 +203,16 @@ void Application::create() {
   arcTriangles.push_back(arcTriangle);
 #endif
 
-//#define ARC_QUAD
+#define ARC_QUAD
 #ifdef ARC_QUAD
-  ArcQuad arcQuad;
-  arcQuad.halfArcQuad[0].p0 = glm::vec3(-1.0f, -0.25f, 0);
-  arcQuad.halfArcQuad[0].p1 = glm::vec3(1.0f, -0.25f, 0);
-  arcQuad.halfArcQuad[0].center = glm::vec3(0.0f, -2.0f, 0);
 
-  arcQuad.halfArcQuad[1].p0 = glm::vec3(-1.0f, 0.25f, 0);
-  arcQuad.halfArcQuad[1].p1 = glm::vec3(1.0f, 0.25f, 0);
-  arcQuad.halfArcQuad[1].center = glm::vec3(0.0f, -2.0f, 0);
+  
+  //addC(arcSegments, arcTriangles, arcQuads);
+  //addS(arcSegments, arcTriangles, arcQuads);
+  //addT(arcSegments, arcTriangles, arcQuads);
+  //addM(arcSegments, arcTriangles, arcQuads);
+  addF(arcSegments, arcTriangles, arcQuads);
 
-  arcQuad.createBuffer(5);
-  arcQuads.push_back(arcQuad);
 #endif
 
 }

@@ -64,18 +64,22 @@ struct ArcTriangle
     for (int i = 0; i < nSegs + 1; i++) {
       float t = static_cast<float>(i) / static_cast<float>(nSegs);
       float thetha = t * alpha;
+
+#ifdef USE_SLERP
       glm::vec3 p =
         sinf(alpha - thetha) / sinf(static_cast<float>(alpha)) * a +
         sinf(thetha) / sinf(static_cast<float>(alpha)) * b;
 
-      //std::complex<float> numerator = (1.f - (std::complex<float>(cos(thetha), sin(thetha))));
-      //std::complex<float> divisor   = (1.f - std::complex<float>(cos(alpha), sin(alpha)));
-      //std::complex<float> w         = numerator / divisor;
-      //glm::vec3       w_vec         = glm::vec3(w.real(), w.imag(), 0.0f);
+#endif
 
-      //glm::vec3 p = glm::vec3(w_vec) * b + (glm::vec3(1.0f) - glm::length(w_vec)) * a;
-
-      //glm::vec3 p(w.real(), w.imag(), 0.0f);
+#ifdef USE_COMPLEX_METHOD
+      std::complex<float> numerator = (1.f - std::complex<float>(cos(-thetha), sin(-thetha)));
+      std::complex<float> divisor   = (1.f - std::complex<float>(cos(-alpha), sin(-alpha)));
+      std::complex<float> w         = numerator / divisor;
+      
+      std::complex<float> p_complex = (1.f - w) * std::complex<float>(b.x, b.y) + w * std::complex<float>(a.x, a.y);
+      glm::vec3 p = glm::vec3(p_complex.real(), p_complex.imag(), 0.0f);
+#endif
 
       v.position = p +center;
       vertices.push_back(v);
@@ -104,7 +108,7 @@ struct ArcTriangle
     float radius = glm::max(glm::length(p1_proj - center_proj) * w / 2.0f, glm::length(p2_proj - center_proj) * h / 2.0f); //glm::length(len) / (2 * sin(static_cast<float>(alpha)));
     float alpha =
       acosf(glm::dot(p1_proj - center_proj, p2_proj - center_proj)
-        / (glm::length(p1_proj - center_proj) * glm::length(p1_proj - center_proj)));
+        / (glm::length(p1_proj - center_proj) * glm::length(p2_proj - center_proj)));
 
     int curve_length = static_cast<int>(radius * static_cast<float>(alpha)) + 1;
     createBuffer(static_cast<int>(curve_length / mult));

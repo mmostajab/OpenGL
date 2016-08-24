@@ -23,10 +23,10 @@ struct ArcQuad
 
   std::array<HalfArcQuad, 2> halfArcQuad;
 
-  std::array<GLuint,  2> buffer     = {  0,  0 };
-  std::array<size_t, 2>  bufferSizeMaxNumSegs = {  0,  0 };
-  std::array<int32_t, 2> nVertices  = { -1, -1 };
-  std::array<int32_t, 2> nSegs      = { -1, -1 };
+  GLuint                  buffer               = 0;
+  std::array<size_t,  2>  bufferSizeMaxNumSegs = {  0,  0 };
+  int32_t                 nVertices            = -1;
+  std::array<int32_t, 2>  nSegs                = { -1, -1 };
 
   ArcQuad(
     glm::vec3 _p1      = glm::vec3(0.0f, 0.0f, 0.0f),
@@ -49,58 +49,81 @@ struct ArcQuad
   }
 
   void createBuffer(uint32_t _nSegs) {
-    for (size_t i = 0; i < halfArcQuad.size(); i++) createBuffer(i, _nSegs);
-  }
-
-  void createBuffer(size_t i, uint32_t _nSegs) {
 
     //if (_nSegs0 == nSegs[0] && _nSegs1 == nSegs[1]) return;
 
     //for (size_t i = 0; i < buffer.size(); i++) {
 
-      if (_nSegs == nSegs[i]) return;
+      if (_nSegs == nSegs[0] && _nSegs == nSegs[1]) return;
 
-      std::cout << "Number of segments for curve " << i << " changed from " << nSegs[i] << " to " << _nSegs << "." << std::endl;
+      //std::cout << "Number of segments for curve " << i << " changed from " << nSegs[i] << " to " << _nSegs << "." << std::endl;
 
-      nSegs[i] = _nSegs;
+      nSegs[0] = _nSegs;
+      nSegs[1] = _nSegs;
 
-      if (buffer[i] > 0 || _nSegs > bufferSizeMaxNumSegs[i]) {
+      if (buffer > 0 || _nSegs > bufferSizeMaxNumSegs[0]) {
         
-        if(buffer[i] > 0) glDeleteBuffers(1, &buffer[i]);
+        if (buffer > 0) glDeleteBuffers(1, &buffer);
         
-        //buffer[i] = 0;
-        bufferSizeMaxNumSegs[i] = _nSegs + 2;
-        glCreateBuffers(1, &buffer[i]);
-        glBindBuffer(GL_ARRAY_BUFFER, buffer[i]);
-        glBufferData(GL_ARRAY_BUFFER, bufferSizeMaxNumSegs[i] * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
+        bufferSizeMaxNumSegs[0] = bufferSizeMaxNumSegs[0] = 2 * (_nSegs + 2);
+        
+        glCreateBuffers(1, &buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, buffer);
+        glBufferData(GL_ARRAY_BUFFER, bufferSizeMaxNumSegs[0] * sizeof(Vertex), nullptr, GL_DYNAMIC_DRAW);
       }
 
       std::vector<Vertex> vertices;
 
       Vertex v;
-      v.position = i == 0 ? halfArcQuad[1].p1 : halfArcQuad[0].p0;// halfArcQuad[i].center;
-      vertices.push_back(v);
 
-      glm::vec3 a = halfArcQuad[i].p0 - halfArcQuad[i].center;
-      glm::vec3 b = halfArcQuad[i].p1 - halfArcQuad[i].center;
-      float cos_alpha = glm::clamp(glm::dot(a, b) / (glm::length(a) * glm::length(b)), -1.0f, 1.0f);
+      glm::vec3 a[] = { halfArcQuad[0].p0 - halfArcQuad[0].center, halfArcQuad[1].p0 - halfArcQuad[1].center };
+      glm::vec3 b[] = { halfArcQuad[0].p1 - halfArcQuad[0].center, halfArcQuad[1].p1 - halfArcQuad[1].center };
+      float cos_alpha = glm::clamp(glm::dot(a[1], b[1]) / (glm::length(a[1]) * glm::length(b[1])), -1.0f, 1.0f);
+      //float epsilon() = 0.01f;
       float alpha = acosf(cos_alpha);
 
-      for (int j = 0; j < nSegs[i] + 1; j++) {
-        float t = static_cast<float>(j) / static_cast<float>(nSegs[i]);
+      for (int j = 0; j < nSegs[0] + 1; j++) {
+        float t = static_cast<float>(j) / static_cast<float>(nSegs[0]);
         float thetha = t * alpha;
-        glm::vec3 p =
-          sinf(alpha - thetha) / sinf(static_cast<float>(alpha)) * a +
-          sinf(thetha) / sinf(static_cast<float>(alpha)) * b;
 
-        v.position = p + halfArcQuad[i].center;
+#ifdef USE_SLERP
+        glm::vec3 p[] = {
+          // 0
+          sinf(alpha - thetha) / sinf(static_cast<float>(alpha)) * a[0] +
+          sinf(thetha) / sinf(static_cast<float>(alpha)) * b[0],
+
+          // 1
+          sinf(alpha - thetha) / sinf(static_cast<float>(alpha)) * a[1] +
+          sinf(thetha) / sinf(static_cast<float>(alpha)) * b[1]
+        };
+#endif
+
+#ifdef USE_COMPLEX_METHOD
+        std::complex<float> numerator = (1.f - (std::complex<float>(cos(thetha), sin(thetha))));
+        std::complex<float> divisor = (1.f - std::complex<float>(cos(alpha), sin(alpha)));
+        std::complex<float> w = numerator / divisor;
+
+        std::complex<float> p_complex[] = {
+          (1.f - w) * std::complex<float>(b[0].x, b[0].y) + w * std::complex<float>(a[0].x, a[0].y),
+          (1.f - w) * std::complex<float>(b[1].x, b[1].y) + w * std::complex<float>(a[1].x, a[1].y)
+        };
+        glm::vec3 p[] = {
+          glm::vec3(p_complex[0].real(), p_complex[0].imag(), 0.0f),
+          glm::vec3(p_complex[1].real(), p_complex[1].imag(), 0.0f)
+        };
+#endif
+
+        v.position = halfArcQuad[0].center + p[0] ;
+        vertices.push_back(v);
+
+        v.position = halfArcQuad[1].center + p[1] ;
         vertices.push_back(v);
       }
 
-      glBindBuffer(GL_ARRAY_BUFFER, buffer[i]);
+      glBindBuffer(GL_ARRAY_BUFFER, buffer);
       glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(Vertex), vertices.data());
 
-      nVertices[i] = static_cast<GLint>(vertices.size());      
+      nVertices = static_cast<GLint>(vertices.size());      
     //}    
   }
 
@@ -122,10 +145,10 @@ struct ArcQuad
       float radius = glm::max(glm::length(p1_proj - center_proj) * w / 2.0f, glm::length(p2_proj - center_proj) * h / 2.0f); //glm::length(len) / (2 * sin(static_cast<float>(alpha)));
       float alpha =
         acosf(glm::dot(p1_proj - center_proj, p2_proj - center_proj)
-          / (glm::length(p1_proj - center_proj) * glm::length(p1_proj - center_proj)));
+          / (glm::length(p1_proj - center_proj) * glm::length(p2_proj - center_proj)));
 
       int curve_length = static_cast<int>(radius * static_cast<float>(alpha)) + 1;
-      createBuffer(i, static_cast<int>(curve_length / mult));
+      createBuffer(static_cast<int>(curve_length / mult));
     }
   }
 
@@ -135,11 +158,9 @@ struct ArcQuad
 
     glEnableVertexAttribArray(0);
     
-    for (size_t i = 0; i < buffer.size(); i++) {
-      glBindBuffer(GL_ARRAY_BUFFER, buffer[i]);
-      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const char*)0);
-      glDrawArrays(GL_TRIANGLE_FAN, 0, nVertices[i]);
-    }
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const char*)0);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, nVertices);
 
     glDisableVertexAttribArray(0);
 
