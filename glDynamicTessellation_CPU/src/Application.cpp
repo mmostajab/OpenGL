@@ -209,9 +209,9 @@ void Application::create() {
   
   //addC(arcSegments, arcTriangles, arcQuads);
   //addS(arcSegments, arcTriangles, arcQuads);
-  //addT(arcSegments, arcTriangles, arcQuads);
+  addT(arcSegments, arcTriangles, arcQuads);
   //addM(arcSegments, arcTriangles, arcQuads);
-  addF(arcSegments, arcTriangles, arcQuads);
+  //addF(arcSegments, arcTriangles, arcQuads);
 
 #endif
 
