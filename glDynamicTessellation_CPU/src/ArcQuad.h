@@ -61,7 +61,7 @@ struct ArcQuad
       nSegs[0] = _nSegs;
       nSegs[1] = _nSegs;
 
-      if (buffer > 0 || _nSegs > bufferSizeMaxNumSegs[0]) {
+      if (buffer <= 0 || (2 * (_nSegs + 2)) > bufferSizeMaxNumSegs[0]) {
         
         if (buffer > 0) glDeleteBuffers(1, &buffer);
         
@@ -86,19 +86,19 @@ struct ArcQuad
         float t = static_cast<float>(j) / static_cast<float>(nSegs[0]);
         float thetha = t * alpha;
 
-#ifdef USE_SLERP
-        glm::vec3 p[] = {
-          // 0
-          sinf(alpha - thetha) / sinf(static_cast<float>(alpha)) * a[0] +
-          sinf(thetha) / sinf(static_cast<float>(alpha)) * b[0],
+//#ifdef USE_SLERP
+//        glm::vec3 p[] = {
+//          // 0
+//          sinf(alpha - thetha) / sinf(static_cast<float>(alpha)) * a[0] +
+//          sinf(thetha) / sinf(static_cast<float>(alpha)) * b[0],
+//
+//          // 1
+//          sinf(alpha - thetha) / sinf(static_cast<float>(alpha)) * a[1] +
+//          sinf(thetha) / sinf(static_cast<float>(alpha)) * b[1]
+//        };
+//#endif
 
-          // 1
-          sinf(alpha - thetha) / sinf(static_cast<float>(alpha)) * a[1] +
-          sinf(thetha) / sinf(static_cast<float>(alpha)) * b[1]
-        };
-#endif
-
-#ifdef USE_COMPLEX_METHOD
+//#ifdef USE_COMPLEX_METHOD
         std::complex<float> numerator = (1.f - (std::complex<float>(cos(thetha), sin(thetha))));
         std::complex<float> divisor = (1.f - std::complex<float>(cos(alpha), sin(alpha)));
         std::complex<float> w = numerator / divisor;
@@ -111,7 +111,7 @@ struct ArcQuad
           glm::vec3(p_complex[0].real(), p_complex[0].imag(), 0.0f),
           glm::vec3(p_complex[1].real(), p_complex[1].imag(), 0.0f)
         };
-#endif
+//#endif
 
         v.position = halfArcQuad[0].center + p[0] ;
         vertices.push_back(v);
@@ -129,6 +129,8 @@ struct ArcQuad
 
   void updateBuffer(glm::mat4 mvp, unsigned int w, unsigned int h) {
 
+    int curve_length = 0;
+
     for (size_t i = 0; i < halfArcQuad.size(); i++) {
 
       glm::vec4 p1_proj     = mvp * glm::vec4(halfArcQuad[i].p0,      1.0f);
@@ -144,12 +146,17 @@ struct ArcQuad
 
       float radius = glm::max(glm::length(p1_proj - center_proj) * w / 2.0f, glm::length(p2_proj - center_proj) * h / 2.0f); //glm::length(len) / (2 * sin(static_cast<float>(alpha)));
       float alpha =
-        acosf(glm::dot(p1_proj - center_proj, p2_proj - center_proj)
-          / (glm::length(p1_proj - center_proj) * glm::length(p2_proj - center_proj)));
+        acosf(
+          glm::clamp(
+          glm::dot(p1_proj - center_proj, p2_proj - center_proj)
+          / (glm::length(p1_proj - center_proj) * glm::length(p2_proj - center_proj)), -1.0f, 1.0f
+      ));
 
-      int curve_length = static_cast<int>(radius * static_cast<float>(alpha)) + 1;
-      createBuffer(static_cast<int>(curve_length / mult));
+       curve_length = glm::max(static_cast<int>(radius * static_cast<float>(alpha)) + 1, curve_length);
+      
     }
+
+    createBuffer(static_cast<int>(curve_length / mult));
   }
 
   void drawBuffer() {

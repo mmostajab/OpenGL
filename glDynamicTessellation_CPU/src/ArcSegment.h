@@ -64,20 +64,20 @@ struct ArcSegment
       float t = static_cast<float>(i) / static_cast<float>(nSegs);
       float thetha = t * alpha;
 
-#ifdef USE_SLERP
-      glm::vec3 p =
-      sinf(alpha - thetha) / sinf(static_cast<float>(alpha)) * a +
-      sinf(thetha) / sinf(static_cast<float>(alpha)) * b;
-#endif
+//#ifdef USE_SLERP
+//      glm::vec3 p =
+//      sinf(alpha - thetha) / sinf(static_cast<float>(alpha)) * a +
+//      sinf(thetha) / sinf(static_cast<float>(alpha)) * b;
+//#endif
 
-#ifdef USE_COMPLEX_METHOD
+//#ifdef USE_COMPLEX_METHOD
       std::complex<float> numerator = (1.f - (std::complex<float>(cos(thetha), sin(thetha))));
       std::complex<float> divisor = (1.f - std::complex<float>(cos(alpha), sin(alpha)));
       std::complex<float> w = numerator / divisor;
 
       std::complex<float> p_complex = (1.f - w) * std::complex<float>(b.x, b.y) + w * std::complex<float>(a.x, a.y);
       glm::vec3 p = glm::vec3(p_complex.real(), p_complex.imag(), 0.0f);
-#endif
+//#endif
 
       v.position = p + center;
       vertices.push_back(v);

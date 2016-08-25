@@ -206,10 +206,25 @@ void Application::create() {
 #define ARC_QUAD
 #ifdef ARC_QUAD
 
+  addLogo(glm::vec3(-2.25f, 0.0f, 0.0f), 0.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
+  addCST(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
+
+  //addC(glm::vec3(-1.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
+  /*addS(glm::vec3( 0.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
+  addT(glm::vec3( 1.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);*/
+  //addCST(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
+/*
+  addCST(glm::vec3(0.0f,-1.0f, 0.0f), -1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
   
-  //addC(arcSegments, arcTriangles, arcQuads);
-  //addS(arcSegments, arcTriangles, arcQuads);
-  addT(arcSegments, arcTriangles, arcQuads);
+  addCST(glm::vec3(0.0f, 2.0f, 0.0f), 3.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);*/
+
+
+
+  /*addT(glm::vec3(0.0f), 1.0f * glm::pi<float>() / 3.0f, 0.2f, arcSegments, arcTriangles, arcQuads);
+  addT(glm::vec3(0.0f), 2.0f * glm::pi<float>() / 3.0f, 0.2f, arcSegments, arcTriangles, arcQuads);
+  addT(glm::vec3(0.0f), 3.0f * glm::pi<float>() / 3.0f, 0.2f, arcSegments, arcTriangles, arcQuads);
+  addT(glm::vec3(0.0f), 4.0f * glm::pi<float>() / 3.0f, 0.2f, arcSegments, arcTriangles, arcQuads);
+  addT(glm::vec3(0.0f), 5.0f * glm::pi<float>() / 3.0f, 0.2f, arcSegments, arcTriangles, arcQuads);*/
   //addM(arcSegments, arcTriangles, arcQuads);
   //addF(arcSegments, arcTriangles, arcQuads);
 
