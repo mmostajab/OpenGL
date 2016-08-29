@@ -1,22 +1,23 @@
 #ifndef __ARC_SEGMENT_H__
 #define __ARC_SEGMENT_H__
 
-// GLM
 #include <glm\glm.hpp>
-
-// GL
 #include <GL\GL.h>
-
-// STD
 #include <vector>
-
-// Dynamic Tessellation
-#include "DynTessArcPrimitive.h"
 
 extern float mult;
 
-class ArcSegment : public DynTessArcPrimitive
-{	
+struct ArcSegment
+{									//      ___       ;
+  glm::vec3 	p1;                 //    /     \     ;
+  glm::vec3 	p2;                 // p1 ------- p2  ;
+                                  //double	    alpha; // arc angle in rad
+  glm::vec3   center;
+
+  struct Vertex {
+    glm::vec3 position;
+  };
+
   GLuint buffer = 0;
   GLint  nVertices;
   int    nSegs = -1;
@@ -130,13 +131,6 @@ class ArcSegment : public DynTessArcPrimitive
     glDisableVertexAttribArray(0);
 
   }
-
-  protected:
-                                  //      ___       ;
-  glm::vec3 	p1;                 //    /     \     ;
-  glm::vec3 	p2;                 // p1 ------- p2  ;
-                                  //double	    alpha; // arc angle in rad
-  glm::vec3   center;
 };
 
 #endif

@@ -1,34 +1,37 @@
-#ifndef __ARC_SEGMENT_H__
-#define __ARC_SEGMENT_H__
+#ifndef __ARC_TRIANGLE_H__
+#define __ARC_TRIANGLE_H__
 
-// GLM
 #include <glm\glm.hpp>
-
-// GL
 #include <GL\GL.h>
-
-// STD
 #include <vector>
-
-// Dynamic Tessellation
-#include "DynTessArcPrimitive.h"
 
 extern float mult;
 
-class ArcSegment : public DynTessArcPrimitive
-{	
+struct ArcTriangle
+{
+  glm::vec3 	p1;
+  glm::vec3 	p2;
+  glm::vec3   p3;
+  glm::vec3   center;
+
+  struct Vertex {
+    glm::vec3 position;
+  };
+
   GLuint buffer = 0;
   GLint  nVertices;
   int    nSegs = -1;
 
-  ArcSegment(
+  ArcTriangle(
     glm::vec3 _p1 = glm::vec3(1.0f, 0.0f, 0.0f),
     glm::vec3 _p2 = glm::vec3(0.0f, 1.0f, 0.0f),
+    glm::vec3 _p3 = glm::vec3(1.0f, 1.0f, 0.0f),
     glm::vec3 _center = glm::vec3(0.0f)/*double _alpha = glm::pi<double>() / 2.0f*/,
     int _nSegs = 5) {
 
     p1 = _p1;
     p2 = _p2;
+    p3 = _p3;
     center = _center;
     //alpha = _alpha;
     createBuffer(_nSegs);
@@ -50,8 +53,7 @@ class ArcSegment : public DynTessArcPrimitive
     std::vector<Vertex> vertices;
 
     Vertex v;
-    glm::vec3 center_of_arc = (p1 + p2) / 2.0f;
-    v.position = center_of_arc;
+    v.position = p3;
     vertices.push_back(v);
 
     glm::vec3 a = p1 - center;
@@ -63,22 +65,23 @@ class ArcSegment : public DynTessArcPrimitive
       float t = static_cast<float>(i) / static_cast<float>(nSegs);
       float thetha = t * alpha;
 
-//#ifdef USE_SLERP
-//      glm::vec3 p =
-//      sinf(alpha - thetha) / sinf(static_cast<float>(alpha)) * a +
-//      sinf(thetha) / sinf(static_cast<float>(alpha)) * b;
-//#endif
+#ifdef USE_SLERP
+      glm::vec3 p =
+        sinf(alpha - thetha) / sinf(static_cast<float>(alpha)) * a +
+        sinf(thetha) / sinf(static_cast<float>(alpha)) * b;
 
-//#ifdef USE_COMPLEX_METHOD
-      std::complex<float> numerator = (1.f - (std::complex<float>(cos(thetha), sin(thetha))));
-      std::complex<float> divisor = (1.f - std::complex<float>(cos(alpha), sin(alpha)));
-      std::complex<float> w = numerator / divisor;
+#endif
 
+#ifdef USE_COMPLEX_METHOD
+      std::complex<float> numerator = (1.f - std::complex<float>(cos(-thetha), sin(-thetha)));
+      std::complex<float> divisor   = (1.f - std::complex<float>(cos(-alpha), sin(-alpha)));
+      std::complex<float> w         = numerator / divisor;
+      
       std::complex<float> p_complex = (1.f - w) * std::complex<float>(b.x, b.y) + w * std::complex<float>(a.x, a.y);
       glm::vec3 p = glm::vec3(p_complex.real(), p_complex.imag(), 0.0f);
-//#endif
+#endif
 
-      v.position = p + center;
+      v.position = p +center;
       vertices.push_back(v);
     }
 
@@ -104,13 +107,8 @@ class ArcSegment : public DynTessArcPrimitive
 
     float radius = glm::max(glm::length(p1_proj - center_proj) * w / 2.0f, glm::length(p2_proj - center_proj) * h / 2.0f); //glm::length(len) / (2 * sin(static_cast<float>(alpha)));
     float alpha =
-      acosf(
-        glm::clamp(
-        glm::dot(p1_proj - center_proj, p2_proj - center_proj)
-        / (glm::length(p1_proj - center_proj) * glm::length(p2_proj - center_proj)),
-          -1.0f, 1.0f
-        )
-      );
+      acosf(glm::dot(p1_proj - center_proj, p2_proj - center_proj)
+        / (glm::length(p1_proj - center_proj) * glm::length(p2_proj - center_proj)));
 
     int curve_length = static_cast<int>(radius * static_cast<float>(alpha)) + 1;
     createBuffer(static_cast<int>(curve_length / mult));
@@ -130,13 +128,6 @@ class ArcSegment : public DynTessArcPrimitive
     glDisableVertexAttribArray(0);
 
   }
-
-  protected:
-                                  //      ___       ;
-  glm::vec3 	p1;                 //    /     \     ;
-  glm::vec3 	p2;                 // p1 ------- p2  ;
-                                  //double	    alpha; // arc angle in rad
-  glm::vec3   center;
 };
 
 #endif
