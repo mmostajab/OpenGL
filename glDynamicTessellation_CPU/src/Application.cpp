@@ -1,5 +1,5 @@
 #ifdef WIN32
-	#include <Windows.h>
+	//#include <Windows.h>
 #endif
 
 #include "application.h"
@@ -318,9 +318,9 @@ void Application::draw() {
   
   glUseProgram(simple_program);
 
-  for (auto& arc : arcSegments)  arc.drawBuffer();
-  for (auto& arc : arcTriangles) arc.drawBuffer();
-  for (auto& arc : arcQuads)     arc.drawBuffer();
+  for (auto& arc : arcSegments)  arc.draw();
+  for (auto& arc : arcTriangles) arc.draw();
+  for (auto& arc : arcQuads)     arc.draw();
 
   // Draw the world coordinate system
   //glViewport(0, 0, 100, 100);

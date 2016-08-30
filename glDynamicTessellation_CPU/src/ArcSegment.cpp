@@ -1,41 +1,23 @@
-#ifndef __ARC_SEGMENT_H__
-#define __ARC_SEGMENT_H__
+#include "ArcSegment.h"
 
-#include <glm\glm.hpp>
-#include <GL\GL.h>
-#include <vector>
+// STD
+#include <iostream>
 
-extern float mult;
-
-struct ArcSegment
-{									//      ___       ;
-  glm::vec3 	p1;                 //    /     \     ;
-  glm::vec3 	p2;                 // p1 ------- p2  ;
-                                  //double	    alpha; // arc angle in rad
-  glm::vec3   center;
-
-  struct Vertex {
-    glm::vec3 position;
-  };
-
-  GLuint buffer = 0;
-  GLint  nVertices;
-  int    nSegs = -1;
-
-  ArcSegment(
-    glm::vec3 _p1 = glm::vec3(1.0f, 0.0f, 0.0f),
-    glm::vec3 _p2 = glm::vec3(0.0f, 1.0f, 0.0f),
-    glm::vec3 _center = glm::vec3(0.0f)/*double _alpha = glm::pi<double>() / 2.0f*/,
-    int _nSegs = 5) {
+ArcSegment::ArcSegment(
+  glm::vec3 _p1 = glm::vec3(1.0f, 0.0f, 0.0f),
+  glm::vec3 _p2 = glm::vec3(0.0f, 1.0f, 0.0f),
+  glm::vec3 _center = glm::vec3(0.0f)/*double _alpha = glm::pi<double>() / 2.0f*/,
+  int _nSegs = 5): DynTessArcPrimitive(DYN_TESS_ARC_SEGMENT) {
 
     p1 = _p1;
     p2 = _p2;
     center = _center;
     //alpha = _alpha;
-    createBuffer(_nSegs);
+    //_nSegs = nSegs;
+    createBuffer();
   }
 
-  void createBuffer(int _nSegs) {
+void ArcSegment::createBuffer() {
 
     if (_nSegs == nSegs) return;
 
@@ -71,12 +53,7 @@ struct ArcSegment
 //#endif
 
 //#ifdef USE_COMPLEX_METHOD
-      std::complex<float> numerator = (1.f - (std::complex<float>(cos(thetha), sin(thetha))));
-      std::complex<float> divisor = (1.f - std::complex<float>(cos(alpha), sin(alpha)));
-      std::complex<float> w = numerator / divisor;
-
-      std::complex<float> p_complex = (1.f - w) * std::complex<float>(b.x, b.y) + w * std::complex<float>(a.x, a.y);
-      glm::vec3 p = glm::vec3(p_complex.real(), p_complex.imag(), 0.0f);
+      
 //#endif
 
       v.position = p + center;

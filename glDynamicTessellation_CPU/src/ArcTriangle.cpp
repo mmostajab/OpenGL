@@ -1,28 +1,9 @@
-#ifndef __ARC_TRIANGLE_H__
-#define __ARC_TRIANGLE_H__
+#include "ArcTriangle.h"
 
-#include <glm\glm.hpp>
-#include <GL\GL.h>
-#include <vector>
+// STD
+#include <iostream>
 
-extern float mult;
-
-struct ArcTriangle
-{
-  glm::vec3 	p1;
-  glm::vec3 	p2;
-  glm::vec3   p3;
-  glm::vec3   center;
-
-  struct Vertex {
-    glm::vec3 position;
-  };
-
-  GLuint buffer = 0;
-  GLint  nVertices;
-  int    nSegs = -1;
-
-  ArcTriangle(
+ArcTriangle::ArcTriangle(
     glm::vec3 _p1 = glm::vec3(1.0f, 0.0f, 0.0f),
     glm::vec3 _p2 = glm::vec3(0.0f, 1.0f, 0.0f),
     glm::vec3 _p3 = glm::vec3(1.0f, 1.0f, 0.0f),
@@ -37,7 +18,7 @@ struct ArcTriangle
     createBuffer(_nSegs);
   }
 
-  void createBuffer(int _nSegs) {
+  void ArcTriangle::createBuffer() {
 
     if (_nSegs == nSegs) return;
 
@@ -92,7 +73,7 @@ struct ArcTriangle
     nVertices = static_cast<GLint>(vertices.size());
   }
 
-  void updateBuffer(glm::mat4 mvp, unsigned int w, unsigned int h) {
+  void ArcTriangle::updateBuffer(glm::mat4 mvp, unsigned int w, unsigned int h) {
 
     glm::vec4 p1_proj = mvp * glm::vec4(p1, 1.0f);
     glm::vec4 p2_proj = mvp * glm::vec4(p2, 1.0f);
@@ -111,11 +92,11 @@ struct ArcTriangle
         / (glm::length(p1_proj - center_proj) * glm::length(p2_proj - center_proj)));
 
     int curve_length = static_cast<int>(radius * static_cast<float>(alpha)) + 1;
-    createBuffer(static_cast<int>(curve_length / mult));
+    createBuffer(/*static_cast<int>(curve_length / mult)*/);
 
   }
 
-  void drawBuffer() {
+  void ArcTriangle::draw() {
 
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -129,5 +110,3 @@ struct ArcTriangle
 
   }
 };
-
-#endif

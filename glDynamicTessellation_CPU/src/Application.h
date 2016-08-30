@@ -3,7 +3,7 @@
 
 #include "helper.h"
 
-#include <Windows.h>
+//#include <Windows.h>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_EXPOSE_NATIVE_WGL
