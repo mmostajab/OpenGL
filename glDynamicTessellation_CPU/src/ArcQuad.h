@@ -50,14 +50,23 @@ public:
   void updateBuffer(glm::mat4 mvp, unsigned int w, unsigned int h);
   void draw();
 
+  void setNSegs(const int & _nSegs);
+
 public:
 //protected:
   std::array<HalfArcQuad, 2> halfArcQuad;
 
-  GLuint                  buffer = 0;
+#ifdef OPENSG_VECTORS
+
+#else
+
+  GLuint buffer = 0;
+
+#endif
+
   std::array<size_t, 2>  bufferSizeMaxNumSegs = { 0,  0 };
-  int32_t                 nVertices = -1;
-  std::array<int32_t, 2>  nSegs = { -1, -1 };
+  int32_t                 nVertices           = -1;
+  std::array<int32_t, 2>  nSegs               = { -1, -1 };
 
 };
 

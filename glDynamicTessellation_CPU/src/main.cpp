@@ -9,6 +9,8 @@
 
 Application app;
 
+float mult = 1.0f;
+
 int main() {
 #ifdef DEBUG_MEM_LEAKS
   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);

@@ -1,30 +1,27 @@
 #include "ArcTriangle.h"
 
+#include "ArcPrimitiveHelper.h"
+
 // STD
 #include <iostream>
 
 ArcTriangle::ArcTriangle(
-    glm::vec3 _p1 = glm::vec3(1.0f, 0.0f, 0.0f),
-    glm::vec3 _p2 = glm::vec3(0.0f, 1.0f, 0.0f),
-    glm::vec3 _p3 = glm::vec3(1.0f, 1.0f, 0.0f),
-    glm::vec3 _center = glm::vec3(0.0f)/*double _alpha = glm::pi<double>() / 2.0f*/,
-    int _nSegs = 5) {
+    glm::vec3 _p1,
+    glm::vec3 _p2,
+    glm::vec3 _p3,
+    glm::vec3 _center/*double _alpha = glm::pi<double>() / 2.0f*/,
+    int _nSegs): DynTessArcPrimitive(DYN_TESS_ARC_TRIANGLE) {
 
     p1 = _p1;
     p2 = _p2;
     p3 = _p3;
     center = _center;
     //alpha = _alpha;
-    createBuffer(_nSegs);
+    setNSegs(_nSegs);
+    createBuffer();
   }
 
   void ArcTriangle::createBuffer() {
-
-    if (_nSegs == nSegs) return;
-
-    std::cout << "Number of segments changed from " << nSegs << " to " << _nSegs << std::endl;
-
-    nSegs = _nSegs;
 
     if (buffer > 0) {
       glDeleteBuffers(1, &buffer);
@@ -46,23 +43,16 @@ ArcTriangle::ArcTriangle(
       float t = static_cast<float>(i) / static_cast<float>(nSegs);
       float thetha = t * alpha;
 
+      glm::vec3 p;
 #ifdef USE_SLERP
-      glm::vec3 p =
-        sinf(alpha - thetha) / sinf(static_cast<float>(alpha)) * a +
-        sinf(thetha) / sinf(static_cast<float>(alpha)) * b;
-
+      p = ArcPrimitiveHelper::slerp(a, b, thetha, alpha);
 #endif
 
 #ifdef USE_COMPLEX_METHOD
-      std::complex<float> numerator = (1.f - std::complex<float>(cos(-thetha), sin(-thetha)));
-      std::complex<float> divisor   = (1.f - std::complex<float>(cos(-alpha), sin(-alpha)));
-      std::complex<float> w         = numerator / divisor;
-      
-      std::complex<float> p_complex = (1.f - w) * std::complex<float>(b.x, b.y) + w * std::complex<float>(a.x, a.y);
-      glm::vec3 p = glm::vec3(p_complex.real(), p_complex.imag(), 0.0f);
+      p = ArcPrimitiveHelper::interpolation_complex(a, b, -thetha, -alpha);
 #endif
 
-      v.position = p +center;
+      v.position = p + center;
       vertices.push_back(v);
     }
 
@@ -74,25 +64,14 @@ ArcTriangle::ArcTriangle(
   }
 
   void ArcTriangle::updateBuffer(glm::mat4 mvp, unsigned int w, unsigned int h) {
+    
+    int new_nSegs = static_cast<int>(ArcPrimitiveHelper::calcProjectedCurveLength(mvp, w, h, p1, p2, center) / mult);
 
-    glm::vec4 p1_proj = mvp * glm::vec4(p1, 1.0f);
-    glm::vec4 p2_proj = mvp * glm::vec4(p2, 1.0f);
-    glm::vec4 center_proj = mvp * glm::vec4(center, 1.0f);
+    if (new_nSegs == nSegs) return;
 
-    p1_proj.x /= p1_proj.z;	p1_proj.y /= p1_proj.z;
-    p2_proj.x /= p2_proj.z;	p2_proj.y /= p2_proj.z;
-    center_proj.x /= center_proj.z; center_proj.y /= center_proj.z;
-
-    //glm::vec2 len = glm::vec2((p1_proj.x - p2_proj.x) * w, (p1_proj.y - p2_proj.y) * h);
-    //std::cout << "Length = " << glm::length(len) << std::endl;
-
-    float radius = glm::max(glm::length(p1_proj - center_proj) * w / 2.0f, glm::length(p2_proj - center_proj) * h / 2.0f); //glm::length(len) / (2 * sin(static_cast<float>(alpha)));
-    float alpha =
-      acosf(glm::dot(p1_proj - center_proj, p2_proj - center_proj)
-        / (glm::length(p1_proj - center_proj) * glm::length(p2_proj - center_proj)));
-
-    int curve_length = static_cast<int>(radius * static_cast<float>(alpha)) + 1;
-    createBuffer(/*static_cast<int>(curve_length / mult)*/);
+    std::cout << "Number of segments changed from " << nSegs << " to " << new_nSegs << std::endl;
+    setNSegs(new_nSegs);
+    createBuffer();
 
   }
 
@@ -109,4 +88,8 @@ ArcTriangle::ArcTriangle(
     glDisableVertexAttribArray(0);
 
   }
-};
+
+void ArcTriangle::setNSegs(const int& _nSegs)
+{
+  nSegs = _nSegs;
+}

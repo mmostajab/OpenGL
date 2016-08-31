@@ -28,8 +28,8 @@ static void addLogo(
 
   ArcTriangle arc[4];
   
-  arc[0].p1      = TRANSFORM(mat, glm::vec3(1.0f, 0.0f, 0.0f));
-  arc[0].p2      = TRANSFORM(mat, glm::vec3(0.0f, 1.0f, 0.0f));
+  arc[0].p1      = TRANSFORM(mat, glm::vec3(0.0f, 1.0f, 0.0f));
+  arc[0].p2      = TRANSFORM(mat, glm::vec3(1.0f, 0.0f, 0.0f));
   arc[0].p3      = TRANSFORM(mat, glm::vec3(1.0f, 1.0f, 0.0f));
   arc[0].center  = TRANSFORM(mat, glm::vec3(1.0f, 1.0f, 0.0f));
   arcTriangles.push_back(arc[0]);
@@ -74,48 +74,48 @@ static void addC(
 
   ArcSegment arcSegment0, arcSegment1;
 
-  arcSegment0.p1 = TRANSFORM(mat, glm::vec3(1.4f, 1.4f, 0.0f));
-  arcSegment0.p2 = TRANSFORM(mat, glm::vec3(0.7f, 0.7f, 0.0f));
-  arcSegment0.center = TRANSFORM(mat, glm::vec3(1.05f, 1.05f, 0.0f));
+  arcSegment0.p1      = TRANSFORM(mat, glm::vec3(1.4f, 1.4f, 0.0f));
+  arcSegment0.p2      = TRANSFORM(mat, glm::vec3(0.7f, 0.7f, 0.0f));
+  arcSegment0.center  = TRANSFORM(mat, glm::vec3(1.05f, 1.05f, 0.0f));
   arcSegment0.createBuffer();
   arcSegments.push_back(arcSegment0);
 
-  arcSegment1.p1 = TRANSFORM(mat, glm::vec3(0.7f, -0.7f, 0.0f));
-  arcSegment1.p2 = TRANSFORM(mat, glm::vec3(1.4f, -1.4f, 0.0f));
-  arcSegment1.center = TRANSFORM(mat, glm::vec3(1.05f, -1.05f, 0.0f));
+  arcSegment1.p1      = TRANSFORM(mat, glm::vec3(0.7f, -0.7f, 0.0f));
+  arcSegment1.p2      = TRANSFORM(mat, glm::vec3(1.4f, -1.4f, 0.0f));
+  arcSegment1.center  = TRANSFORM(mat, glm::vec3(1.05f, -1.05f, 0.0f));
   arcSegment1.createBuffer();
   arcSegments.push_back(arcSegment1);
 
   ArcQuad arcQuad0, arcQuad1, arcQuad2, arcQuad3;
-  arcQuad0.halfArcQuad[0].p0 = TRANSFORM(mat, glm::vec3(0.0f, 2.0f, 0));
-  arcQuad0.halfArcQuad[0].p1 = TRANSFORM(mat, glm::vec3(1.4f, 1.4f, 0));
-  arcQuad0.halfArcQuad[0].center = TRANSFORM(mat, glm::vec3(0.0f, 0.0f, 0));
+  arcQuad0.halfArcQuad[0].p0      = TRANSFORM(mat, glm::vec3(0.0f, 2.0f, 0));
+  arcQuad0.halfArcQuad[0].p1      = TRANSFORM(mat, glm::vec3(1.4f, 1.4f, 0));
+  arcQuad0.halfArcQuad[0].center  = TRANSFORM(mat, glm::vec3(0.0f, 0.0f, 0));
 
-  arcQuad0.halfArcQuad[1].p0 = TRANSFORM(mat, glm::vec3(0.0f, 1.0f, 0));
-  arcQuad0.halfArcQuad[1].p1 = TRANSFORM(mat, glm::vec3(0.7f, 0.7f, 0));
-  arcQuad0.halfArcQuad[1].center = TRANSFORM(mat, glm::vec3(0.0f, 0.0f, 0));
+  arcQuad0.halfArcQuad[1].p0      = TRANSFORM(mat, glm::vec3(0.0f, 1.0f, 0));
+  arcQuad0.halfArcQuad[1].p1      = TRANSFORM(mat, glm::vec3(0.7f, 0.7f, 0));
+  arcQuad0.halfArcQuad[1].center  = TRANSFORM(mat, glm::vec3(0.0f, 0.0f, 0));
 
   arcQuad0.createBuffer();
   arcQuads.push_back(arcQuad0);
 
-  arcQuad1.halfArcQuad[0].p0 = TRANSFORM(mat, glm::vec3(0.0f, -2.0f, 0));
-  arcQuad1.halfArcQuad[0].p1 = TRANSFORM(mat, glm::vec3(0.0f, 2.0f, 0));
-  arcQuad1.halfArcQuad[0].center = TRANSFORM(mat, glm::vec3(0.0f, 0.0f, 0));
+  arcQuad1.halfArcQuad[0].p0      = TRANSFORM(mat, glm::vec3(0.0f, -2.0f, 0));
+  arcQuad1.halfArcQuad[0].p1      = TRANSFORM(mat, glm::vec3(0.0f, 2.0f, 0));
+  arcQuad1.halfArcQuad[0].center  = TRANSFORM(mat, glm::vec3(0.0f, 0.0f, 0));
 
-  arcQuad1.halfArcQuad[1].p0 = TRANSFORM(mat, glm::vec3(0.0f, -1.0f, 0));
-  arcQuad1.halfArcQuad[1].p1 = TRANSFORM(mat, glm::vec3(0.0f, 1.0f, 0));
-  arcQuad1.halfArcQuad[1].center = TRANSFORM(mat, glm::vec3(0.0f, 0.0f, 0));
+  arcQuad1.halfArcQuad[1].p0      = TRANSFORM(mat, glm::vec3(0.0f, -1.0f, 0));
+  arcQuad1.halfArcQuad[1].p1      = TRANSFORM(mat, glm::vec3(0.0f, 1.0f, 0));
+  arcQuad1.halfArcQuad[1].center  = TRANSFORM(mat, glm::vec3(0.0f, 0.0f, 0));
 
   arcQuad1.createBuffer();
   arcQuads.push_back(arcQuad1);
 
-  arcQuad2.halfArcQuad[0].p0 = TRANSFORM(mat, glm::vec3(1.4f, -1.4f, 0));
-  arcQuad2.halfArcQuad[0].p1 = TRANSFORM(mat, glm::vec3(0.0f, -2.0f, 0));
-  arcQuad2.halfArcQuad[0].center = TRANSFORM(mat, glm::vec3(0.0f, 0.0f, 0));
+  arcQuad2.halfArcQuad[0].p0      = TRANSFORM(mat, glm::vec3(1.4f, -1.4f, 0));
+  arcQuad2.halfArcQuad[0].p1      = TRANSFORM(mat, glm::vec3(0.0f, -2.0f, 0));
+  arcQuad2.halfArcQuad[0].center  = TRANSFORM(mat, glm::vec3(0.0f, 0.0f, 0));
 
-  arcQuad2.halfArcQuad[1].p0 = TRANSFORM(mat, glm::vec3(0.7f, -0.7f, 0));
-  arcQuad2.halfArcQuad[1].p1 = TRANSFORM(mat, glm::vec3(0.0f, -1.0f, 0));
-  arcQuad2.halfArcQuad[1].center = TRANSFORM(mat, glm::vec3(0.0f, 0.0f, 0));
+  arcQuad2.halfArcQuad[1].p0      = TRANSFORM(mat, glm::vec3(0.7f, -0.7f, 0));
+  arcQuad2.halfArcQuad[1].p1      = TRANSFORM(mat, glm::vec3(0.0f, -1.0f, 0));
+  arcQuad2.halfArcQuad[1].center  = TRANSFORM(mat, glm::vec3(0.0f, 0.0f, 0));
 
   arcQuad2.createBuffer();
   arcQuads.push_back(arcQuad2);
@@ -230,8 +230,8 @@ static void addT(
   // (-2.0f, -3.0f) => (2.0f, 1.2f) 
 
   ArcTriangle arcTriangle0, arcTriangle1;
-  arcTriangle0.p1 = TRANSFORM(rot, glm::vec3(-1.0f, 4.0f, 0));
-  arcTriangle0.p2 = TRANSFORM(rot, glm::vec3(-2.0f, 4.1f, 0));
+  arcTriangle0.p1 = TRANSFORM(rot, glm::vec3(-2.0f, 4.1f, 0));
+  arcTriangle0.p2 = TRANSFORM(rot, glm::vec3(-1.0f, 4.0f, 0));
   arcTriangle0.p3 = TRANSFORM(rot, glm::vec3(-1.8f, 4.2f, 0));
   arcTriangle0.center = TRANSFORM(rot, glm::vec3(-1.4f, 4.2f, 0));
   arcTriangles.push_back(arcTriangle0);

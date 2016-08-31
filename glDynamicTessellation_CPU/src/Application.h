@@ -26,10 +26,11 @@
 #include "ArcTriangle.h"
 #include "ArcQuad.h"
 
+extern float                 mult;
+
 #define MAX_FRAMEBUFFER_WIDTH 2048
 #define MAX_FRAMEBUFFER_HEIGHT 2048
 
-static float                 mult = 1.0f;
 static clock_t               last_change_clock = clock();
 
 class Application {

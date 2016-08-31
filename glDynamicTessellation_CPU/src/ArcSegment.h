@@ -39,6 +39,8 @@ public:
   void updateBuffer(glm::mat4 mvp, unsigned int w, unsigned int h)  override;
   void draw()                                                       override;
 
+  void setNSegs(const int& nSegs);
+
 //protected:
 public:
     glm::vec3 	p1;               //      ___       ;
@@ -50,10 +52,11 @@ public:
 #else
 
   GLuint buffer = 0;
-  GLint  nVertices;
-  int    nSegs = -1;
 
 #endif
+
+  int  nVertices;
+  int    nSegs;
 
 };
 
