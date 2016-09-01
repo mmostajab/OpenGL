@@ -108,8 +108,8 @@ Vector4D UnifiedMath::matrixMultiply(Matrix4x4 m, Vector4D v){
 
 Matrix4x4 UnifiedMath::matrixMultiply(Matrix4x4 m1, Matrix4x4 m2) {
 #ifdef USE_OPENSG
-  Matrix4x4 r;
-  m1.mult(m2, r);
+  Matrix4x4 r = m1;
+  r.mult(m2);
   return r;
 #else
   return m1 * m2;
@@ -119,7 +119,8 @@ Matrix4x4 UnifiedMath::matrixMultiply(Matrix4x4 m1, Matrix4x4 m2) {
 Matrix4x4 UnifiedMath::matrixSequenceMultiply(const std::vector<Matrix4x4>& matrixSequence)
 {
   Matrix4x4 res = getIdentityMatrix();
-  for (auto& m : matrixSequence) {
+  for (size_t i = 0; i< matrixSequence.size(); i++) {
+    const Matrix4x4& m = matrixSequence[i];
     res = matrixMultiply(res, m);
   }
   return res;
@@ -128,6 +129,7 @@ Matrix4x4 UnifiedMath::matrixSequenceMultiply(const std::vector<Matrix4x4>& matr
 Matrix4x4 UnifiedMath::getIdentityMatrix()
 {
 #ifdef USE_OPENSG
+  return OSG::Matrix4f::identity();
 #else
   return glm::mat4(1.0f);
 #endif
@@ -136,7 +138,10 @@ Matrix4x4 UnifiedMath::getIdentityMatrix()
 Matrix4x4 UnifiedMath::translate(Vector3D v)
 {
 #ifdef USE_OPENSG
-  return Matrix4x4();
+  OSG::Matrix4f m;
+  m.setIdentity();
+  m.setTranslate(v);
+  return m;
 #else
   return glm::translate<float>(v);
 #endif // _DEBUG
@@ -145,6 +150,10 @@ Matrix4x4 UnifiedMath::translate(Vector3D v)
 Matrix4x4 UnifiedMath::rotate(float angle, Vector3D axis)
 {
 #ifdef USE_OPENSG
+  OSG::Matrix4f m;
+  m.setIdentity();
+  m.setRotate(OSG::Quaternion(axis, angle));
+  return m;
 #else
   return glm::rotate<float>(angle, axis);
 #endif // 
@@ -153,6 +162,10 @@ Matrix4x4 UnifiedMath::rotate(float angle, Vector3D axis)
 Matrix4x4 UnifiedMath::scale(Vector3D s)
 {
 #ifdef USE_OPENSG
+  OSG::Matrix4f m;
+  m.setIdentity();
+  m.setScale(s);
+  return m;
 #else
   return glm::scale<float>(s);
 #endif // USE_OPENSG

@@ -6,6 +6,9 @@
   #include <OpenSG/OSGVec3fFields.h>
   #include <OpenSG/OSGMatrix.h>
   #include <OpenSG/OSGMathIO.h>
+  #include <OpenSG/OSGLinearTransform.h>
+  #include <OpenSG/OSGQuaternion.h>
+
 
   #define Vector3D   OSG::Vec3f
   #define Vector4D   OSG::Vec4f
