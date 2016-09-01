@@ -1,16 +1,7 @@
 #ifndef __ARC_PRIMITIVE_H__
 #define __ARC_PRIMITIVE_H__
 
-#ifdef OPENSG_VECTORS
-
-#else
-
-  #include <Windows.h>
-
-  #include <glm\glm.hpp>
-  #include <GL\GL.h>
-
-#endif
+#include "UnifiedMath.h"
 
 #include <array>
 #include <vector>
@@ -24,7 +15,7 @@ enum DynamicTessellatedPrimitiveType {
 
 // Vertex of a Dynamic Tessellated Arc Primitive.
 struct Vertex {
-  glm::vec3 position;
+  Vector3D position;
 };
 
 // interface for an ArcPrimitive Representation
@@ -33,11 +24,16 @@ public:
   DynTessArcPrimitive(DynamicTessellatedPrimitiveType type);
 
   virtual void createBuffer()                                               = 0;
-  virtual void updateBuffer(glm::mat4 mvp, unsigned int w, unsigned int h)  = 0;
+  virtual void updateBuffer(Matrix4x4 mvp, unsigned int w, unsigned int h)  = 0;
   virtual void draw()                                                       = 0;
 
-private:
+  float getTessScale() const;
+  void  setTessScale(float tessScale);
+  void  multiplyTessFactor(float multiplier);
+
+protected:
   DynamicTessellatedPrimitiveType m_type;
+  float                           m_tessScale;
 };
 
 #endif // __ARC_QUAD_H__

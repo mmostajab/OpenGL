@@ -1,62 +1,58 @@
 #ifndef __ARC_TRIANGLE_H__
 #define __ARC_TRIANGLE_H__
 
-#ifdef OPENSG_VECTORS
-
-#else
-
-#ifdef _WIN32
-  #include <Windows.h>
-#endif
-
-  // GL
-  #include <gl/glew.h>
-
-  // GLM
-  #include <glm\glm.hpp>
-
-#endif
+#include "UnifiedMath.h"
 
 // STD
 #include <vector>
 
-#include "DynTessArcPrimitive.h"
+#ifdef USE_OPENSG
 
-extern float mult;
+#else
+
+// Widnows
+#include <windows.h>
+
+// GL
+#include <GL/glew.h>
+
+#endif
+
+#include "DynTessArcPrimitive.h"
 
 class ArcTriangle : public DynTessArcPrimitive
 {
 public:
   ArcTriangle(
-    glm::vec3 _p1 = glm::vec3(1.0f, 0.0f, 0.0f),
-    glm::vec3 _p2 = glm::vec3(0.0f, 1.0f, 0.0f),
-    glm::vec3 _p3 = glm::vec3(1.0f, 1.0f, 0.0f),
-    glm::vec3 _center = glm::vec3(0.0f)/*double _alpha = glm::pi<double>() / 2.0f*/,
+    Vector3D _p1 = Vector3D(1.0f, 0.0f, 0.0f),
+    Vector3D _p2 = Vector3D(0.0f, 1.0f, 0.0f),
+    Vector3D _p3 = Vector3D(1.0f, 1.0f, 0.0f),
+    Vector3D _center = Vector3D(0.0f)/*double _alpha = glm::pi<double>() / 2.0f*/,
     int _nSegs = 5);
 
   void createBuffer()                                               override;
-  void updateBuffer(glm::mat4 mvp, unsigned int w, unsigned int h)  override;
+  void updateBuffer(Matrix4x4 mvp, unsigned int w, unsigned int h)  override;
   void draw()                                                       override;
 
   void setNSegs(const int& nSegs);
 
 //protected:
 public:
-  glm::vec3 	p1;
-  glm::vec3 	p2;
-  glm::vec3   p3;
-  glm::vec3   center;
+  Vector3D 	p1;
+  Vector3D 	p2;
+  Vector3D   p3;
+  Vector3D   center;
 
 #ifdef OPENSG_VECTORS
 
 #else
 
-  GLuint buffer = 0;
+  GLuint buffer;
 
 #endif
 
   int    nVertices;
-  int    nSegs    = -1;
+  int    nSegs;
 };
 
 #endif

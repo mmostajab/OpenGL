@@ -259,7 +259,9 @@ void Application::update(float time, float timeSinceLastFrame) {
         */
     if (m_q_pressed) {
       if (clock() - last_change_clock > 300) {
-        mult *= 2.0f;
+        for (auto& arc : arcSegments)  arc.multiplyTessFactor(2.0f);
+        for (auto& arc : arcTriangles) arc.multiplyTessFactor(2.0f);
+        for (auto& arc : arcQuads)     arc.multiplyTessFactor(2.0f);
         last_change_clock = clock();
       }
       //m_camera.Move(CameraDirection::UP);
@@ -267,7 +269,9 @@ void Application::update(float time, float timeSinceLastFrame) {
 
     if (m_e_pressed) {
       if (clock() - last_change_clock > 300) {
-        mult /= 2.0f;
+        for (auto& arc : arcSegments)  arc.multiplyTessFactor(0.5f);
+        for (auto& arc : arcTriangles) arc.multiplyTessFactor(0.5f);
+        for (auto& arc : arcQuads)     arc.multiplyTessFactor(0.5f);
         last_change_clock = clock();
       }
       //m_camera.Move(CameraDirection::DOWN);

@@ -6,10 +6,10 @@
 #include <iostream>
 
 ArcTriangle::ArcTriangle(
-    glm::vec3 _p1,
-    glm::vec3 _p2,
-    glm::vec3 _p3,
-    glm::vec3 _center/*double _alpha = glm::pi<double>() / 2.0f*/,
+    Vector3D _p1,
+    Vector3D _p2,
+    Vector3D _p3,
+    Vector3D _center/*double _alpha = glm::pi<double>() / 2.0f*/,
     int _nSegs): DynTessArcPrimitive(DYN_TESS_ARC_TRIANGLE) {
 
     p1 = _p1;
@@ -24,8 +24,12 @@ ArcTriangle::ArcTriangle(
   void ArcTriangle::createBuffer() {
 
     if (buffer > 0) {
+#ifdef USE_OPENSG
+
+#else
       glDeleteBuffers(1, &buffer);
       buffer = 0;
+#endif
     }
 
     std::vector<Vertex> vertices;
@@ -34,16 +38,16 @@ ArcTriangle::ArcTriangle(
     v.position = p3;
     vertices.push_back(v);
 
-    glm::vec3 a = p1 - center;
-    glm::vec3 b = p2 - center;
-    float cos_alpha = glm::clamp(glm::dot(a, b) / (glm::length(a) * glm::length(b)), -1.0f, 1.0f);
+    Vector3D a = p1 - center;
+    Vector3D b = p2 - center;
+    float cos_alpha = ArcPrimitiveHelper::angle_between(a, b);
     float alpha = acosf(cos_alpha);
 
     for (int i = 0; i < nSegs + 1; i++) {
       float t = static_cast<float>(i) / static_cast<float>(nSegs);
       float thetha = t * alpha;
 
-      glm::vec3 p;
+      Vector3D p;
 #ifdef USE_SLERP
       p = ArcPrimitiveHelper::slerp(a, b, thetha, alpha);
 #endif
@@ -56,16 +60,20 @@ ArcTriangle::ArcTriangle(
       vertices.push_back(v);
     }
 
+#ifdef USE_OPENSG
+
+#else
     glCreateBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW);
+#endif
 
     nVertices = static_cast<GLint>(vertices.size());
   }
 
-  void ArcTriangle::updateBuffer(glm::mat4 mvp, unsigned int w, unsigned int h) {
+  void ArcTriangle::updateBuffer(Matrix4x4 mvp, unsigned int w, unsigned int h) {
     
-    int new_nSegs = static_cast<int>(ArcPrimitiveHelper::calcProjectedCurveLength(mvp, w, h, p1, p2, center) / mult);
+    int new_nSegs = static_cast<int>(ArcPrimitiveHelper::calcProjectedCurveLength(mvp, w, h, p1, p2, center) / m_tessScale);
 
     if (new_nSegs == nSegs) return;
 
@@ -79,6 +87,10 @@ ArcTriangle::ArcTriangle(
 
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+#ifdef USE_OPENSG
+
+#else
+
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const char*)0);
@@ -86,6 +98,7 @@ ArcTriangle::ArcTriangle(
     glDrawArrays(GL_TRIANGLE_FAN, 0, nVertices);
 
     glDisableVertexAttribArray(0);
+#endif
 
   }
 
