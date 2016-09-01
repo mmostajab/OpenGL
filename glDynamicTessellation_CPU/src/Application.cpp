@@ -282,10 +282,10 @@ void Application::update(float time, float timeSinceLastFrame) {
     m_camera.GetMatricies(m_projmat, m_viewmat, m_worldmat);
     m_inv_viewmat = glm::inverse(m_viewmat);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_transformation_buffer);
-    glm::mat4* transform_matrices = (glm::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 3 * sizeof(glm::mat4), GL_MAP_WRITE_BIT);
-    transform_matrices[0] = m_projmat;
-    transform_matrices[1] = m_viewmat;
-    transform_matrices[2] = m_worldmat;
+    glm::mat4* m_transformation_buffer = (glm::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 3 * sizeof(glm::mat4), GL_MAP_WRITE_BIT);
+    m_transformation_buffer[0] = m_projmat;
+    m_transformation_buffer[1] = m_viewmat;
+    m_transformation_buffer[2] = m_worldmat;
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 
 	clock_t start_time = clock();
@@ -398,7 +398,7 @@ void Application::compileShaders() {
 	const char* coordsys_vert = {
 		"#version 430 core\n"
 
-		"layout(std140, binding = 0) uniform TransformBlock {\n"
+		"layout(std140, binding = 0) uniform TransformWithTranslationBlock {\n"
 			"mat4 proj_mat;\n"
 			"mat4 view_mat;\n"
 			"mat4 world_mat;\n"
@@ -430,7 +430,7 @@ void Application::compileShaders() {
 	const char* simple_vert = {
 		"#version 430 core\n"
 
-		"layout(std140, binding = 0) uniform TransformBlock {\n"
+		"layout(std140, binding = 0) uniform TransformWithTranslationBlock {\n"
 		"mat4 proj_mat;\n"
 		"mat4 view_mat;\n"
 		"mat4 world_mat;\n"

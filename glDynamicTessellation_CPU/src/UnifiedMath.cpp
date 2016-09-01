@@ -105,3 +105,10 @@ Vector4D UnifiedMath::matrixMultiply(Matrix4x4 m, Vector4D v){
     return m * v;
 #endif
 }
+
+Vector3D UnifiedMath::TransformWithTranslation(Matrix4x4 m, Vector3D v)
+{
+  Vector4D v4d = make_Vector4D(v, 1.0f);
+  Vector4D res = matrixMultiply(m, v4d);
+  return Vector3D(res[0], res[1], res[2]);
+}

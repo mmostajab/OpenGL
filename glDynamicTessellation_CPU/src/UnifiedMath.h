@@ -49,6 +49,9 @@ public:
   static Vector3D min(Vector3D a, Vector3D b);
   static Vector4D min(Vector4D a, Vector4D b);
   static Vector4D matrixMultiply(Matrix4x4 m, Vector4D v);
+
+  // Trasnformation
+  static Vector3D TransformWithTranslation(Matrix4x4 m, Vector3D v);
 };
 
 
