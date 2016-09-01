@@ -14,13 +14,18 @@
 #else
 
   // GLM
-  #include <glm\glm.hpp>
+  #include <glm/glm.hpp>
+  #include <glm/gtx/transform.hpp>
+  #include <glm/gtc/matrix_transform.hpp>
 
   #define Vector3D  glm::vec3
   #define Vector4D  glm::vec4
   #define Matrix4x4 glm::mat4
 
 #endif
+
+// STD
+#include <vector>
 
 class UnifiedMath {
 
@@ -48,7 +53,16 @@ public:
   // min
   static Vector3D min(Vector3D a, Vector3D b);
   static Vector4D min(Vector4D a, Vector4D b);
-  static Vector4D matrixMultiply(Matrix4x4 m, Vector4D v);
+  
+  // Matrix operations
+  static Vector4D  matrixMultiply(Matrix4x4 m, Vector4D v);
+  static Matrix4x4 matrixMultiply(Matrix4x4 m1, Matrix4x4 m2);
+  static Matrix4x4 matrixSequenceMultiply(const std::vector<Matrix4x4>& matrixSequence);
+
+  static Matrix4x4 getIdentityMatrix();
+  static Matrix4x4 translate(Vector3D v);
+  static Matrix4x4 rotate(float angle, Vector3D axis);
+  static Matrix4x4 scale(Vector3D s);
 
   // Trasnformation
   static Vector3D TransformWithTranslation(Matrix4x4 m, Vector3D v);
