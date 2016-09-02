@@ -1,6 +1,7 @@
 #ifndef __DEFINES_H__
 #define __DEFINES_H__
 
+#define USE_OPENSG
 #ifdef USE_OPENSG
 
   #include <OpenSG/OSGVec3fFields.h>
@@ -10,9 +11,9 @@
   #include <OpenSG/OSGQuaternion.h>
 
 
-  #define Vector3D   OSG::Vec3f
-  #define Vector4D   OSG::Vec4f
-  #define Matrix4x4  OSG::Matrix4f
+  #define Vector3Df   OSG::Vec3f
+  #define Vector4Df   OSG::Vec4f
+  #define Matrix4x4f  OSG::Matrix4f
 
 #else
 
@@ -21,9 +22,9 @@
   #include <glm/gtx/transform.hpp>
   #include <glm/gtc/matrix_transform.hpp>
 
-  #define Vector3D  glm::vec3
-  #define Vector4D  glm::vec4
-  #define Matrix4x4 glm::mat4
+  #define Vector3Df  glm::vec3
+  #define Vector4Df  glm::vec4
+  #define Matrix4x4f glm::mat4
 
 #endif
 
@@ -35,40 +36,40 @@ class UnifiedMath {
 public:
 
   // make vectors
-  static Vector4D make_Vector4D(Vector3D v3d, float w);
+  static Vector4Df make_Vector4Df(Vector3Df v3d, float w);
 
   // clamp
   static float clamp(float value, float min, float max);
 
   // dot
-  static float dot(Vector3D a, Vector3D b);
-  static float dot(Vector4D a, Vector4D b);
+  static float dot(Vector3Df a, Vector3Df b);
+  static float dot(Vector4Df a, Vector4Df b);
 
   // length
-  static float length(Vector3D v);
-  static float length(Vector4D v);
+  static float length(Vector3Df v);
+  static float length(Vector4Df v);
   
   // max
-  static Vector3D max(Vector3D a, Vector3D b);
-  static Vector4D max(Vector4D a, Vector4D b);
+  static Vector3Df max(Vector3Df a, Vector3Df b);
+  static Vector4Df max(Vector4Df a, Vector4Df b);
   static float max(float a, float b);
 
   // min
-  static Vector3D min(Vector3D a, Vector3D b);
-  static Vector4D min(Vector4D a, Vector4D b);
+  static Vector3Df min(Vector3Df a, Vector3Df b);
+  static Vector4Df min(Vector4Df a, Vector4Df b);
   
   // Matrix operations
-  static Vector4D  matrixMultiply(Matrix4x4 m, Vector4D v);
-  static Matrix4x4 matrixMultiply(Matrix4x4 m1, Matrix4x4 m2);
-  static Matrix4x4 matrixSequenceMultiply(const std::vector<Matrix4x4>& matrixSequence);
+  static Vector4Df  matrixMultiply(Matrix4x4f m, Vector4Df v);
+  static Matrix4x4f matrixMultiply(Matrix4x4f m1, Matrix4x4f m2);
+  static Matrix4x4f matrixSequenceMultiply(const std::vector<Matrix4x4f>& matrixSequence);
 
-  static Matrix4x4 getIdentityMatrix();
-  static Matrix4x4 translate(Vector3D v);
-  static Matrix4x4 rotate(float angle, Vector3D axis);
-  static Matrix4x4 scale(Vector3D s);
+  static Matrix4x4f getIdentityMatrix();
+  static Matrix4x4f translate(Vector3Df v);
+  static Matrix4x4f rotate(float angle, Vector3Df axis);
+  static Matrix4x4f scale(Vector3Df s);
 
   // Trasnformation
-  static Vector3D TransformWithTranslation(Matrix4x4 m, Vector3D v);
+  static Vector3Df TransformWithTranslation(Matrix4x4f m, Vector3Df v);
 };
 
 

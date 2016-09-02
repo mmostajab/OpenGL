@@ -6,9 +6,9 @@
 #include <iostream>
 
 ArcSegment::ArcSegment(
-  Vector3D _p1,
-  Vector3D _p2,
-  Vector3D _center,
+  Vector3Df _p1,
+  Vector3Df _p2,
+  Vector3Df _center,
   int _nSegs): DynTessArcPrimitive(DYN_TESS_ARC_SEGMENT) {
 
   p1 = _p1;
@@ -16,30 +16,60 @@ ArcSegment::ArcSegment(
   center = _center;
   //alpha = _alpha;
   //_nSegs = nSegs;
+  
+#ifdef USE_OPENSG
+  transform = OSG::Node::create();
+	OSG::TransformPtr transform_core = OSG::Transform::create();
+	OSG::Matrix4f matrix;
+	//matrix.identity();
+	//matrix.setTranslate(translation);
+	//transform_core->setMatrix(matrix);
+	OSG::beginEditCP(transform);
+	transform->setCore(transform_core);
+	OSG::endEditCP(transform);
+
+	OSG::NodePtr geoNode = OSG::Node::create();
+	OSG::GeometryPtr geoCore = OSG::Geometry::create();
+	OSG::beginEditCP(geoCore);
+	geoNode->setCore(geoCore);
+	OSG::endEditCP(geoCore);
+
+	OSG::beginEditCP(transform);
+	transform->addChild(geoNode);
+	OSG::endEditCP(transform);
+#endif
+
   setNSegs(_nSegs);
   createBuffer();
+
 }
 
 void ArcSegment::createBuffer() {
 
 #ifdef USE_OPENSG
-  
+  std::vector<OSG::Pnt3f> vertices;
 #else
+
   if (buffer > 0) {
     glDeleteBuffers(1, &buffer);
     buffer = 0;
   }
-#endif
 
   std::vector<Vertex> vertices;
+#endif
 
   Vertex v;
-  Vector3D center_of_arc = (p1 + p2) * 0.5f;
+  Vector3Df center_of_arc = (p1 + p2) * 0.5f;
   v.position = center_of_arc;
-  vertices.push_back(v);
 
-  Vector3D a = p1 - center;
-  Vector3D b = p2 - center;
+#ifdef USE_OPENSG
+  vertices.push_back(OSG::Pnt3f(v.position));
+#else
+  vertices.push_back(v);
+#endif
+
+  Vector3Df a = p1 - center;
+  Vector3Df b = p2 - center;
   float cos_alpha = ArcPrimitiveHelper::angle_between(a, b);
   float alpha = acosf(cos_alpha);
 
@@ -47,7 +77,7 @@ void ArcSegment::createBuffer() {
     float t = static_cast<float>(i) / static_cast<float>(nSegs);
     float thetha = t * alpha;
 
-    Vector3D p;
+    Vector3Df p;
 
 #ifdef USE_SLERP
     p = ArcPrimitiveHelper::slerp(a, b, thetha, alpha);
@@ -58,11 +88,21 @@ void ArcSegment::createBuffer() {
 #endif
 
     v.position = p + center;
+#ifdef USE_OPENSG
+    vertices.push_back(OSG::Pnt3f(v.position));
+#else
     vertices.push_back(v);
+#endif
   }
 
-  #ifdef USE_OPENSG
-  
+#ifdef USE_OPENSG
+  std::vector<OSG::UInt32> lengths;
+	std::vector<OSG::UInt8>  types;
+
+  lengths.push_back(static_cast<OSG::UInt32>(vertices.size()));
+	types.push_back(GL_TRIANGLE_FAN);
+
+  createDrawArraysNode(transform, vertices, lengths, types);  
 #else
   glCreateBuffers(1, &buffer);
   glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -72,7 +112,7 @@ void ArcSegment::createBuffer() {
   nVertices = static_cast<GLint>(vertices.size());
 }
 
-void ArcSegment::updateBuffer(Matrix4x4 mvp, unsigned int w, unsigned int h) {
+void ArcSegment::updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h) {
 
   int new_nSegs = static_cast<int>(ArcPrimitiveHelper::calcProjectedCurveLength(mvp, w, h, p1, p2, center) / m_tessScale);
 

@@ -8,6 +8,12 @@
 
 #ifdef USE_OPENSG
 
+  #include <OpenSG/OSGNode.h>
+  #include <OpenSG/OSGNodePtr.h>
+  #include <OpenSG/OSGPerspectiveCamera.h>
+
+  #include "DrawCallNodes.h"
+
 #else
 
 // Widnows
@@ -24,26 +30,28 @@ class ArcTriangle : public DynTessArcPrimitive
 {
 public:
   ArcTriangle(
-    Vector3D _p1 = Vector3D(1.0f, 0.0f, 0.0f),
-    Vector3D _p2 = Vector3D(0.0f, 1.0f, 0.0f),
-    Vector3D _p3 = Vector3D(1.0f, 1.0f, 0.0f),
-    Vector3D _center = Vector3D(0.0f)/*double _alpha = glm::pi<double>() / 2.0f*/,
+    Vector3Df _p1 = Vector3Df(1.0f, 0.0f, 0.0f),
+    Vector3Df _p2 = Vector3Df(0.0f, 1.0f, 0.0f),
+    Vector3Df _p3 = Vector3Df(1.0f, 1.0f, 0.0f),
+    Vector3Df _center = Vector3Df(0.0f)/*double _alpha = glm::pi<double>() / 2.0f*/,
     int _nSegs = 5);
 
   void createBuffer()                                               override;
-  void updateBuffer(Matrix4x4 mvp, unsigned int w, unsigned int h)  override;
+  void updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h)  override;
   void draw()                                                       override;
 
   void setNSegs(const int& nSegs);
 
 //protected:
 public:
-  Vector3D 	p1;
-  Vector3D 	p2;
-  Vector3D   p3;
-  Vector3D   center;
+  Vector3Df 	p1;
+  Vector3Df 	p2;
+  Vector3Df   p3;
+  Vector3Df   center;
 
-#ifdef OPENSG_VECTORS
+#ifdef USE_OPENSG
+
+  OSG::NodePtr transform;
 
 #else
 

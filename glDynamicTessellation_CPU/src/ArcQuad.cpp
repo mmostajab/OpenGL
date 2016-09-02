@@ -5,7 +5,7 @@
 
 #include "ArcPrimitiveHelper.h"
 
-ArcQuad::ArcQuad(Vector3D _p1, Vector3D _p2, Vector3D _center0, Vector3D _p3, Vector3D _p4, Vector3D _center1, int _nSegs): 
+ArcQuad::ArcQuad(Vector3Df _p1, Vector3Df _p2, Vector3Df _center0, Vector3Df _p3, Vector3Df _p4, Vector3Df _center1, int _nSegs): 
   DynTessArcPrimitive(DYN_TESS_ARC_QUAD)
 {
   halfArcQuad[0].p0 = _p1;
@@ -16,11 +16,40 @@ ArcQuad::ArcQuad(Vector3D _p1, Vector3D _p2, Vector3D _center0, Vector3D _p3, Ve
   halfArcQuad[1].p1 = _p4;
   halfArcQuad[1].center = _center1;
 
+#ifdef USE_OPENSG
+  transform = OSG::Node::create();
+	OSG::TransformPtr transform_core = OSG::Transform::create();
+	OSG::Matrix4f matrix;
+	//matrix.identity();
+	//matrix.setTranslate(translation);
+	//transform_core->setMatrix(matrix);
+	OSG::beginEditCP(transform);
+	transform->setCore(transform_core);
+	OSG::endEditCP(transform);
+
+	OSG::NodePtr geoNode = OSG::Node::create();
+	OSG::GeometryPtr geoCore = OSG::Geometry::create();
+	OSG::beginEditCP(geoCore);
+	geoNode->setCore(geoCore);
+	OSG::endEditCP(geoCore);
+
+	OSG::beginEditCP(transform);
+	//transform->addChild(geoNode);
+	OSG::endEditCP(transform);
+#endif
+
   setNSegs(_nSegs);
   createBuffer();
 }
 
 void ArcQuad::createBuffer() {
+
+#ifdef USE_OPENSG
+  std::vector<OSG::Pnt3f> vertices;
+#else
+  std::vector<Vertex> vertices;
+#endif
+
 
       if (
 #ifdef USE_OPENSG
@@ -32,9 +61,12 @@ void ArcQuad::createBuffer() {
         
         
 #ifdef USE_OPENSG
+          
 #else
         if (buffer > 0) 
           glDeleteBuffers(1, &buffer);
+
+        
 #endif
         
         bufferSizeMaxNumSegs[0] = bufferSizeMaxNumSegs[1] = 2 * (nSegs[0] + 2);
@@ -46,12 +78,12 @@ void ArcQuad::createBuffer() {
 #endif
       }
 
-      std::vector<Vertex> vertices;
+      
 
       Vertex v;
 
-      Vector3D a[] = { halfArcQuad[0].p0 - halfArcQuad[0].center, halfArcQuad[1].p0 - halfArcQuad[1].center };
-      Vector3D b[] = { halfArcQuad[0].p1 - halfArcQuad[0].center, halfArcQuad[1].p1 - halfArcQuad[1].center };
+      Vector3Df a[] = { halfArcQuad[0].p0 - halfArcQuad[0].center, halfArcQuad[1].p0 - halfArcQuad[1].center };
+      Vector3Df b[] = { halfArcQuad[0].p1 - halfArcQuad[0].center, halfArcQuad[1].p1 - halfArcQuad[1].center };
       float cos_alpha = ArcPrimitiveHelper::angle_between(a[1], b[1]);
       //float epsilon() = 0.01f;
       float alpha = acosf(cos_alpha);
@@ -60,7 +92,7 @@ void ArcQuad::createBuffer() {
         float t = static_cast<float>(j) / static_cast<float>(nSegs[0]);
         float thetha = t * alpha;
 
-        Vector3D p[2];
+        Vector3Df p[2];
 
 #ifdef USE_SLERP
       p[0] = ArcPrimitiveHelper::slerp(a[0], b[0], thetha, alpha);
@@ -73,14 +105,28 @@ void ArcQuad::createBuffer() {
 #endif
 
         v.position = halfArcQuad[0].center + p[0] ;
+#ifdef USE_OPENSG
+        vertices.push_back(OSG::Pnt3f(v.position));
+#else
         vertices.push_back(v);
+#endif
 
         v.position = halfArcQuad[1].center + p[1] ;
+#ifdef USE_OPENSG
+        vertices.push_back(OSG::Pnt3f(v.position));
+#else
         vertices.push_back(v);
+#endif
       }
 
 #ifdef USE_OPENSG
+  std::vector<OSG::UInt32> lengths;
+	std::vector<OSG::UInt8>  types;
 
+  lengths.push_back(static_cast<OSG::UInt32>(vertices.size()));
+  types.push_back(GL_TRIANGLE_STRIP);
+
+  createDrawArraysNode(transform, vertices, lengths, types);  
 #else
       glBindBuffer(GL_ARRAY_BUFFER, buffer);
       glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(Vertex), vertices.data());
@@ -88,7 +134,7 @@ void ArcQuad::createBuffer() {
       nVertices = static_cast<GLint>(vertices.size());      
   }
 
-void ArcQuad::updateBuffer(Matrix4x4 mvp, unsigned int w, unsigned int h) {
+void ArcQuad::updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h) {
 
   int new_nSegs = 0;
 

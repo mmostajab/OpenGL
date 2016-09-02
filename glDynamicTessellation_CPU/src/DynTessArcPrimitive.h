@@ -15,7 +15,7 @@ enum DynamicTessellatedPrimitiveType {
 
 // Vertex of a Dynamic Tessellated Arc Primitive.
 struct Vertex {
-  Vector3D position;
+  Vector3Df position;
 };
 
 // interface for an ArcPrimitive Representation
@@ -24,7 +24,7 @@ public:
   DynTessArcPrimitive(DynamicTessellatedPrimitiveType type);
 
   virtual void createBuffer()                                               = 0;
-  virtual void updateBuffer(Matrix4x4 mvp, unsigned int w, unsigned int h)  = 0;
+  virtual void updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h)  = 0;
   virtual void draw()                                                       = 0;
 
   float getTessScale() const;

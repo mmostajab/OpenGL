@@ -2,16 +2,16 @@
 
 #include <complex>
 
-Vector4D ArcPrimitiveHelper::Projection2ClipCoords(Vector4D v)
+Vector4Df ArcPrimitiveHelper::Projection2ClipCoords(Vector4Df v)
 {
 #ifdef USE_OPENSG
-  return Vector4D(v.x() / v.w(), v.y() / v.w(), v.z() / v.w(), 1.0f);
+  return Vector4Df(v.x() / v.w(), v.y() / v.w(), v.z() / v.w(), 1.0f);
 #else
-  return Vector4D(v.x / v.w, v.y / v.w, v.z / v.w, 1.0f);
+  return Vector4Df(v.x / v.w, v.y / v.w, v.z / v.w, 1.0f);
 #endif
 }
 
-float ArcPrimitiveHelper::calcCurveLength(const Vector3D & _p0, const Vector3D & _p1, const Vector3D & _center)
+float ArcPrimitiveHelper::calcCurveLength(const Vector3Df & _p0, const Vector3Df & _p1, const Vector3Df & _center)
 {
   // the angle between _p0 - _center and _p1 - _center
   float alpha =
@@ -29,15 +29,15 @@ float ArcPrimitiveHelper::calcCurveLength(const Vector3D & _p0, const Vector3D &
 }
 
 float ArcPrimitiveHelper::calcProjectedCurveLength(
-  const Matrix4x4& mvp, const uint32_t& w, const uint32_t& h,
-  const Vector3D & p0, const Vector3D & p1, const Vector3D & center
+  const Matrix4x4f& mvp, const uint32_t& w, const uint32_t& h,
+  const Vector3Df & p0, const Vector3Df & p1, const Vector3Df & center
 )
 {
   float curve_length = 0.0f;
 
-  Vector4D p1_proj = mvp * UnifiedMath::make_Vector4D(p0, 1.0f);
-  Vector4D p2_proj = mvp * UnifiedMath::make_Vector4D(p1, 1.0f);
-  Vector4D center_proj = mvp * UnifiedMath::make_Vector4D(center, 1.0f);
+  Vector4Df p1_proj = mvp * UnifiedMath::make_Vector4Df(p0, 1.0f);
+  Vector4Df p2_proj = mvp * UnifiedMath::make_Vector4Df(p1, 1.0f);
+  Vector4Df center_proj = mvp * UnifiedMath::make_Vector4Df(center, 1.0f);
 
   p1_proj     = Projection2ClipCoords(p1_proj);
   p2_proj     = Projection2ClipCoords(p2_proj);
@@ -56,8 +56,8 @@ float ArcPrimitiveHelper::calcProjectedCurveLength(
   return curve_length;
 }
 
-Vector3D ArcPrimitiveHelper::slerp(
-  const Vector3D& _p0, const Vector3D & _p1, 
+Vector3Df ArcPrimitiveHelper::slerp(
+  const Vector3Df& _p0, const Vector3Df & _p1, 
   const float& _thetha, const float & _angle)
 {
   return 
@@ -65,8 +65,8 @@ Vector3D ArcPrimitiveHelper::slerp(
     sinf(_thetha) / sinf(static_cast<float>(_angle))          * _p1;
 }
 
-Vector3D ArcPrimitiveHelper::interpolation_complex(
-  const Vector3D& _p0, const Vector3D& _p1, 
+Vector3Df ArcPrimitiveHelper::interpolation_complex(
+  const Vector3Df& _p0, const Vector3Df& _p1, 
   const float& _thetha, const float& _angle)
 {
   std::complex<float> numerator = (1.f - (std::complex<float>(cos(_thetha), sin(_thetha))));
@@ -74,12 +74,12 @@ Vector3D ArcPrimitiveHelper::interpolation_complex(
   std::complex<float> w         = numerator / divisor;
 
   std::complex<float> p_complex = (1.f - w) * std::complex<float>(_p1[0], _p1[1]) + w * std::complex<float>(_p0[0], _p0[1]);
-  Vector3D p = Vector3D(p_complex.real(), p_complex.imag(), 0.0f);
+  Vector3Df p = Vector3Df(p_complex.real(), p_complex.imag(), 0.0f);
 
   return p;
 }
 
-float ArcPrimitiveHelper::angle_between( const Vector3D& a, const Vector3D& b )
+float ArcPrimitiveHelper::angle_between( const Vector3Df& a, const Vector3Df& b )
 {
   return UnifiedMath::clamp(UnifiedMath::dot(a, b) / (UnifiedMath::length(a) * UnifiedMath::length(b)), -1.0f, 1.0f);
 }

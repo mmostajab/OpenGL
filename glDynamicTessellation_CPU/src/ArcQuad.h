@@ -4,7 +4,11 @@
 #include "UnifiedMath.h"
 
 #ifdef USE_OPENSG
+  #include <OpenSG/OSGNode.h>
+  #include <OpenSG/OSGNodePtr.h>
+  #include <OpenSG/OSGPerspectiveCamera.h>
 
+  #include "DrawCallNodes.h"
 #else
 
   // Widnows
@@ -26,24 +30,24 @@ struct ArcQuad : public DynTessArcPrimitive {
 public:
 
   struct HalfArcQuad {
-    Vector3D p0;
-    Vector3D p1;
-    Vector3D center;
+    Vector3Df p0;
+    Vector3Df p1;
+    Vector3Df center;
   };
 
   ArcQuad(
-    Vector3D _p1       = Vector3D(0.0f, 0.0f, 0.0f),
-    Vector3D _p2       = Vector3D(1.0f, 0.0f, 0.0f),
-    Vector3D _center0  = Vector3D(0.5f, 0.0f, 0.0f)/*double _alpha0 = glm::pi<double>() / 2.0f*/,
-    Vector3D _p3       = Vector3D(0.0f, 1.0f, 0.0f),
-    Vector3D _p4       = Vector3D(1.0f, 1.0f, 0.0f),
-    Vector3D _center1  = Vector3D(0.5f, 1.0f, 0.0f)/*double _alpha1 = glm::pi<double>() / 2.0f*/,
+    Vector3Df _p1       = Vector3Df(0.0f, 0.0f, 0.0f),
+    Vector3Df _p2       = Vector3Df(1.0f, 0.0f, 0.0f),
+    Vector3Df _center0  = Vector3Df(0.5f, 0.0f, 0.0f)/*double _alpha0 = glm::pi<double>() / 2.0f*/,
+    Vector3Df _p3       = Vector3Df(0.0f, 1.0f, 0.0f),
+    Vector3Df _p4       = Vector3Df(1.0f, 1.0f, 0.0f),
+    Vector3Df _center1  = Vector3Df(0.5f, 1.0f, 0.0f)/*double _alpha1 = glm::pi<double>() / 2.0f*/,
     int _nSegs          = 5
   );
 
   void createBuffer();
 
-  void updateBuffer(Matrix4x4 mvp, unsigned int w, unsigned int h);
+  void updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h);
 
   void draw();
 
@@ -54,6 +58,8 @@ public:
   std::array<HalfArcQuad, 2> halfArcQuad;
 
 #ifdef USE_OPENSG
+
+  OSG::NodePtr transform;
 
 #else
 
