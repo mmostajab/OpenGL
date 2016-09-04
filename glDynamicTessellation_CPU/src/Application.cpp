@@ -121,6 +121,7 @@ void Application::init(const unsigned int& width, const unsigned int& height) {
     //glEnable(GL_DEPTH);
     e = glGetError();
     glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
     e = glGetError();
 }
 
@@ -314,22 +315,27 @@ void Application::update(float time, float timeSinceLastFrame) {
 
 void Application::draw() {
   glViewport(0, 0, m_width, m_height);
-
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+  glClearDepth(2.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  
-  glUseProgram(simple_program);
+
+  glUseProgram(m_background_program);
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+ 
+  glUseProgram(m_simple_program);
 
   for (auto& arc : arcSegments)  arc.draw();
   for (auto& arc : arcTriangles) arc.draw();
   for (auto& arc : arcQuads)     arc.draw();
 
+ 
+
   // Draw the world coordinate system
-  //glViewport(0, 0, 100, 100);
-  //glUseProgram(m_coord_system_program);
-  //glDrawArrays(GL_LINES, 0, 6);
+  glViewport(0, 0, 100, 100);
+  glUseProgram(m_coord_system_program);
+  glDrawArrays(GL_LINES, 0, 6);
 }
 
 void Application::run() {
@@ -455,8 +461,51 @@ void Application::compileShaders() {
 		"}\n"
 	};
 
+  const char* background_vert = {
+    "#version 430 core\n"
+
+    "out VS_OUT\n"
+    "{\n"
+      "vec4 E;\n"
+    "} vs_out;\n"
+
+    "void main(void)\n"
+    "{\n"
+    "  const vec4 vertices[] = vec4[](\n"
+    "    vec4(-1.0f, -1.0f, 1.0f, 1.0f),\n"
+    "    vec4( 1.0f, -1.0f, 1.0f, 1.0f),\n"
+    "    vec4(-1.0f,  1.0f, 1.0f, 1.0f),\n"
+    "    vec4( 1.0f,  1.0f, 1.0f, 1.0f) \n"
+    ");\n"
+
+    "  gl_Position = vertices[gl_VertexID];\n"
+    "  vs_out.E = vertices[gl_VertexID];\n"
+    "}\n"
+  };
+
+  const char* background_frag = {
+    "#version 430 core\n"
+
+    "in VS_OUT\n"
+    "{\n"
+    "vec4 E;\n"
+    "} fs_in;\n"
+
+    // Final output
+    "layout (location = 0) out vec4 color;\n"
+
+    "void main(void) {\n"
+    "float t = (fs_in.E.y + 1.0f) / 2.0f;\n"
+    "vec3 color1 = vec3(0.8f, 0.8f, 0.8f);\n"
+    "vec3 color0 = vec3(0.3f, 0.3f, 0.3f);\n"
+    "color = vec4((1.0f-t)*color0 + t*color1, 1);\n"
+    "gl_FragDepth = 1.0f;\n"
+    "}\n"
+  };
+
   m_coord_system_program = compile_link_vs_fs_with_source(coordsys_vert, coordsys_frag);
-  simple_program = compile_link_vs_fs_with_source(simple_vert, simple_frag);
+  m_simple_program = compile_link_vs_fs_with_source(simple_vert, simple_frag);
+  m_background_program = compile_link_vs_fs_with_source(background_vert, background_frag);
 }
 
 void Application::prepare_framebuffer() {

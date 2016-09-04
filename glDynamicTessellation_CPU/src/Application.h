@@ -56,7 +56,7 @@ public:
 
     void prepare_framebuffer();
 
-    GLuint simple_program;
+    
 
 private:
     static void EventMouseButton(GLFWwindow* window, int button, int action, int mods);
@@ -82,9 +82,14 @@ public:
     static GLFWwindow* m_window;
     glm::mat4 m_projmat, m_viewmat, m_worldmat, m_inv_viewmat, m_mvp_mat;
     static unsigned int m_width, m_height;
-    GLuint m_coord_system_program;
+    
     GLuint m_transformation_buffer, m_lighting_buffer, m_general_buffer;
    
+    // shaders
+    GLuint m_simple_program;
+    GLuint m_coord_system_program;
+    GLuint m_background_program;
+
 	// scene objects
 	static Camera m_camera;
 
