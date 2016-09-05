@@ -207,8 +207,21 @@ void Application::create() {
 #define ARC_QUAD
 #ifdef ARC_QUAD
 
-  addLogo(glm::vec3(-2.25f, 0.0f, 0.0f), 0.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
-  addCST(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
+  //ArcQuad arcQuad;
+  //arcQuad.halfArcQuad[0].center = glm::vec3(0.0f);
+  //arcQuad.halfArcQuad[0].p0     = glm::vec3( 1.0f,  1.0f, 0.0f);
+  //arcQuad.halfArcQuad[0].p1     = glm::vec3(-1.0f, -1.0f, 0.0f);
+
+  //arcQuad.halfArcQuad[1].center = glm::vec3(0.0f);
+  //arcQuad.halfArcQuad[1].p0 = glm::vec3(2.0f, 2.0f, 0.0f);
+  //arcQuad.halfArcQuad[1].p1 = glm::vec3(-2.0f, -2.0f, 0.0f);
+
+  //arcQuad.createBuffer();
+
+  //arcQuads.push_back(arcQuad);
+
+ addLogo(glm::vec3(-2.25f, 0.0f, 0.0f), 0.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
+ addCST(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
 
   //addC(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
   /*addS(glm::vec3( 0.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
@@ -242,11 +255,7 @@ void Application::update(float time, float timeSinceLastFrame) {
     }
   }
 
-  if (wireframe) 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-
+  
     /*    m_camera.Move(CameraDirection::FORWARD);
 
     if (m_s_pressed)
@@ -321,9 +330,15 @@ void Application::draw() {
   glClearDepth(2.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+  // background should be always filled.
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glUseProgram(m_background_program);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
  
+  if (wireframe)
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
   glUseProgram(m_simple_program);
 
   for (auto& arc : arcSegments)  arc.draw();

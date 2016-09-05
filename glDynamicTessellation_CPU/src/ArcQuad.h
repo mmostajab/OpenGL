@@ -51,7 +51,7 @@ public:
 
   void draw();
 
-  void setNSegs(const int & _nSegs);
+  void setNSegs(const std::array<int32_t, 2> & _nSegs);
 
 public:
 //protected:
