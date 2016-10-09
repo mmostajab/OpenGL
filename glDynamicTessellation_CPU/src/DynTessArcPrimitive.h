@@ -2,6 +2,7 @@
 #define __ARC_PRIMITIVE_H__
 
 #include "UnifiedMath.h"
+#include "AABB.h"
 
 #include <array>
 #include <vector>
