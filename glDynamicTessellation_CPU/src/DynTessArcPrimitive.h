@@ -6,6 +6,29 @@
 #include <array>
 #include <vector>
 
+#ifdef USE_OPENSG
+  #include <OpenSG/OSGNode.h>
+  #include <OpenSG/OSGNodePtr.h>
+  #include <OpenSG/OSGPerspectiveCamera.h>
+  #include <OpenSG/OSGComponentTransform.h>
+  #include <OpenSG/OSGSwitch.h>
+
+  #include "DrawCallNodes.h"
+
+  #include <base/ifxcore/ifxLog.h>
+
+#else
+
+  // Widnows
+  #include <windows.h>
+
+  // GL
+  #include <GL/glew.h>
+
+#endif
+
+namespace ArcRep {
+
 // Type of a dynamic tessellated primitive
 enum DynamicTessellatedPrimitiveType {
   DYN_TESS_ARC_SEGMENT  = 0,
@@ -23,17 +46,44 @@ class DynTessArcPrimitive {
 public:
   DynTessArcPrimitive(DynamicTessellatedPrimitiveType type);
 
-  virtual void createBuffer()                                               = 0;
-  virtual void updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h)  = 0;
+  virtual bool updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h)  = 0;
   virtual void draw()                                                       = 0;
 
   float getTessScale() const;
   void  setTessScale(float tessScale);
   void  multiplyTessFactor(float multiplier);
 
+//protected:
+public:
+
+#ifdef USE_OPENSG
+public:
+  const std::vector<OSG::Pnt3f>&  getVertices() const;
+  const std::vector<OSG::UInt32>& getLengths()  const;
+  const std::vector<OSG::UInt8>&  getTypes()    const;
+
+protected:
+  /*OSG::NodePtr transform;
+  OSG::NodePtr switchNode;*/
+
+  std::vector<OSG::Pnt3f> vertices;
+  std::vector<OSG::UInt32> lengths;
+	std::vector<OSG::UInt8>  types;
+
+#else
+
+  GLuint buffer;
+
+#endif
+
 protected:
   DynamicTessellatedPrimitiveType m_type;
   float                           m_tessScale;
+
+  virtual void createBuffer() = 0;
+
 };
+
+}
 
 #endif // __ARC_QUAD_H__

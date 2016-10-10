@@ -9,6 +9,11 @@
 #include <fstream>
 #include <time.h>
 #include <random>
+#include <chrono>
+
+// OpenMP
+#include <omp.h>
+
 
 // GL
 #include <glm/glm.hpp>
@@ -37,6 +42,13 @@ Camera				        Application::m_camera;
 bool                 Application::wireframe = false;
 
 Application::Application() {
+  // get underlying buffer
+  //m_orig_cout_buf = //std::cout.rdbuf();
+
+  // set null
+  //std::cout.rdbuf(NULL);
+
+  m_logFile.open("log.h");
 }
 
 void Application::init(const unsigned int& width, const unsigned int& height, HGLRC mainWindowContext) {
@@ -70,7 +82,7 @@ void Application::init(const unsigned int& width, const unsigned int& height, HG
     glfwSetCharCallback(m_window, (GLFWcharfun)EventChar);
 
     if (glewInit() != GLEW_OK){
-        std::cout << "cannot intialize the glew.\n";
+        //std::cout << "cannot intialize the glew.\n";
         exit(EXIT_FAILURE);
     }
 
@@ -111,7 +123,7 @@ void Application::init(const unsigned int& width, const unsigned int& height) {
     glfwSetCharCallback(m_window, (GLFWcharfun)EventChar);
 
     if (glewInit() != GLEW_OK){
-        std::cout << "cannot intialize the glew.\n";
+        //std::cout << "cannot intialize the glew.\n";
         exit(EXIT_FAILURE);
     }
 
@@ -158,18 +170,23 @@ void Application::init() {
 void Application::create() {
   compileShaders();
 
-  //#define ARC_SEGMENT
+#define ARC_SEGMENT
 #ifdef ARC_SEGMENT
 
 //#define ONE_ARC_SEGMENT
-#ifdef ONE_ARC_SEGMENT
+//#ifdef ONE_ARC_SEGMENT
+
+#if 0
   ArcSegment arcSegment;
   arcSegment.p1 = glm::vec3(-1.0f, -1.0f, 0);
   arcSegment.p2 = glm::vec3( 1.0f,  1.0f, 0);
   //arcSegment.alpha = glm::pi<double>() / 2.0;
   arcSegment.center = glm::vec3(1.0f, -1.0f, 0.0f);
-  arcSegment.createBuffer(5);
+  arcSegment.createBuffer();
   arcSegments.push_back(arcSegment);
+#endif
+
+
 #endif
 
 //#define MULTI_ARC_SEGMENT
@@ -187,45 +204,72 @@ void Application::create() {
 	  }
   }
 #endif
-#endif
 
 
 //  addLogo(glm::vec3(0.0f), 0.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
 
-//#define ARC_TRIANGLE
+#define ARC_TRIANGLE
 #ifdef  ARC_TRIANGLE
+
+#if 0
+
   ArcTriangle arcTriangle;
   arcTriangle.p1 = glm::vec3(-1.0f, -1.0f, 0);
-  arcTriangle.p2 = glm::vec3(1.0f,  1.0f, 0);
-  arcTriangle.p3 = glm::vec3(-1.0f, 1.0f, 0);
+  arcTriangle.p3 = glm::vec3(1.0f,  1.0f, 0);
+  arcTriangle.p2 = glm::vec3(-1.0f, 1.0f, 0);
   //arcSegment.alpha = glm::pi<double>() / 2.0;
   arcTriangle.center = glm::vec3(1.0f, -1.0f, 0.0f);
-  arcTriangle.createBuffer(5);
+  arcTriangle.createBuffer();
   arcTriangles.push_back(arcTriangle);
+
+#endif
+
 #endif
 
 #define ARC_QUAD
 #ifdef ARC_QUAD
 
-  //ArcQuad arcQuad;
-  //arcQuad.halfArcQuad[0].center = glm::vec3(0.0f);
-  //arcQuad.halfArcQuad[0].p0     = glm::vec3( 1.0f,  1.0f, 0.0f);
-  //arcQuad.halfArcQuad[0].p1     = glm::vec3(-1.0f, -1.0f, 0.0f);
+#if 0
+  ArcQuad arcQuad;
+  arcQuad.halfArcQuad[0].center = glm::vec3(0.0f);
+  arcQuad.halfArcQuad[0].p0     = glm::vec3( 1.0f,  1.0f, 0.0f);
+  arcQuad.halfArcQuad[0].p1     = glm::vec3(-1.0f, -1.0f, 0.0f);
+  
+  arcQuad.halfArcQuad[1].center = glm::vec3(0.0f);
+  arcQuad.halfArcQuad[1].p0 = glm::vec3(2.0f, 2.0f, 0.0f);
+  arcQuad.halfArcQuad[1].p1 = glm::vec3(-2.0f, -2.0f, 0.0f);
 
-  //arcQuad.halfArcQuad[1].center = glm::vec3(0.0f);
-  //arcQuad.halfArcQuad[1].p0 = glm::vec3(2.0f, 2.0f, 0.0f);
-  //arcQuad.halfArcQuad[1].p1 = glm::vec3(-2.0f, -2.0f, 0.0f);
+  arcQuad.createBuffer();
 
-  //arcQuad.createBuffer();
+  arcQuads.push_back(arcQuad);
 
-  //arcQuads.push_back(arcQuad);
+#endif
 
- addLogo(glm::vec3(-2.25f, 0.0f, 0.0f), 0.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
- addCST(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
+#if 1
+  int32_t w = 2;
+  int32_t h = 2;
+
+  std::ifstream config("config.txt");
+  if (config) {
+    config >> w >> h;
+  }
+
+  float cst_width = 4.0f;
+  float cst_height = 1.2f;
+
+  for (int32_t i = 0; i < h; i++) {
+    for (int32_t j = 0; j < w; j++) {
+      addLogo(glm::vec3(-2.0f, 0.0f, 0.0f) + glm::vec3(i * cst_width, j * cst_height, 0.0f), 0.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
+      addCST(glm::vec3(0.25f, 0.0f, 0.0f) + glm::vec3(i * cst_width, j * cst_height, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
+      addLogo(glm::vec3(2.0f, 0.0f, 0.0f) + glm::vec3(i * cst_width, j * cst_height, 0.0f), 0.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
+    }
+  }
+#endif
+  
 
   //addC(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
-  /*addS(glm::vec3( 0.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
-  addT(glm::vec3( 1.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);*/
+  //addS(glm::vec3( 0.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
+  /*addT(glm::vec3( 1.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);*/
   //addCST(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
 /*
   addCST(glm::vec3(0.0f,-1.0f, 0.0f), -1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
@@ -244,6 +288,13 @@ void Application::create() {
 
 #endif
 
+  //std::cout.set_rdbuf(m_orig_cout_buf);
+  std::cout << "Number of Arc Segments = "  << arcSegments.size() << std::endl;
+  std::cout << "Number of Arc Triangles = " << arcTriangles.size() << std::endl;
+  std::cout << "Number of Arc Quads = "     << arcQuads.size() << std::endl;
+  std::cout << "Total = " << arcSegments.size() + arcTriangles.size() + arcQuads.size() << std::endl;
+
+  //std::cout.set_rdbuf(NULL);
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
@@ -300,12 +351,23 @@ void Application::update(float time, float timeSinceLastFrame) {
 
 	clock_t start_time = clock();
 	m_mvp_mat = m_projmat * m_viewmat * m_worldmat;
-	for (auto& arc : arcSegments)  arc.updateBuffer(m_mvp_mat, m_width, m_height);
-  for (auto& arc : arcTriangles) arc.updateBuffer(m_mvp_mat, m_width, m_height);
-  for (auto& arc : arcQuads)     arc.updateBuffer(m_mvp_mat, m_width, m_height);
+
+  std::chrono::high_resolution_clock::time_point start_update_time = std::chrono::high_resolution_clock::now();
+//#pragma omp parallel
+  {
+//#pragma omp parallel for
+    for (int i = 0; i < static_cast<int>(arcSegments.size()); i++)  arcSegments[i].updateBuffer(m_mvp_mat, m_width, m_height);
+//#pragma omp for
+    for (int i = 0; i < static_cast<int>(arcTriangles.size()); i++) arcTriangles[i].updateBuffer(m_mvp_mat, m_width, m_height);
+//#pragma omp for
+    for (int i = 0; i < static_cast<int>(arcQuads.size()); i++)     arcQuads[i].updateBuffer(m_mvp_mat, m_width, m_height);
+  }
+  std::chrono::high_resolution_clock::time_point end_update_time = std::chrono::high_resolution_clock::now();
+  int64_t update_time = (end_update_time - start_update_time).count();
+  if(update_time > 1e7) std::cout << "update time = " << update_time << "( " << 1e9f / update_time << " FPS )" <<std::endl;
 
 	clock_t end_time = clock();
-	//std::cout << "Tesselation time = " << (end_time - start_time) / CLOCKS_PER_SEC << std::endl;
+	////std::cout << "Tesselation time = " << (end_time - start_time) / CLOCKS_PER_SEC << std::endl;
 
     // updating the lighting info
     glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_lighting_buffer);
@@ -472,7 +534,7 @@ void Application::compileShaders() {
 		"layout (location = 0) out vec4 color;\n"
 
 		"void main(void) {\n"
-			"color = vec4(0, 1, 0, 1);\n"
+			"color = vec4(0.4, 1, 0.6, 1);\n"
 		"}\n"
 	};
 

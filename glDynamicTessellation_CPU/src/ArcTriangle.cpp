@@ -1,9 +1,10 @@
 #include "ArcTriangle.h"
-
 #include "ArcPrimitiveHelper.h"
 
 // STD
 #include <iostream>
+
+using namespace ArcRep;
 
 ArcTriangle::ArcTriangle(
     Vector3Df _p1,
@@ -12,37 +13,24 @@ ArcTriangle::ArcTriangle(
     Vector3Df _center/*double _alpha = glm::pi<double>() / 2.0f*/,
     int _nSegs): DynTessArcPrimitive(DYN_TESS_ARC_TRIANGLE) {
 
-    p1 = _p1;
-    p2 = _p2;
-    p3 = _p3;
-    center = _center;
-    //alpha = _alpha;
+  set(_p1, _p2, _p3, _center, _nSegs);
 
-#ifdef USE_OPENSG
-  transform = OSG::Node::create();
-	OSG::TransformPtr transform_core = OSG::Transform::create();
-	OSG::Matrix4f matrix;
-	matrix.identity();
-  matrix.setTranslate(OSG::Pnt3f(0.0f, 0.0f, 0.0f));
-	transform_core->setMatrix(matrix);
-	OSG::beginEditCP(transform);
-	transform->setCore(transform_core);
-	OSG::endEditCP(transform);
-
-	OSG::NodePtr geoNode = OSG::Node::create();
-	OSG::GeometryPtr geoCore = OSG::Geometry::create();
-	OSG::beginEditCP(geoCore);
-	geoNode->setCore(geoCore);
-	OSG::endEditCP(geoCore);
-
-	OSG::beginEditCP(transform);
-	transform->addChild(geoNode);
-	OSG::endEditCP(transform);
-#endif
-
-    setNSegs(_nSegs);
-    createBuffer();
   }
+
+void ArcTriangle::set(
+  Vector3Df _p1,
+  Vector3Df _p2,
+  Vector3Df _p3,
+  Vector3Df _center,
+  int _nSegs) {
+
+  p1 = _p1;
+  p2 = _p2;
+  p3 = _p3;
+  center = _center;
+  setNSegs(_nSegs);
+  createBuffer();
+}
 
   void ArcTriangle::createBuffer() {
 
@@ -58,7 +46,9 @@ ArcTriangle::ArcTriangle(
     
 
 #ifdef USE_OPENSG
-  std::vector<OSG::Pnt3f> vertices;
+  vertices.clear();
+  lengths.clear();
+  types.clear();
 #else
   std::vector<Vertex>     vertices;
 #endif
@@ -102,13 +92,11 @@ ArcTriangle::ArcTriangle(
     }
 
 #ifdef USE_OPENSG
-  std::vector<OSG::UInt32> lengths;
-	std::vector<OSG::UInt8>  types;
 
   lengths.push_back(static_cast<OSG::UInt32>(vertices.size()));
 	types.push_back(GL_TRIANGLE_FAN);
 
-  createDrawArraysNode(transform, vertices, lengths, types);  
+  //createDrawArraysNode(transform, vertices, lengths, types);  
 #else
     glCreateBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -118,16 +106,20 @@ ArcTriangle::ArcTriangle(
     nVertices = static_cast<GLint>(vertices.size());
   }
 
-  void ArcTriangle::updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h) {
+  bool ArcTriangle::updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h) {
     
     int new_nSegs = static_cast<int>(ArcPrimitiveHelper::calcProjectedCurveLength(mvp, w, h, p1, p2, center) / m_tessScale);
 
-    if (new_nSegs == nSegs) return;
+    if (new_nSegs == nSegs) return false;
 
-    std::cout << "Number of segments changed from " << nSegs << " to " << new_nSegs << std::endl;
+#ifdef USE_OPENSG
+    ifxLog( ifxLogLevel::IFX_NORMAL, "Updating arc triangle.\n"); 
+#else
+    //std::cout << "Number of segments changed from " << nSegs << " to " << new_nSegs << std::endl;
+#endif
     setNSegs(new_nSegs);
     createBuffer();
-
+    return true;
   }
 
   void ArcTriangle::draw() {

@@ -5,8 +5,15 @@
 
 #include "ArcPrimitiveHelper.h"
 
+using namespace ArcRep;
+
 ArcQuad::ArcQuad(Vector3Df _p1, Vector3Df _p2, Vector3Df _center0, Vector3Df _p3, Vector3Df _p4, Vector3Df _center1, int _nSegs): 
   DynTessArcPrimitive(DYN_TESS_ARC_QUAD)
+{
+  set(_p1, _p2, _center0, _p3, _p4, _center1, _nSegs);
+}
+
+void ArcQuad::set(Vector3Df _p1, Vector3Df _p2, Vector3Df _center0, Vector3Df _p3, Vector3Df _p4, Vector3Df _center1, int _nSegs)
 {
   halfArcQuad[0].p0 = _p1;
   halfArcQuad[0].p1 = _p2;
@@ -16,36 +23,17 @@ ArcQuad::ArcQuad(Vector3Df _p1, Vector3Df _p2, Vector3Df _center0, Vector3Df _p3
   halfArcQuad[1].p1 = _p4;
   halfArcQuad[1].center = _center1;
 
-#ifdef USE_OPENSG
-  transform = OSG::Node::create();
-	OSG::TransformPtr transform_core = OSG::Transform::create();
-	OSG::Matrix4f matrix;
-	//matrix.identity();
-	//matrix.setTranslate(translation);
-	//transform_core->setMatrix(matrix);
-	OSG::beginEditCP(transform);
-	transform->setCore(transform_core);
-	OSG::endEditCP(transform);
-
-	OSG::NodePtr geoNode = OSG::Node::create();
-	OSG::GeometryPtr geoCore = OSG::Geometry::create();
-	OSG::beginEditCP(geoCore);
-	geoNode->setCore(geoCore);
-	OSG::endEditCP(geoCore);
-
-	OSG::beginEditCP(transform);
-	//transform->addChild(geoNode);
-	OSG::endEditCP(transform);
-#endif
-
-  setNSegs(std::array<int32_t, 2>{_nSegs, _nSegs});
+  std::array<int32_t, 2> NumberOfSegments = { _nSegs, _nSegs };
+  setNSegs(NumberOfSegments);
   createBuffer();
 }
 
 void ArcQuad::createBuffer() {
 
 #ifdef USE_OPENSG
-  std::vector<OSG::Pnt3f> vertices;
+  vertices.clear();
+  lengths.clear();
+  types.clear();
 #else
   std::vector<Vertex> vertices;
 #endif
@@ -76,78 +64,108 @@ void ArcQuad::createBuffer() {
     
 
   Vertex v;
-  size_t i = 0, j = 0;
-  while (i+1 < curve_points[0].size() && j+1 < curve_points[1].size()) {
 
-    Vertex v0, v1;
-    v0.position = curve_points[0][i];
-    v1.position = curve_points[1][j];
+  if(curve_points[0].size() == curve_points[1].size()){
 
-    float length_left  = UnifiedMath::length(curve_points[0][i + 1] - curve_points[1][j]);
-    float length_right = UnifiedMath::length(curve_points[0][i] - curve_points[1][j + 1]);
-    if (length_left <= length_right) {
-      v.position = curve_points[0][i + 1];
-      i++;
-    } else {
-      v.position = curve_points[1][j + 1];
-      j++;
+    for(size_t i = 0; i < curve_points[0].size(); i++){
+
+#ifdef USE_OPENSG
+      v.position = curve_points[0][i];
+      vertices.push_back(OSG::Pnt3f(v.position));
+
+      v.position = curve_points[1][i];
+      vertices.push_back(OSG::Pnt3f(v.position));
+#else
+      v.position = curve_points[0][i];
+      vertices.push_back(v);
+      
+      v.position = curve_points[1][i];
+      vertices.push_back(v);
+#endif
+
     }
+
 #ifdef USE_OPENSG
-    vertices.push_back(OSG::Pnt3f(v0.position));
-    vertices.push_back(OSG::Pnt3f(v1.position));
-    vertices.push_back(OSG::Pnt3f(v.position));
-#else
-    vertices.push_back(v0);
-    vertices.push_back(v1);
-    vertices.push_back(v);
+    lengths.push_back(static_cast<OSG::UInt32>(vertices.size()));
+    types.push_back(GL_TRIANGLE_STRIP);
 #endif
+
+  } else {
+
+    size_t i = 0, j = 0;
+    while (i+1 < curve_points[0].size() && j+1 < curve_points[1].size()) {
+
+      Vertex v0, v1;
+      v0.position = curve_points[0][i];
+      v1.position = curve_points[1][j];
+
+      float length_left  = UnifiedMath::length(curve_points[0][i + 1] - curve_points[1][j]);
+      float length_right = UnifiedMath::length(curve_points[0][i] - curve_points[1][j + 1]);
+      if (length_left <= length_right) {
+        v.position = curve_points[0][i + 1];
+        i++;
+      } else {
+        v.position = curve_points[1][j + 1];
+        j++;
+      }
+#ifdef USE_OPENSG
+      vertices.push_back(OSG::Pnt3f(v0.position));
+      vertices.push_back(OSG::Pnt3f(v1.position));
+      vertices.push_back(OSG::Pnt3f(v.position));
+#else
+      vertices.push_back(v0);
+      vertices.push_back(v1);
+      vertices.push_back(v);
+#endif
+    }
+
+    for (; i+1 < curve_points[0].size(); i++) {
+      Vertex v0, v1;
+      v0.position = curve_points[0][i];
+      v1.position = curve_points[1][j];
+      v.position = curve_points[0][i + 1];
+
+#ifdef USE_OPENSG
+      vertices.push_back(OSG::Pnt3f(v0.position));
+      vertices.push_back(OSG::Pnt3f(v1.position));
+      vertices.push_back(OSG::Pnt3f(v.position));
+#else
+      vertices.push_back(v0);
+      vertices.push_back(v1);
+      vertices.push_back(v);
+#endif
+    }
+
+    for (; j + 1 < curve_points[1].size(); j++) {
+      Vertex v0, v1;
+      v0.position = curve_points[0][i];
+      v1.position = curve_points[1][j];
+      v.position = curve_points[1][j + 1];
+#ifdef USE_OPENSG
+      vertices.push_back(OSG::Pnt3f(v0.position));
+      vertices.push_back(OSG::Pnt3f(v1.position));
+      vertices.push_back(OSG::Pnt3f(v.position));
+#else
+      vertices.push_back(v0);
+      vertices.push_back(v1);
+      vertices.push_back(v);
+#endif
+
+    }
+
+#ifdef USE_OPENSG
+    lengths.push_back(static_cast<OSG::UInt32>(vertices.size()));
+    types.push_back(GL_TRIANGLES);
+#endif
+
   }
 
-  for (; i+1 < curve_points[0].size(); i++) {
-    Vertex v0, v1;
-    v0.position = curve_points[0][i];
-    v1.position = curve_points[1][j];
-    v.position = curve_points[0][i + 1];
-
 #ifdef USE_OPENSG
-    vertices.push_back(OSG::Pnt3f(v0.position));
-    vertices.push_back(OSG::Pnt3f(v1.position));
-    vertices.push_back(OSG::Pnt3f(v.position));
-#else
-    vertices.push_back(v0);
-    vertices.push_back(v1);
-    vertices.push_back(v);
-#endif
-  }
-
-  for (; j + 1 < curve_points[1].size(); j++) {
-    Vertex v0, v1;
-    v0.position = curve_points[0][i];
-    v1.position = curve_points[1][j];
-    v.position = curve_points[1][j + 1];
-#ifdef USE_OPENSG
-    vertices.push_back(OSG::Pnt3f(v0.position));
-    vertices.push_back(OSG::Pnt3f(v1.position));
-    vertices.push_back(OSG::Pnt3f(v.position));
-#else
-    vertices.push_back(v0);
-    vertices.push_back(v1);
-    vertices.push_back(v);
-#endif
-  }
-
-#ifdef USE_OPENSG
-  std::vector<OSG::UInt32> lengths;
-	std::vector<OSG::UInt8>  types;
-
-  lengths.push_back(static_cast<OSG::UInt32>(vertices.size()));
-  types.push_back(GL_TRIANGLE_STRIP);
-
-  createDrawArraysNode(transform, vertices, lengths, types);  
+  //createDrawArraysNode(transform, vertices, lengths, types);  
 #else
 
   if (buffer > 0)
-    glDeleteBuffers(1, &buffer);
+  glDeleteBuffers(1, &buffer);
   glCreateBuffers(1, &buffer);
   glBindBuffer(GL_ARRAY_BUFFER, buffer);
   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
@@ -155,7 +173,7 @@ void ArcQuad::createBuffer() {
       nVertices = static_cast<GLint>(vertices.size());      
   }
 
-void ArcQuad::updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h) {
+bool ArcQuad::updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h) {
 
   std::array<int32_t, 2> new_nSegs = { 0, 0 };
 
@@ -163,13 +181,22 @@ void ArcQuad::updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h) {
     new_nSegs[i] = static_cast<int>(ArcPrimitiveHelper::calcProjectedCurveLength(mvp, w, h, halfArcQuad[i].p0, halfArcQuad[i].p1, halfArcQuad[i].center) / m_tessScale);
   }
 
-  // if the buffer does not need to change
-  if (nSegs[0] == new_nSegs[0] && nSegs[1] == new_nSegs[1]) return;
+  new_nSegs[0] = new_nSegs[1] = std::max(new_nSegs[0], new_nSegs[1]);
 
-  std::cout << "Number of segments changed from " << nSegs[0] << " to " << new_nSegs[0] << std::endl;
-  std::cout << "Number of segments changed from " << nSegs[1] << " to " << new_nSegs[1] << std::endl;
+  // if the buffer does not need to change
+  if (nSegs[0] == new_nSegs[0] && nSegs[1] == new_nSegs[1]) return false;
+
+#ifdef USE_OPENSG
+  ifxLog( ifxLogLevel::IFX_NORMAL, "Updating arc quad.\n"); 
+#else
+  //std::cout << "Number of segments changed from " << nSegs[0] << " to " << new_nSegs[0] << std::endl;
+  //std::cout << "Number of segments changed from " << nSegs[1] << " to " << new_nSegs[1] << std::endl;
+#endif
+
   setNSegs(new_nSegs);
   createBuffer();
+
+  return true;
 }
 
 void ArcQuad::draw() {
@@ -182,7 +209,11 @@ void ArcQuad::draw() {
     
   glBindBuffer(GL_ARRAY_BUFFER, buffer);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const char*)0);
-  glDrawArrays(GL_TRIANGLES, 0, nVertices);
+
+  if(nSegs[0] == nSegs[1])
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, nVertices);
+  else
+    glDrawArrays(GL_TRIANGLES, 0, nVertices);
 
   glDisableVertexAttribArray(0);
 #endif

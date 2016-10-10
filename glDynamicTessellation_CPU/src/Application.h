@@ -20,11 +20,15 @@
 #include <stdio.h>
 #include <complex>
 #include <time.h>
+#include <fstream>
+#include <iostream>
 
 #include "Camera.h"
 #include "ArcSegment.h"
 #include "ArcTriangle.h"
 #include "ArcQuad.h"
+
+using namespace ArcRep;
 
 extern float                 mult;
 
@@ -102,6 +106,9 @@ public:
 	std::vector<ArcSegment>  arcSegments;
   std::vector<ArcTriangle> arcTriangles;
   std::vector<ArcQuad>     arcQuads;
+
+  std::streambuf* m_orig_cout_buf;
+  std::ofstream m_logFile;
 };
 
 #endif

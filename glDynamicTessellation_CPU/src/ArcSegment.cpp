@@ -1,9 +1,10 @@
 #include "ArcSegment.h"
-
 #include "ArcPrimitiveHelper.h"
 
 // STD
 #include <iostream>
+
+using namespace ArcRep;
 
 ArcSegment::ArcSegment(
   Vector3Df _p1,
@@ -11,33 +12,19 @@ ArcSegment::ArcSegment(
   Vector3Df _center,
   int _nSegs): DynTessArcPrimitive(DYN_TESS_ARC_SEGMENT) {
 
+  set(_p1, _p2, _center, _nSegs);
+
+}
+
+void ArcSegment::set(
+  Vector3Df _p1,
+  Vector3Df _p2,
+  Vector3Df _center,
+  int _nSegs) {
+
   p1 = _p1;
   p2 = _p2;
   center = _center;
-  //alpha = _alpha;
-  //_nSegs = nSegs;
-  
-#ifdef USE_OPENSG
-  transform = OSG::Node::create();
-	OSG::TransformPtr transform_core = OSG::Transform::create();
-	OSG::Matrix4f matrix;
-	//matrix.identity();
-	//matrix.setTranslate(translation);
-	//transform_core->setMatrix(matrix);
-	OSG::beginEditCP(transform);
-	transform->setCore(transform_core);
-	OSG::endEditCP(transform);
-
-	OSG::NodePtr geoNode = OSG::Node::create();
-	OSG::GeometryPtr geoCore = OSG::Geometry::create();
-	OSG::beginEditCP(geoCore);
-	geoNode->setCore(geoCore);
-	OSG::endEditCP(geoCore);
-
-	OSG::beginEditCP(transform);
-	transform->addChild(geoNode);
-	OSG::endEditCP(transform);
-#endif
 
   setNSegs(_nSegs);
   createBuffer();
@@ -47,7 +34,9 @@ ArcSegment::ArcSegment(
 void ArcSegment::createBuffer() {
 
 #ifdef USE_OPENSG
-  std::vector<OSG::Pnt3f> vertices;
+  vertices.clear();
+  lengths.clear();
+  types.clear();
 #else
 
   if (buffer > 0) {
@@ -96,13 +85,11 @@ void ArcSegment::createBuffer() {
   }
 
 #ifdef USE_OPENSG
-  std::vector<OSG::UInt32> lengths;
-	std::vector<OSG::UInt8>  types;
 
   lengths.push_back(static_cast<OSG::UInt32>(vertices.size()));
 	types.push_back(GL_TRIANGLE_FAN);
 
-  createDrawArraysNode(transform, vertices, lengths, types);  
+  //createDrawArraysNode(transform, vertices, lengths, types);  
 #else
   glCreateBuffers(1, &buffer);
   glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -112,24 +99,29 @@ void ArcSegment::createBuffer() {
   nVertices = static_cast<GLint>(vertices.size());
 }
 
-void ArcSegment::updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h) {
+bool ArcSegment::updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h) {
 
   int new_nSegs = static_cast<int>(ArcPrimitiveHelper::calcProjectedCurveLength(mvp, w, h, p1, p2, center) / m_tessScale);
 
   // if the buffer does not need to change
-  if (nSegs == new_nSegs) return;
+  if (nSegs == new_nSegs) return false;
 
-  std::cout << "Number of segments changed from " << nSegs << " to " << new_nSegs << std::endl;
+#ifdef USE_OPENSG
+  ifxLog( ifxLogLevel::IFX_NORMAL, "Updating arc segment.\n"); 
+#else
+  //std::cout << "Number of segments changed from " << nSegs << " to " << new_nSegs << std::endl;
+#endif
+
   setNSegs(new_nSegs);
   createBuffer();
-
+  return true;
 }
 
 void ArcSegment::draw() {
 
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 #ifdef USE_OPENSG
-  
+  // Draw will be called in the node.
 #else
   glEnableVertexAttribArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, buffer);
