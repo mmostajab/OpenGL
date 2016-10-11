@@ -42,8 +42,7 @@ void ArcQuad::createBuffer() {
   for (int i = 0; i < 2; i++){
     Vector3Df a     = halfArcQuad[i].p0 - halfArcQuad[i].center;
     Vector3Df b     = halfArcQuad[i].p1 - halfArcQuad[i].center;
-    float cos_alpha = ArcPrimitiveHelper::angle_between(a, b);
-    float alpha     = acosf(cos_alpha);
+    float alpha = ArcPrimitiveHelper::angle_between(a, b);
 
     for (int j = 0; j < nSegs[0] + 1; j++) {
       float t = static_cast<float>(j) / static_cast<float>(nSegs[0]);

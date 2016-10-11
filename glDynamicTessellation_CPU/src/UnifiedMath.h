@@ -45,6 +45,9 @@ public:
   static float dot(Vector3Df a, Vector3Df b);
   static float dot(Vector4Df a, Vector4Df b);
 
+  // cross
+  static Vector3Df cross(Vector3Df a, Vector3Df b);
+
   // length
   static float length(Vector3Df v);
   static float length(Vector4Df v);

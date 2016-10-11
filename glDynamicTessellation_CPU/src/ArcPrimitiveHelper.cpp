@@ -79,7 +79,31 @@ Vector3Df ArcPrimitiveHelper::interpolation_complex(
   return p;
 }
 
-float ArcPrimitiveHelper::angle_between( const Vector3Df& a, const Vector3Df& b )
+float ArcPrimitiveHelper::angle_with_positive_x(const Vector3Df & a)
+{
+  float l = sqrtf(a.x * a.x + a.y * a.y);
+  if (a.y >= 0) {
+    return acos(a.x / l);
+  }
+  else {
+    return 2 * glm::pi<float>() - acos(a.x / l);
+  }
+}
+
+float ArcPrimitiveHelper::cos_angle_between( const Vector3Df& a, const Vector3Df& b )
 {
   return UnifiedMath::clamp(UnifiedMath::dot(a, b) / (UnifiedMath::length(a) * UnifiedMath::length(b)), -1.0f, 1.0f);
+}
+
+float ArcPrimitiveHelper::angle_between(const Vector3Df & a, const Vector3Df & b)
+{
+  float absloute_angle_a = angle_with_positive_x(a);
+  float absloute_angle_b = angle_with_positive_x(b);
+
+  float thetha = acos(cos_angle_between(a, b));
+
+  if (absloute_angle_a > absloute_angle_b)
+    return thetha;
+  else
+    return 2 * glm::pi<float>() - thetha;
 }

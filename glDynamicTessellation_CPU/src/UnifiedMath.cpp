@@ -29,6 +29,15 @@ float UnifiedMath::dot(Vector3Df a, Vector3Df b)
 #endif
 }
 
+Vector3Df UnifiedMath::cross(Vector3Df a, Vector3Df b)
+{
+#ifdef USE_OPENSG
+  return a.dot(b);
+#else
+  return glm::cross(a, b);
+#endif
+}
+
 
 float UnifiedMath::dot(Vector4Df a, Vector4Df b)
 {

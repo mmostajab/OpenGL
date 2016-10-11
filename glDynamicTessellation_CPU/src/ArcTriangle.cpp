@@ -67,12 +67,14 @@ void ArcTriangle::set(
 
     Vector3Df a = p1 - center;
     Vector3Df b = p2 - center;
-    float cos_alpha = ArcPrimitiveHelper::angle_between(a, b);
-    float alpha = acosf(cos_alpha);
+    float alpha = ArcPrimitiveHelper::angle_between(a, b);
+
+    Vector3Df c = UnifiedMath::cross(a, b);
+    bool ccw = c[2] < 0;
 
     for (int i = 0; i < nSegs + 1; i++) {
       float t = static_cast<float>(i) / static_cast<float>(nSegs);
-      float thetha = t * alpha;
+      float thetha = ccw ? t * alpha : (1 - t) * alpha;
 
       Vector3Df p;
 #ifdef USE_SLERP
@@ -98,7 +100,7 @@ void ArcTriangle::set(
 
   //createDrawArraysNode(transform, vertices, lengths, types);  
 #else
-    glCreateBuffers(1, &buffer);
+    glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW);
 #endif
@@ -135,6 +137,10 @@ void ArcTriangle::set(
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const char*)0);
 
     glDrawArrays(GL_TRIANGLE_FAN, 0, nVertices);
+    GLenum error = glGetError();
+
+    std::cout << "error = " <<
+      error << std::endl;
 
     glDisableVertexAttribArray(0);
 #endif

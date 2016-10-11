@@ -246,8 +246,8 @@ void Application::create() {
 #endif
 
 #if 1
-  int32_t w = 2;
-  int32_t h = 2;
+  int32_t w = 6;
+  int32_t h = 6;
 
   std::ifstream config("config.txt");
   if (config) {
@@ -261,7 +261,7 @@ void Application::create() {
     for (int32_t j = 0; j < w; j++) {
       addLogo(glm::vec3(-2.0f, 0.0f, 0.0f) + glm::vec3(i * cst_width, j * cst_height, 0.0f), 0.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
       addCST(glm::vec3(0.25f, 0.0f, 0.0f) + glm::vec3(i * cst_width, j * cst_height, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
-      addLogo(glm::vec3(2.0f, 0.0f, 0.0f) + glm::vec3(i * cst_width, j * cst_height, 0.0f), 0.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
+      //addLogo(glm::vec3(2.0f, 0.0f, 0.0f) + glm::vec3(i * cst_width, j * cst_height, 0.0f), 0.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
     }
   }
 #endif
@@ -391,6 +391,9 @@ void Application::draw() {
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   glClearDepth(2.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  glEnable(GL_CULL_FACE);
+  glFrontFace(GL_CCW);
 
   // background should be always filled.
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

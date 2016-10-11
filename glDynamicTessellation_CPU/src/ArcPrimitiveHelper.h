@@ -47,8 +47,14 @@ public:
                                 const float& thetha, const float& angle
   );
 
-  // returns the angle between vectors @a and @b
-  static float       angle_between( const Vector3Df& a, const Vector3Df& b );
+  // returns the angle of a vector with positive x in CCW order
+  static float       angle_with_positive_x(const Vector3Df& a);
+
+  // returns the cosine of the angle between vectors @a and @b
+  static float       cos_angle_between( const Vector3Df& a, const Vector3Df& b );
+
+  // returns the cosine of the angle between vectors @a and @b
+  static float       angle_between(const Vector3Df& a, const Vector3Df& b);
 };
 
 #endif // __ARC_PRIMITIVE_HELPER_H__

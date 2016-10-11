@@ -16,6 +16,9 @@ Camera::Camera() {
 
   camera_pitch = 0.0f;
   camera_heading = 0.0f;
+
+  camera_ortho_view_plane_size[0] = 3.0;
+  camera_ortho_view_plane_size[1] = 3.0;
 }
 
 Camera::~Camera() {
@@ -39,7 +42,10 @@ void Camera::Update() {
     projection = glm::ortho(-1.5f * float(aspect), 1.5f * float(aspect), -1.5f, 1.5f, -10.0f, 10.f);
   }
   else if (camera_mode == FREE) {
-    projection = glm::perspective(field_of_view, aspect, near_clip, far_clip);
+    // TODO Replaced by ortho
+    //projection = glm::perspective(field_of_view, aspect, near_clip, far_clip);
+    projection = glm::ortho(-1.5f * float(aspect), 1.5f * float(aspect), -1.5f, 1.5f, -10.0f, 10.f);
+    
     //detmine axis for pitch rotation
     glm::vec3 axis = glm::cross(camera_direction, glm::vec3(0, 1, 0));
     camera_up = glm::normalize(-glm::cross(camera_direction, axis));
@@ -62,7 +68,15 @@ void Camera::Update() {
     camera_position_delta = camera_position_delta * .8f;
   }
   else if (camera_mode == MODELVIEWER) {
-    projection = glm::perspective(field_of_view, aspect, near_clip, far_clip);
+    // TODO Replaced by ortho
+    //projection = glm::perspective(field_of_view, aspect, near_clip, far_clip);
+    projection = glm::ortho(
+      -camera_ortho_view_plane_size[0] / 2.0f * float(aspect), 
+       camera_ortho_view_plane_size[0] / 2.0f * float(aspect), 
+      -camera_ortho_view_plane_size[1] / 2.0f, 
+       camera_ortho_view_plane_size[1] / 2.0f, 
+       float(near_clip), float(far_clip));
+
     //detmine axis for pitch rotation
     glm::vec3 axis = glm::cross(camera_direction, glm::vec3(0, 1, 0));
     camera_up = glm::normalize(-glm::cross(camera_direction, axis));
@@ -154,7 +168,16 @@ void Camera::MoveForward(int yOffset){
     break;
 
   case MODELVIEWER:
-    camera_position += camera_direction * (camera_scale * yOffset * 10);
+    // TODO projection is changed
+    //camera_position += camera_direction * (camera_scale * yOffset * 10);
+    if (yOffset < 0.0f) {
+      camera_ortho_view_plane_size[0] *= 1.1f;
+      camera_ortho_view_plane_size[1] *= 1.1f;
+    }
+    else {
+      camera_ortho_view_plane_size[0] *= 0.9f;
+      camera_ortho_view_plane_size[1] *= 0.9f;
+    }
     break;
   };
 }

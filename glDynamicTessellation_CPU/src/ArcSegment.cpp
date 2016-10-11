@@ -59,8 +59,7 @@ void ArcSegment::createBuffer() {
 
   Vector3Df a = p1 - center;
   Vector3Df b = p2 - center;
-  float cos_alpha = ArcPrimitiveHelper::angle_between(a, b);
-  float alpha = acosf(cos_alpha);
+  float alpha = ArcPrimitiveHelper::angle_between(a, b);
 
   for (int i = 0; i < nSegs + 1; i++) {
     float t = static_cast<float>(i) / static_cast<float>(nSegs);

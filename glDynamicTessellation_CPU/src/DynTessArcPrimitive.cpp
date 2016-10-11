@@ -2,7 +2,7 @@
 
 using namespace ArcRep;
 
-DynTessArcPrimitive::DynTessArcPrimitive(DynamicTessellatedPrimitiveType _type): m_type(_type), m_tessScale(1.0f)
+DynTessArcPrimitive::DynTessArcPrimitive(DynamicTessellatedPrimitiveType _type): buffer(0), m_type(_type), m_tessScale(1.0f)
 {
 #ifdef USE_OPENSG
 
