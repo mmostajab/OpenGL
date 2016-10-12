@@ -27,10 +27,12 @@ public:
     int _nSegs);
 
   
-  bool updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h)  override;
+  bool updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned int w, unsigned int h)  override;
   void draw()                                                       override;
 
   void setNSegs(const int& nSegs);
+
+  int  getNumGenTriangles() const;
 
 protected:
 //public:

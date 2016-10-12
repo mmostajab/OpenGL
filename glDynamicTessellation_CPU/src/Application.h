@@ -60,7 +60,7 @@ public:
 
     void prepare_framebuffer();
 
-    
+    void setupOpenGLSpecs();
 
 private:
     static void EventMouseButton(GLFWwindow* window, int button, int action, int mods);

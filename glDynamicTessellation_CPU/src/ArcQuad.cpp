@@ -172,12 +172,42 @@ void ArcQuad::createBuffer() {
       nVertices = static_cast<GLint>(vertices.size());      
   }
 
-bool ArcQuad::updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h) {
+bool ArcQuad::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned int w, unsigned int h) {
 
   std::array<int32_t, 2> new_nSegs = { 0, 0 };
 
   for (size_t i = 0; i < halfArcQuad.size(); i++) {
-    new_nSegs[i] = static_cast<int>(ArcPrimitiveHelper::calcProjectedCurveLength(mvp, w, h, halfArcQuad[i].p0, halfArcQuad[i].p1, halfArcQuad[i].center) / m_tessScale);
+    if (m_tessMethod == TESS_METHOD_CURVE_LENGTH)
+      new_nSegs[i] = static_cast<int>(ArcPrimitiveHelper::calcProjectedCurveLength(mvp, w, h, halfArcQuad[i].p0, halfArcQuad[i].p1, halfArcQuad[i].center) / m_tessScale);
+    else if (m_tessMethod == TESS_METHOD_FIXED_ALPHA) {
+
+      // TODO Consider projection
+
+      // project the pixel
+      float pixel_size = 0.f;
+      if (camInfo.type == CameraInfo::CAMERA_TYPE_ORTHO) {
+        pixel_size = UnifiedMath::max(camInfo.ortho.pixelWidth(), camInfo.ortho.pixelHeight());
+      }
+      else if (camInfo.type == CameraInfo::CAMERA_TYPE_PERSPECTIVE) {
+        std::cout << "Perspective camera is not supported.\n";
+      }
+
+      // calculate alpha
+      float radius = UnifiedMath::max(UnifiedMath::length(halfArcQuad[i].p0 - halfArcQuad[i].center), UnifiedMath::length(halfArcQuad[i].p1 - halfArcQuad[i].center));
+
+      float tri_alpha = 1 - pixel_size / radius;
+      if (std::fabs(tri_alpha) >= 1.0f || std::fabs(tri_alpha) <= m_dropCullingFactor) {
+        new_nSegs[i] = 0;
+      }
+      else {
+        // calculate the new number of segments
+        float alpha = acos(tri_alpha);
+        float angle = ArcPrimitiveHelper::angle_between(halfArcQuad[i].p0 - halfArcQuad[i].center, halfArcQuad[i].p1 - halfArcQuad[i].center);
+
+        new_nSegs[i] = static_cast<int>(std::ceil(angle / alpha / m_tessScale)) ;
+      }
+    }
+
   }
 
   new_nSegs[0] = new_nSegs[1] = std::max(new_nSegs[0], new_nSegs[1]);
@@ -223,4 +253,9 @@ void ArcQuad::setNSegs(const std::array<int32_t, 2> & _nSegs)
 {
   nSegs[0] = _nSegs[0];
   nSegs[1] = _nSegs[1];
+}
+
+int ArcRep::ArcQuad::getNumGenTriangles() const
+{
+  return 2 * nSegs[0];
 }

@@ -98,9 +98,39 @@ void ArcSegment::createBuffer() {
   nVertices = static_cast<GLint>(vertices.size());
 }
 
-bool ArcSegment::updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h) {
+bool ArcSegment::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned int w, unsigned int h) {
 
-  int new_nSegs = static_cast<int>(ArcPrimitiveHelper::calcProjectedCurveLength(mvp, w, h, p1, p2, center) / m_tessScale);
+  int new_nSegs = 0;
+    if(m_tessMethod == TESS_METHOD_CURVE_LENGTH)
+      new_nSegs = static_cast<int>(ArcPrimitiveHelper::calcProjectedCurveLength(mvp, w, h, p1, p2, center) / m_tessScale);
+    else if (m_tessMethod == TESS_METHOD_FIXED_ALPHA) {
+      
+      // TODO Consider projection
+
+      // project the pixel
+      float pixel_size = 0.f;
+      if (camInfo.type == CameraInfo::CAMERA_TYPE_ORTHO) {
+        pixel_size = UnifiedMath::max(camInfo.ortho.pixelWidth(), camInfo.ortho.pixelHeight());
+      }
+      else if (camInfo.type == CameraInfo::CAMERA_TYPE_PERSPECTIVE) {
+        std::cout << "Perspective camera is not supported.\n";
+      }
+
+      // calculate alpha
+      float radius = UnifiedMath::max(UnifiedMath::length(p1 - center), UnifiedMath::length(p2 - center));
+
+      float tri_alpha = 1 - pixel_size / radius;
+      if (std::fabs(tri_alpha) >= 1.0f || std::fabs(tri_alpha) <= m_dropCullingFactor) {
+        new_nSegs = 0;
+      }
+      else {
+        // calculate the new number of segments
+        float alpha = acos(tri_alpha);
+        float angle = ArcPrimitiveHelper::angle_between(p1 - center, p2 - center);
+
+        new_nSegs = static_cast<int>(std::ceil(angle / alpha / m_tessScale));
+      }
+    }
 
   // if the buffer does not need to change
   if (nSegs == new_nSegs) return false;
@@ -135,4 +165,9 @@ void ArcSegment::draw() {
 void ArcSegment::setNSegs(const int & _nSegs)
 {
   nSegs = _nSegs;
+}
+
+int ArcSegment::getNumGenTriangles() const
+{
+  return nSegs;
 }

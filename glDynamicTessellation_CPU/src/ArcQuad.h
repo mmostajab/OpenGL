@@ -43,11 +43,13 @@ public:
 
   
 
-  bool updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h);
+  bool updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned int w, unsigned int h);
 
   void draw();
 
   void setNSegs(const std::array<int32_t, 2> & _nSegs);
+
+  int  getNumGenTriangles() const;
 
 //public:
 protected:

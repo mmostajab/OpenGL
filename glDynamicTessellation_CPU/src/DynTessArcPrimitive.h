@@ -2,6 +2,7 @@
 #define __ARC_PRIMITIVE_H__
 
 #include "UnifiedMath.h"
+#include "CameraInfo.h"
 
 #include <array>
 #include <vector>
@@ -20,7 +21,7 @@
 #else
 
   // Widnows
-  #include <windows.h>
+  //#include <windows.h>
 
   // GL
   #include <GL/glew.h>
@@ -41,17 +42,25 @@ struct Vertex {
   Vector3Df position;
 };
 
+enum TessellatonMethod {
+  TESS_METHOD_CURVE_LENGTH             = 0,
+  TESS_METHOD_FIXED_ALPHA              = 1,
+  TESS_METHOD_CIRCULAR_CURVE_SUBDIV    = 2
+};
+
 // interface for an ArcPrimitive Representation
 class DynTessArcPrimitive {
 public:
   DynTessArcPrimitive(DynamicTessellatedPrimitiveType type);
 
-  virtual bool updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h)  = 0;
-  virtual void draw()                                                       = 0;
+  virtual bool updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned int w, unsigned int h)  = 0;
+  virtual void draw()                                                                                   = 0;
 
   float getTessScale() const;
   void  setTessScale(float tessScale);
   void  multiplyTessFactor(float multiplier);
+
+  virtual int   getNumGenTriangles() const = 0;
 
 //protected:
 public:
@@ -79,6 +88,10 @@ protected:
 protected:
   DynamicTessellatedPrimitiveType m_type;
   float                           m_tessScale;
+
+  TessellatonMethod               m_tessMethod;
+
+  float                           m_dropCullingFactor;
 
   virtual void createBuffer() = 0;
 

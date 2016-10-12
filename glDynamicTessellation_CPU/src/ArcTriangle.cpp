@@ -69,7 +69,7 @@ void ArcTriangle::set(
     Vector3Df b = p2 - center;
     float alpha = ArcPrimitiveHelper::angle_between(a, b);
 
-    Vector3Df c = UnifiedMath::cross(a, b);
+    Vector3Df c = UnifiedMath::cross(p1-p3, p2-p3);
     bool ccw = c[2] < 0;
 
     for (int i = 0; i < nSegs + 1; i++) {
@@ -108,9 +108,41 @@ void ArcTriangle::set(
     nVertices = static_cast<GLint>(vertices.size());
   }
 
-  bool ArcTriangle::updateBuffer(Matrix4x4f mvp, unsigned int w, unsigned int h) {
+  bool ArcTriangle::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned int w, unsigned int h) {
     
-    int new_nSegs = static_cast<int>(ArcPrimitiveHelper::calcProjectedCurveLength(mvp, w, h, p1, p2, center) / m_tessScale);
+    int new_nSegs = 0;
+    if(m_tessMethod == TESS_METHOD_CURVE_LENGTH)
+      new_nSegs = static_cast<int>(ArcPrimitiveHelper::calcProjectedCurveLength(mvp, w, h, p1, p2, center) / m_tessScale);
+    else if (m_tessMethod == TESS_METHOD_FIXED_ALPHA) {
+      
+      // TODO Consider projection
+
+      // project the pixel
+      float pixel_size = 0.f;
+      if (camInfo.type == CameraInfo::CAMERA_TYPE_ORTHO) {
+        pixel_size = UnifiedMath::max(camInfo.ortho.pixelWidth(), camInfo.ortho.pixelHeight());
+      }
+      else if (camInfo.type == CameraInfo::CAMERA_TYPE_PERSPECTIVE) {
+        std::cout << "Perspective camera is not supported.\n";
+      }
+
+      // calculate alpha
+      float radius = UnifiedMath::max(UnifiedMath::length(p1 - center), UnifiedMath::length(p2 - center));
+
+      float tri_alpha = 1 - pixel_size / radius;
+      if (std::fabs(tri_alpha) >= 1.0f || std::fabs(tri_alpha) <= m_dropCullingFactor) {
+        new_nSegs = 0;
+      }
+      else {
+        // calculate the new number of segments
+        float alpha = acos(tri_alpha);
+        float angle = ArcPrimitiveHelper::angle_between(p1 - center, p2 - center);
+
+        new_nSegs = static_cast<int>(std::ceil(angle / alpha / m_tessScale)) ;
+      }
+    }
+
+
 
     if (new_nSegs == nSegs) return false;
 
@@ -137,10 +169,6 @@ void ArcTriangle::set(
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const char*)0);
 
     glDrawArrays(GL_TRIANGLE_FAN, 0, nVertices);
-    GLenum error = glGetError();
-
-    std::cout << "error = " <<
-      error << std::endl;
 
     glDisableVertexAttribArray(0);
 #endif
@@ -150,4 +178,9 @@ void ArcTriangle::set(
 void ArcTriangle::setNSegs(const int& _nSegs)
 {
   nSegs = _nSegs;
+}
+
+int ArcTriangle::getNumGenTriangles() const
+{
+  return nSegs;
 }

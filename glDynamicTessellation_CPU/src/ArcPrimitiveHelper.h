@@ -11,7 +11,7 @@
 #else
 
 // Widnows
-#include <windows.h>
+//#include <windows.h>
 
 // GL
 #include <GL/glew.h>

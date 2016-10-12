@@ -2,6 +2,8 @@
 	//#include <Windows.h>
 #endif
 
+#define ENABLE_CULLING
+
 #include "application.h"
 
 // STD
@@ -21,6 +23,7 @@
 #include <GL/glew.h>
 
 #include "SampleDataGenerator.h"
+#include "CameraInfo.h"
 
 // Static Members
 GLFWwindow*				    Application::m_window = 0;
@@ -87,12 +90,6 @@ void Application::init(const unsigned int& width, const unsigned int& height, HG
     }
 
     init();
-
-    GLenum e = glGetError();
-    //glEnable(GL_DEPTH);
-    e = glGetError();
-    glEnable(GL_DEPTH_TEST);
-    e = glGetError();
 }
 
 void Application::init(const unsigned int& width, const unsigned int& height) {
@@ -295,6 +292,8 @@ void Application::create() {
   std::cout << "Total = " << arcSegments.size() + arcTriangles.size() + arcQuads.size() << std::endl;
 
   //std::cout.set_rdbuf(NULL);
+
+  setupOpenGLSpecs();
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
@@ -352,16 +351,40 @@ void Application::update(float time, float timeSinceLastFrame) {
 	clock_t start_time = clock();
 	m_mvp_mat = m_projmat * m_viewmat * m_worldmat;
 
+  float near_plane_width_w  = m_camera.camera_ortho_view_plane_size[0];
+  float near_plane_height   = m_camera.camera_ortho_view_plane_size[1];
+  
+  // Passed camera information
+  // TODO 
+  // 1. should support rotated ortho cam
+  // 2. should support perspective cam
+  CameraInfo camInfo;
+  camInfo.type = CameraInfo::CAMERA_TYPE_ORTHO;
+  camInfo.ortho.near_plane_width_world  = m_camera.camera_ortho_view_plane_size[0];
+  camInfo.ortho.near_plane_height_world = m_camera.camera_ortho_view_plane_size[1];
+  camInfo.ortho.w = m_width;
+  camInfo.ortho.h = m_height;
+
+
   std::chrono::high_resolution_clock::time_point start_update_time = std::chrono::high_resolution_clock::now();
 //#pragma omp parallel
   {
 //#pragma omp parallel for
-    for (int i = 0; i < static_cast<int>(arcSegments.size()); i++)  arcSegments[i].updateBuffer(m_mvp_mat, m_width, m_height);
+    for (int i = 0; i < static_cast<int>(arcSegments.size()); i++)  arcSegments[i].updateBuffer(camInfo, m_mvp_mat, m_width, m_height);
 //#pragma omp for
-    for (int i = 0; i < static_cast<int>(arcTriangles.size()); i++) arcTriangles[i].updateBuffer(m_mvp_mat, m_width, m_height);
+    for (int i = 0; i < static_cast<int>(arcTriangles.size()); i++) arcTriangles[i].updateBuffer(camInfo, m_mvp_mat, m_width, m_height);
 //#pragma omp for
-    for (int i = 0; i < static_cast<int>(arcQuads.size()); i++)     arcQuads[i].updateBuffer(m_mvp_mat, m_width, m_height);
+    for (int i = 0; i < static_cast<int>(arcQuads.size()); i++)     arcQuads[i].updateBuffer(camInfo, m_mvp_mat, m_width, m_height);
   }
+
+  int nTriangles = 0;
+  {
+    for (int i = 0; i < static_cast<int>(arcSegments.size()); i++)  nTriangles += arcSegments[i].getNumGenTriangles();
+    for (int i = 0; i < static_cast<int>(arcTriangles.size()); i++)  nTriangles += arcTriangles[i].getNumGenTriangles();
+    for (int i = 0; i < static_cast<int>(arcQuads.size()); i++)  nTriangles += arcQuads[i].getNumGenTriangles();
+  }
+  std::cout << "Number of triangles = " << nTriangles << std::endl;
+
   std::chrono::high_resolution_clock::time_point end_update_time = std::chrono::high_resolution_clock::now();
   int64_t update_time = (end_update_time - start_update_time).count();
   if(update_time > 1e7) std::cout << "update time = " << update_time << "( " << 1e9f / update_time << " FPS )" <<std::endl;
@@ -391,9 +414,6 @@ void Application::draw() {
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   glClearDepth(2.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  glEnable(GL_CULL_FACE);
-  glFrontFace(GL_CCW);
 
   // background should be always filled.
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -622,6 +642,22 @@ void Application::prepare_framebuffer() {
 
   glGenVertexArrays(1, &quad_vao);
   glBindVertexArray(quad_vao);
+}
+
+void Application::setupOpenGLSpecs()
+{
+  GLenum e = glGetError();
+  //glEnable(GL_DEPTH);
+  e = glGetError();
+  glEnable(GL_DEPTH_TEST);
+  e = glGetError();
+
+#ifdef ENABLE_CULLING
+  glEnable(GL_CULL_FACE);
+  glFrontFace(GL_CCW);
+#else
+  glDisable(GL_CULL_FACE);
+#endif
 }
 
 void Application::EventMouseButton(GLFWwindow* window, int button, int action, int mods) {
