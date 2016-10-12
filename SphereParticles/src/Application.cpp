@@ -132,12 +132,12 @@ void Application::init() {
 
     m_camera.SetMode(MODELVIEWER);
     //m_camera.SetMode(FREE);
-    m_camera.SetPosition(glm::vec3(3.0f, 3.0f, 3.0f));
+    m_camera.SetPosition(glm::vec3(100.0f, 100.0f, 3.0f));
     m_camera.SetLookAt(glm::vec3(0.0f, 0.0f, 0.0f));
-    m_camera.SetClipping(0.01f, 100.0f);
+    m_camera.SetClipping(0.01f, 1000.0f);
     m_camera.SetFOV(60);
     m_camera.SetViewport(0, 0, m_width, m_height);
-    m_camera.camera_scale = 0.01f;
+    m_camera.camera_scale = 0.1f;
 
     prepare_framebuffer();
 
@@ -157,16 +157,19 @@ void Application::init() {
 void Application::create() {
   compileShaders();
 
-  std::vector<glm::vec4> points;
+  segs = 50;
+  dim = 30.0f;
 
-  float x = 0;
-  float y = 0;
-  for (size_t i = 0; i < 9; i++) {
-    points.push_back(glm::vec4(x, y, 0.0f, 1.0f));
-    x += 1.0f;
-    if (i != 0 && i % 3 == 0) {
-      y += 1.0f;
-      x = 0.0f;
+  std::ifstream infile("config.txt");
+  if (infile) {
+    infile >> dim >> segs;
+  }
+
+  for (float x = -dim; x < dim; x += dim / segs) {
+    for (float y = -dim; y < dim; y += dim / segs) {
+      for (float z = -dim; z < dim; z += dim / segs) {
+        points.push_back(glm::vec4(x, y, z, 1.0f));
+      }
     }
   }
 
@@ -175,6 +178,8 @@ void Application::create() {
   glCreateBuffers(1, &point_buffer);
   glBindBuffer(GL_ARRAY_BUFFER, point_buffer);
   glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(glm::vec4), points.data(), GL_STATIC_DRAW);
+
+  std::cout << "Number of particles = " << points.size() << std::endl;
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
@@ -229,6 +234,18 @@ void Application::update(float time, float timeSinceLastFrame) {
     glBindBufferBase(GL_UNIFORM_BUFFER, 3, m_general_buffer);
     glm::vec4* general_info = (glm::vec4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 2 * sizeof(glm::vec4), GL_MAP_WRITE_BIT);
     glUnmapBuffer(GL_UNIFORM_BUFFER);
+
+    for (size_t i = 0; i < points.size(); i++) {
+
+      points[i].x += 0.5f * ((rand() % 1000) / 1000.0f - 0.5f);
+      points[i].y += 0.5f * ((rand() % 1000) / 1000.0f - 0.5f);
+      points[i].z += 0.5f * ((rand() % 1000) / 1000.0f - 0.5f);
+    }
+
+   // glPointSize(10);
+
+    glBindBuffer(GL_ARRAY_BUFFER, point_buffer);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, points.size() * sizeof(glm::vec4), points.data());
 }
 
 void Application::draw() {
@@ -254,11 +271,13 @@ void Application::draw() {
   
   glUseProgram(sphere_program);
 
+  glUniform1f(0, dim / segs / 2.0f);
+
   glBindBuffer(GL_ARRAY_BUFFER, point_buffer);
   glEnableClientState(GL_VERTEX_ARRAY);
   glVertexPointer(4, GL_FLOAT, sizeof(glm::vec4), 0);   //The starting point of the VBO, for the vertices
 
-  glDrawArrays(GL_POINTS, 0, 9);
+  glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(points.size()));
 
   // Draw the world coordinate system
   glViewport(0, 0, 100, 100);

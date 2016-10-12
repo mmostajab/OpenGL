@@ -90,6 +90,9 @@ public:
     GLuint      fbo_textures[3];
     GLuint      quad_vao;
 
+    int segs;
+    float dim ;
+    std::vector<glm::vec4> points;
     GLuint      point_buffer;
     GLuint      sphere_program;
 
