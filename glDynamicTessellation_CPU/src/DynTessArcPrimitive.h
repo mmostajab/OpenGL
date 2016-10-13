@@ -88,7 +88,7 @@ protected:
 protected:
   DynamicTessellatedPrimitiveType m_type;
   float                           m_tessScale;
-
+  float                           m_triangulationAccuracy;
   TessellatonMethod               m_tessMethod;
 
   float                           m_dropCullingFactor;

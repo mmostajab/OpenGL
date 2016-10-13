@@ -399,6 +399,9 @@ void Application::update(float time, float timeSinceLastFrame) {
 
   std::chrono::high_resolution_clock::time_point end_update_time = std::chrono::high_resolution_clock::now();
   int64_t update_time = (end_update_time - start_update_time).count();
+
+  std::cout << "performance (CPU Side) = " << static_cast<float>(nTriangles) / static_cast<float>(update_time / 1e9) << std::endl;
+
   if(update_time > 1e7) std::cout << "update time = " << update_time << "( " << 1e9f / update_time << " FPS )" <<std::endl;
 
 	clock_t end_time = clock();

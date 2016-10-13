@@ -120,7 +120,7 @@ bool ArcSegment::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigne
       float radius = UnifiedMath::max(UnifiedMath::length(p1 - center), UnifiedMath::length(p2 - center));
 
       float tri_alpha = 1 - pixel_size / radius;
-      if (std::fabs(tri_alpha) >= 1.0f || std::fabs(tri_alpha) <= m_dropCullingFactor) {
+      if (std::fabs(tri_alpha) >= 1.0f || radius <= m_dropCullingFactor * pixel_size) {
         new_nSegs = 0;
       }
       else {
@@ -128,12 +128,14 @@ bool ArcSegment::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigne
         float alpha = acos(tri_alpha);
         float angle = ArcPrimitiveHelper::angle_between(p1 - center, p2 - center);
 
-        new_nSegs = static_cast<int>(std::ceil(angle / alpha / m_tessScale));
+        new_nSegs = static_cast<int>(std::ceil(angle / (m_tessScale * m_triangulationAccuracy * alpha)));
       }
     }
 
   // if the buffer does not need to change
+#ifdef UPDATE_ARCS_EVERY_FRAME
   if (nSegs == new_nSegs) return false;
+#endif
 
 #ifdef USE_OPENSG
   ifxLog( ifxLogLevel::IFX_NORMAL, "Updating arc segment.\n"); 

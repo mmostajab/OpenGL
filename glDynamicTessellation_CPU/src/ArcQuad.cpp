@@ -196,7 +196,7 @@ bool ArcQuad::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned i
       float radius = UnifiedMath::max(UnifiedMath::length(halfArcQuad[i].p0 - halfArcQuad[i].center), UnifiedMath::length(halfArcQuad[i].p1 - halfArcQuad[i].center));
 
       float tri_alpha = 1 - pixel_size / radius;
-      if (std::fabs(tri_alpha) >= 1.0f || std::fabs(tri_alpha) <= m_dropCullingFactor) {
+      if (std::fabs(tri_alpha) >= 1.0f || radius <= m_dropCullingFactor * pixel_size) {
         new_nSegs[i] = 0;
       }
       else {
@@ -204,7 +204,7 @@ bool ArcQuad::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned i
         float alpha = acos(tri_alpha);
         float angle = ArcPrimitiveHelper::angle_between(halfArcQuad[i].p0 - halfArcQuad[i].center, halfArcQuad[i].p1 - halfArcQuad[i].center);
 
-        new_nSegs[i] = static_cast<int>(std::ceil(angle / alpha / m_tessScale)) ;
+        new_nSegs[i] = static_cast<int>(std::ceil(angle / (m_tessScale * m_triangulationAccuracy * alpha)));
       }
     }
 
@@ -213,7 +213,9 @@ bool ArcQuad::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned i
   new_nSegs[0] = new_nSegs[1] = std::max(new_nSegs[0], new_nSegs[1]);
 
   // if the buffer does not need to change
+#ifdef UPDATE_ARCS_EVERY_FRAME
   if (nSegs[0] == new_nSegs[0] && nSegs[1] == new_nSegs[1]) return false;
+#endif
 
 #ifdef USE_OPENSG
   ifxLog( ifxLogLevel::IFX_NORMAL, "Updating arc quad.\n"); 
