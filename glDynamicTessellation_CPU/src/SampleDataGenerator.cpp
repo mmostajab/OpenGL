@@ -48,8 +48,7 @@ void addLogo(
 
   arc[3].set(
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(0.0f, -1.0f, 0.0f)),
-    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(1.0f, 0.0f, 0.0f)),
-    
+    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(1.0f, 0.0f, 0.0f)),  
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df( 1.0f, -1.0f, 0.0f)),
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df( 0.0f, 0.0f, 0.0f)),
     100
@@ -256,7 +255,6 @@ static void addT(
   arcTriangle0.set(
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(-2.0f, 4.1f, 0)),
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(-1.0f, 4.0f, 0)),
-    
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(-1.8f, 4.2f, 0)),
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(-1.4f, 4.2f, 0)),
     100);
@@ -266,7 +264,6 @@ static void addT(
     
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(1.0f, 4.0f, 0)),
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(2.0f, 4.1f, 0)),
-    
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(1.8f, 4.2f, 0)),
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(1.4f, 4.2f, 0)),
     100);

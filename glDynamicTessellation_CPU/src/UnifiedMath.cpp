@@ -194,3 +194,8 @@ Vector3Df UnifiedMath::TransformWithTranslation(Matrix4x4f m, Vector3Df v)
   Vector4Df res = matrixMultiply(m, v4d);
   return Vector3Df(res[0], res[1], res[2]);
 }
+
+float UnifiedMath::pi()
+{
+  return 3.1415926535897932384626433832795028841971693993751f;
+}

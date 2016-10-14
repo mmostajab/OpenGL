@@ -73,6 +73,9 @@ public:
 
   // Trasnformation
   static Vector3Df TransformWithTranslation(Matrix4x4f m, Vector3Df v);
+
+  // Const declaration
+  static float pi();
 };
 
 

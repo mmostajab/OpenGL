@@ -56,9 +56,12 @@ public:
   virtual bool updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned int w, unsigned int h)  = 0;
   virtual void draw()                                                                                   = 0;
 
-  float getTessScale() const;
-  void  setTessScale(float tessScale);
+  //float getTessScale() const;
+  //void  setTessScale(float tessScale);
   void  multiplyTessFactor(float multiplier);
+
+  void setDropCullingFactor(float factor);
+  void setTrianulationAccuracyFactor(float factor);
 
   virtual int   getNumGenTriangles() const = 0;
 

@@ -42,9 +42,12 @@ bool                  Application::m_mouse_middle_drag  = false;
 bool                  Application::m_mouse_right_drag   = false;
 int                   Application::rendering_state      = 0;
 Camera				        Application::m_camera;
-bool                 Application::wireframe = false;
+bool                  Application::wireframe = false;
+AntTweakBarGUI        Application::m_gui;
 
-Application::Application() {
+Application::Application():
+  trianglesPerSecondEvaluator("TrianglesPerSecond")
+{
   // get underlying buffer
   //m_orig_cout_buf = //std::cout.rdbuf();
 
@@ -52,6 +55,13 @@ Application::Application() {
   //std::cout.rdbuf(NULL);
 
   m_logFile.open("log.h");
+
+  trianglesPerSecondEvaluator.addData(5, 1);
+  trianglesPerSecondEvaluator.addData(4, 1);
+  trianglesPerSecondEvaluator.addData(3, 1);
+  trianglesPerSecondEvaluator.addData(2, 1);
+  trianglesPerSecondEvaluator.addData(1, 1);
+  
 }
 
 void Application::init(const unsigned int& width, const unsigned int& height, HGLRC mainWindowContext) {
@@ -132,6 +142,8 @@ void Application::init(const unsigned int& width, const unsigned int& height) {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     e = glGetError();
+
+    m_gui.init(width, height);
 }
 
 
@@ -162,6 +174,10 @@ void Application::init() {
     glGenBuffers(1, &m_general_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, m_general_buffer);
     glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), NULL, GL_DYNAMIC_DRAW);
+
+    // GUI
+    m_gui.general_dropCullingFactor = 1.0f;
+    m_gui.general_triangulationAccuracyFactor = 1.0f;
 }
 
 void Application::create() {
@@ -363,6 +379,21 @@ void Application::update(float time, float timeSinceLastFrame) {
 	clock_t start_time = clock();
 	m_mvp_mat = m_projmat * m_viewmat * m_worldmat;
 
+  // Apply GUI
+  for (int i = 0; i < static_cast<int>(arcSegments.size()); i++) {
+    arcSegments[i].setDropCullingFactor(m_gui.general_dropCullingFactor);
+    arcSegments[i].setTrianulationAccuracyFactor(m_gui.general_triangulationAccuracyFactor);
+  }
+  for (int i = 0; i < static_cast<int>(arcTriangles.size()); i++) {
+    arcTriangles[i].setDropCullingFactor(m_gui.general_dropCullingFactor);
+    arcTriangles[i].setTrianulationAccuracyFactor(m_gui.general_triangulationAccuracyFactor);
+  }
+
+  for (int i = 0; i < static_cast<int>(arcQuads.size()); i++) {
+    arcQuads[i].setDropCullingFactor(m_gui.general_dropCullingFactor);
+    arcQuads[i].setTrianulationAccuracyFactor(m_gui.general_triangulationAccuracyFactor);
+  }
+
   float near_plane_width_w  = m_camera.camera_ortho_view_plane_size[0];
   float near_plane_height   = m_camera.camera_ortho_view_plane_size[1];
   
@@ -376,7 +407,6 @@ void Application::update(float time, float timeSinceLastFrame) {
   camInfo.ortho.near_plane_height_world = m_camera.camera_ortho_view_plane_size[1];
   camInfo.ortho.w = m_width;
   camInfo.ortho.h = m_height;
-
 
   std::chrono::high_resolution_clock::time_point start_update_time = std::chrono::high_resolution_clock::now();
 //#pragma omp parallel
@@ -395,14 +425,24 @@ void Application::update(float time, float timeSinceLastFrame) {
     for (int i = 0; i < static_cast<int>(arcTriangles.size()); i++)  nTriangles += arcTriangles[i].getNumGenTriangles();
     for (int i = 0; i < static_cast<int>(arcQuads.size()); i++)  nTriangles += arcQuads[i].getNumGenTriangles();
   }
-  std::cout << "Number of triangles = " << nTriangles << std::endl;
+  
+  //std::cout << "Number of triangles = " << nTriangles << std::endl;
+  m_gui.status_nTriangles = nTriangles;
 
   std::chrono::high_resolution_clock::time_point end_update_time = std::chrono::high_resolution_clock::now();
   int64_t update_time = (end_update_time - start_update_time).count();
 
-  std::cout << "performance (CPU Side) = " << static_cast<float>(nTriangles) / static_cast<float>(update_time / 1e9) << std::endl;
+  //std::cout << "performance (CPU Side) = " << static_cast<float>(nTriangles) / static_cast<float>(update_time / 1e9) << std::endl;
+  //if (update_time > 1e7) std::cout << "update time = " << update_time << "( " << 1e9f / update_time << " FPS )" << std::endl;
+  m_gui.status_perf_triangles_per_second = static_cast<float>(nTriangles) / static_cast<float>(update_time / 1e9);
+  m_gui.status_triangulation_time = update_time / 1e6f;
 
-  if(update_time > 1e7) std::cout << "update time = " << update_time << "( " << 1e9f / update_time << " FPS )" <<std::endl;
+  //trianglesPerSecondEvaluator.addData(nTriangles, update_time);
+  
+  if (m_gui.general_writeEvaluations) {
+    trianglesPerSecondEvaluator.output("c:/CST");
+    m_gui.general_writeEvaluations = false;
+  }
 
 	clock_t end_time = clock();
 	////std::cout << "Tesselation time = " << (end_time - start_time) / CLOCKS_PER_SEC << std::endl;
@@ -451,6 +491,8 @@ void Application::draw() {
   glViewport(0, 0, 100, 100);
   glUseProgram(m_coord_system_program);
   glDrawArrays(GL_LINES, 0, 6);
+
+  m_gui.draw();
 }
 
 void Application::run() {
@@ -694,6 +736,8 @@ void Application::EventMouseButton(GLFWwindow* window, int button, int action, i
 
   if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_RELEASE)
     m_mouse_middle_drag = false;
+
+  m_gui.TwEventMouseButtonGLFW3(button, action, mods);
 }
 
 void Application::EventMousePos(GLFWwindow* window, double xpos, double ypos) {
@@ -715,10 +759,14 @@ void Application::EventMousePos(GLFWwindow* window, double xpos, double ypos) {
   /*if (m_altKeyHold){
       m_seeding_curve->getControlPoints();
   }*/
+
+  m_gui.TwEventMousePosGLFW3(xpos, ypos);
 }
 
 void Application::EventMouseWheel(GLFWwindow* window, double xoffset, double yoffset) {
   m_camera.MoveForward(static_cast<int>(yoffset));
+
+  m_gui.TwEventMouseWheelGLFW3(xoffset, yoffset);
 }
 
 void Application::EventKey(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -753,6 +801,8 @@ void Application::EventKey(GLFWwindow* window, int key, int scancode, int action
     glfwGetCursorPos(m_window, &xpos, &ypos);
     m_camera.SetMousePos(static_cast<int>(xpos), static_cast<int>(ypos));
   }
+
+  m_gui.TwEventKeyGLFW3(key, scancode, action, mods);
 }
 
 void Application::EventChar(GLFWwindow* window, int codepoint) {
@@ -762,6 +812,7 @@ void Application::EventChar(GLFWwindow* window, int codepoint) {
 void Application::WindowSizeCB(GLFWwindow* window, int width, int height) {
   m_width = width; m_height = height;
   glViewport(0, 0, width, height);
+  m_gui.WindowSizeCB(width, height);
 }
 void Application::error_callback(int error, const char* description) {
   fputs(description, stderr);

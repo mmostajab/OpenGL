@@ -12,8 +12,10 @@
 
 #include <algorithm>
 #include <limits>
+#include <stdint.h>
 
-#include <glm/glm.hpp>
+
+#include "UnifiedMath.h"
 
 #ifdef WIN32
 #    define AABB_INLINE __forceinline
@@ -63,10 +65,10 @@ public:
 
   /// Returns the largest spatial extent
   AABB_INLINE uint32_t maxExtentAxis() const;
-
+  
 	/// Bounding min and max vectors.
-	glm::vec3 min;
-	glm::vec3 max;
+	Vector3Df min;
+	Vector3Df max;
 };
 
 
@@ -170,20 +172,20 @@ AABB_INLINE float AABB::volume() const
 
 AABB_INLINE float AABB::surfaceArea() const
 {
-  glm::vec3 dims( max[0] - min[0], max[1] - min[1], max[2] - min[2] );
-  return 2 * (dims.x * dims.y + dims.y * dims.z + dims.x * dims.z);
+  Vector3Df dims( max[0] - min[0], max[1] - min[1], max[2] - min[2] );
+  return 2 * (dims[0] * dims[1] + dims[1] * dims[2] + dims[0] * dims[2]);
 }
 
 AABB_INLINE uint32_t AABB::maxExtentAxis() const
 {
-  glm::vec3 dims( max[0] - min[0], max[1] - min[1], max[2] - min[2] );
-  if( dims.x >= dims.y && dims.x >= dims.z)
+  Vector3Df dims( max[0] - min[0], max[1] - min[1], max[2] - min[2] );
+  if( dims[0] >= dims[1] && dims[0] >= dims[2])
     return 0;
 
-  if( dims.y >= dims.x && dims.y >= dims.z)
+  if( dims[1] >= dims[0] && dims[1] >= dims[2])
     return 1;
 
-  if( dims.z >= dims.x && dims.z >= dims.y)
+  if( dims[2] >= dims[0] && dims[2] >= dims[1])
     return 2;
 
   return 3;

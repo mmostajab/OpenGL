@@ -27,6 +27,8 @@
 #include "ArcSegment.h"
 #include "ArcTriangle.h"
 #include "ArcQuad.h"
+#include "AntTweakBarGUI.h"
+#include "Evaluator.h"
 
 using namespace ArcRep;
 
@@ -83,11 +85,12 @@ private:
 
 //private:
 public:
-    static GLFWwindow* m_window;
-    glm::mat4 m_projmat, m_viewmat, m_worldmat, m_inv_viewmat, m_mvp_mat;
+    static GLFWwindow*  m_window;
+    glm::mat4           m_projmat, m_viewmat, m_worldmat, m_inv_viewmat, m_mvp_mat;
     static unsigned int m_width, m_height;
+    static AntTweakBarGUI      m_gui;
     
-    GLuint m_transformation_buffer, m_lighting_buffer, m_general_buffer;
+    GLuint              m_transformation_buffer, m_lighting_buffer, m_general_buffer;
    
     // shaders
     GLuint m_simple_program;
@@ -102,6 +105,9 @@ public:
     GLuint      render_fbo;
     GLuint      fbo_textures[3];
     GLuint      quad_vao;
+
+    Evaluator<int64_t, int64_t> trianglesPerSecondEvaluator;
+    
 
 	std::vector<ArcSegment>  arcSegments;
   std::vector<ArcTriangle> arcTriangles;

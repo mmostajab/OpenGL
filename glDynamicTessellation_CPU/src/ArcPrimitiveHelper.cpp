@@ -5,9 +5,9 @@
 Vector4Df ArcPrimitiveHelper::Projection2ClipCoords(Vector4Df v)
 {
 #ifdef USE_OPENSG
-  return Vector4Df(v.x() / v.w(), v.y() / v.w(), v.z() / v.w(), 1.0f);
+  return Vector4Df(v[0] / v[3], v[1] / v[3], v[2] / v[3], 1.0f);
 #else
-  return Vector4Df(v.x / v.w, v.y / v.w, v.z / v.w, 1.0f);
+  return Vector4Df(v[0] / v.w, v[1] / v.w, v[2] / v.w, 1.0f);
 #endif
 }
 
@@ -30,7 +30,7 @@ float ArcPrimitiveHelper::calcCurveLength(const Vector3Df & _p0, const Vector3Df
 
 float ArcPrimitiveHelper::calcProjectedCurveLength(
   const Matrix4x4f& mvp, const uint32_t& w, const uint32_t& h,
-  const Vector3Df & p0, const Vector3Df & p1, const Vector3Df & center
+  const Vector3Df& p0, const Vector3Df& p1, const Vector3Df & center
 )
 {
   float curve_length = 0.0f;
@@ -81,12 +81,12 @@ Vector3Df ArcPrimitiveHelper::interpolation_complex(
 
 float ArcPrimitiveHelper::angle_with_positive_x(const Vector3Df & a)
 {
-  float l = sqrtf(a.x * a.x + a.y * a.y);
-  if (a.y >= 0) {
-    return acos(a.x / l);
+  float l = sqrtf(a[0] * a[0] + a[1] * a[1]);
+  if (a[1] >= 0) {
+    return acos(a[0] / l);
   }
   else {
-    return 2 * glm::pi<float>() - acos(a.x / l);
+    return 2 * UnifiedMath::pi() - acos(a[0] / l);
   }
 }
 
@@ -105,5 +105,5 @@ float ArcPrimitiveHelper::angle_between(const Vector3Df & a, const Vector3Df & b
   if (absloute_angle_a > absloute_angle_b)
     return thetha;
   else
-    return 2 * glm::pi<float>() - thetha;
+    return 2 * UnifiedMath::pi() - thetha;
 }
