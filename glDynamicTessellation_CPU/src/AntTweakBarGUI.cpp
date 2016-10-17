@@ -25,6 +25,7 @@ void AntTweakBarGUI::init(const unsigned int& width, const unsigned int& height)
   TwAddVarRW(generalBar, "Tri. Accuracy", TW_TYPE_FLOAT, &general_triangulationAccuracyFactor, "min=0.1 step=0.1");
   TwAddVarRW(generalBar, "Drop Cull Factor", TW_TYPE_FLOAT, &general_dropCullingFactor, "min=0.1 step=0.1");
   TwAddVarRW(generalBar, "Write Evaluations", TW_TYPE_BOOL8, &general_writeEvaluations, "");
+  TwAddVarRW(generalBar, "Clear Evaluations", TW_TYPE_BOOL8, &general_clearEvaluations, "");
 
   TwBar* statusBar = TwNewBar("Status");
   TwDefine("Status position='480 480'");
@@ -35,6 +36,8 @@ void AntTweakBarGUI::init(const unsigned int& width, const unsigned int& height)
   TwAddVarRO(statusBar, "Triangulation time (ms)", TW_TYPE_FLOAT, &status_triangulation_time, "");
   //TwAddVarRO(statusBar, "Avg. lines per sec", TW_TYPE_FLOAT, &status_avg_lines_per_sec, "");
   //TwAddVarRO(statusBar, "FPS", TW_TYPE_FLOAT, &status_fps, "");
+
+  WindowSizeCB(width, height);
 }
 
 void AntTweakBarGUI::draw() {
@@ -95,6 +98,6 @@ void AntTweakBarGUI::WindowSizeCB(int width, int height) {
   m_width = width;
   m_height = height;
 
-  putBar("General", 480.0f / 800.0f, 420.0f / 600.0f, 300.0f / 800.0f, 50.0f / 600.0f);
+  putBar("General", 480.0f / 800.0f, 400.0f / 600.0f, 300.0f / 800.0f, 70.0f / 600.0f);
   putBar("Status", 480.0f / 800.0f, 480.0f / 600.0f, 300.0f / 800.0f, 100.0f / 600.0f);
 }

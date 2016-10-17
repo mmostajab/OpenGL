@@ -9,7 +9,6 @@ template<class inputType = float, class resultType = float>
 class Evaluator {
 public:
 
-  template<class inputType = float, class resultType = float>
   Evaluator(const std::string& evalName) : m_evaluationName(evalName) {}
    
   void addData(inputType in, resultType res) {
@@ -35,15 +34,29 @@ public:
     // sort based on the first 
     std::sort(m_evaluationData.begin(), m_evaluationData.end());
 
-    //std::vector<inputType, resType> finalData;
-    //size_t i = 0; 
+    std::vector<std::pair< inputType, resultType > > finalData;
+    size_t i = 0, j = 1;
+    while (i < m_evaluationData.size()) {
+      if (j < m_evaluationData.size() && m_evaluationData[i].first == m_evaluationData[j].first) {
+        j++;
+      }
+      else {
 
-    //for (int i = 0; i < m_evaluationData.size() - 1; i++) {
-     // if(m_evaluationData)
-    //}
+        if (j - i > 30) {
+          resultType result = m_evaluationData[i].second;
+          for (size_t k = i + 1; k < j; k++)
+            result += m_evaluationData[k].second;
+          result /= (j - i);
 
-    for (int i = 0; i < m_evaluationData.size(); i++) {
-      out << m_evaluationData[i].first << " " << m_evaluationData[i].second << std::endl;
+          finalData.push_back(std::make_pair(m_evaluationData[i].first, result));
+        }
+        i = j;
+        j++;
+      }
+    }
+
+    for (int i = 0; i < finalData.size(); i++) {
+      out << finalData[i].first << " " << finalData[i].second << std::endl;
     }
   }
 

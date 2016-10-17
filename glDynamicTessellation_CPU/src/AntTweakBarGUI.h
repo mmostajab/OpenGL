@@ -32,6 +32,7 @@ public:
   float general_triangulationAccuracyFactor;  // triangulation accuracy
   float general_dropCullingFactor;            // drop culling factor
   bool  general_writeEvaluations;
+  bool  general_clearEvaluations;
   
   // status
   int   status_nTriangles;

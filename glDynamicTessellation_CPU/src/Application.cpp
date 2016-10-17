@@ -55,13 +55,7 @@ Application::Application():
   //std::cout.rdbuf(NULL);
 
   m_logFile.open("log.h");
-
-  trianglesPerSecondEvaluator.addData(5, 1);
-  trianglesPerSecondEvaluator.addData(4, 1);
-  trianglesPerSecondEvaluator.addData(3, 1);
-  trianglesPerSecondEvaluator.addData(2, 1);
-  trianglesPerSecondEvaluator.addData(1, 1);
-  
+ 
 }
 
 void Application::init(const unsigned int& width, const unsigned int& height, HGLRC mainWindowContext) {
@@ -258,9 +252,63 @@ void Application::create() {
 
 #endif
 
-#if 1
-  int32_t w = 6;
-  int32_t h = 6;
+#define TEST_CASE2
+
+#ifdef TEST_CASE1
+
+  ArcSegment seg0, seg1;
+  seg0.set(
+    glm::vec3(-2.0f, 0.0f, 0.0f),
+    glm::vec3(+2.0f, 0.0f, 0.0f),
+    glm::vec3(0.0f, 0.0f, 0.0f),
+    100);
+  arcSegments.push_back(seg0);
+
+  seg1.set(
+    glm::vec3(+2.0f, 0.0f, 0.0f),
+    glm::vec3(-2.0f, 0.0f, 0.0f),
+    glm::vec3(0.0f, 0.0f, 0.0f),
+    100);
+  arcSegments.push_back(seg1);
+
+#endif
+
+#ifdef TEST_CASE2
+  int nW = 8, nH = 8;
+  float w = 10.0f, h = 10.0f;
+
+  float r = std::min(w / nW, h / nH) / 2.0f;
+
+  for (int i = 0; i < nH; i++)
+    for (int j = 0; j < nW; j++) {
+
+      ArcSegment seg0, seg1;
+
+      float r_prime = r * (j+1) / nW;
+
+      seg0.set(
+        glm::vec3(-w / 2.0f, -h / 2.0f, 0.0f) + 2.0f * glm::vec3(j * r, i * r, 0.0f) - glm::vec3(r_prime, 0.0f, 0.0f),
+        glm::vec3(-w / 2.0f, -h / 2.0f, 0.0f) + 2.0f * glm::vec3(j * r, i * r, 0.0f) + glm::vec3(r_prime, 0.0f, 0.0f),
+        glm::vec3(-w / 2.0f, -h / 2.0f, 0.0f) + 2.0f * glm::vec3(j * r, i * r, 0.0f),
+        100
+      );
+
+      seg1.set(
+        glm::vec3(-w / 2.0f, -h / 2.0f, 0.0f) + 2.0f * glm::vec3(j * r, i * r, 0.0f) + glm::vec3(r_prime, 0.0f, 0.0f),
+        glm::vec3(-w / 2.0f, -h / 2.0f, 0.0f) + 2.0f * glm::vec3(j * r, i * r, 0.0f) - glm::vec3(r_prime, 0.0f, 0.0f),
+        glm::vec3(-w / 2.0f, -h / 2.0f, 0.0f) + 2.0f * glm::vec3(j * r, i * r, 0.0f), 
+        100
+      );
+
+      arcSegments.push_back(seg0);
+      arcSegments.push_back(seg1);
+
+    }
+#endif
+
+#ifdef TEST_CASE3
+  int32_t w = 10;
+  int32_t h = 10;
 
   std::ifstream config("config.txt");
   if (config) {
@@ -278,20 +326,6 @@ void Application::create() {
     }
   }
 #endif
-
-#if 0
-
-  ArcSegment seg;
-  seg.set(
-    glm::vec3(-100.0f, 0.0f, 0.0f),
-    glm::vec3(+100.0f, 0.0f, 0.0f),
-    glm::vec3(0.0f, -1000.0f, 0.0f),
-    100);
-  arcSegments.push_back(seg);
-
-#endif
-  
-
   //addC(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
   //addS(glm::vec3( 0.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
   /*addT(glm::vec3( 1.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);*/
@@ -394,8 +428,29 @@ void Application::update(float time, float timeSinceLastFrame) {
     arcQuads[i].setTrianulationAccuracyFactor(m_gui.general_triangulationAccuracyFactor);
   }
 
-  float near_plane_width_w  = m_camera.camera_ortho_view_plane_size[0];
-  float near_plane_height   = m_camera.camera_ortho_view_plane_size[1];
+
+
+  //float near_plane_width_w  = m_camera.camera_ortho_view_plane_size[0];
+  //float near_plane_height   = m_camera.camera_ortho_view_plane_size[1];
+
+  glm::mat4 invProjMatrix = glm::inverse(m_projmat);
+  glm::vec4 c[8];
+  
+  c[0] = invProjMatrix * glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f);
+  c[1] = invProjMatrix * glm::vec4(-1.0f,  1.0f, -1.0f, 1.0f);
+  c[2] = invProjMatrix * glm::vec4( 1.0f,  1.0f, -1.0f, 1.0f);
+  c[3] = invProjMatrix * glm::vec4( 1.0f, -1.0f, -1.0f, 1.0f);
+  c[4] = invProjMatrix * glm::vec4(-1.0f, -1.0f,  1.0f, 1.0f);
+  c[5] = invProjMatrix * glm::vec4(-1.0f,  1.0f,  1.0f, 1.0f);
+  c[6] = invProjMatrix * glm::vec4( 1.0f,  1.0f,  1.0f, 1.0f);
+  c[7] = invProjMatrix * glm::vec4( 1.0f, -1.0f,  1.0f, 1.0f);
+
+
+  float near_plane_width_world = fabs(c[2][0] - c[1][0]);
+  float near_plane_height_world = fabs(c[0][1] - c[1][1]);
+
+  
+
   
   // Passed camera information
   // TODO 
@@ -403,12 +458,19 @@ void Application::update(float time, float timeSinceLastFrame) {
   // 2. should support perspective cam
   CameraInfo camInfo;
   camInfo.type = CameraInfo::CAMERA_TYPE_ORTHO;
-  camInfo.ortho.near_plane_width_world  = m_camera.camera_ortho_view_plane_size[0];
-  camInfo.ortho.near_plane_height_world = m_camera.camera_ortho_view_plane_size[1];
+  camInfo.ortho.near_plane_width_world = near_plane_width_world; //m_camera.camera_ortho_view_plane_size[0];
+  camInfo.ortho.near_plane_height_world = near_plane_height_world; //m_camera.camera_ortho_view_plane_size[1];
   camInfo.ortho.w = m_width;
   camInfo.ortho.h = m_height;
 
+  //std::cout << " Pixel width = " << camInfo.ortho.pixelWidth() << " Pixel height = " << camInfo.ortho.pixelHeight() << std::endl;
+
+//#define USE_WINDOWS_TIME
+#ifdef USE_WINDOWS_TIME
+  DWORD start_update_time = timeGetTime();
+#else
   std::chrono::high_resolution_clock::time_point start_update_time = std::chrono::high_resolution_clock::now();
+#endif
 //#pragma omp parallel
   {
 //#pragma omp parallel for
@@ -429,19 +491,34 @@ void Application::update(float time, float timeSinceLastFrame) {
   //std::cout << "Number of triangles = " << nTriangles << std::endl;
   m_gui.status_nTriangles = nTriangles;
 
+#ifdef USE_WINDOWS_TIME
+  DWORD end_update_time = timeGetTime();
+  DWORD update_time = (end_update_time - start_update_time) ;
+  m_gui.status_triangulation_time = static_cast<float>(update_time) ;
+  m_gui.status_perf_triangles_per_second = static_cast<float>(nTriangles) / static_cast<float>(update_time / 1e3);
+#else
   std::chrono::high_resolution_clock::time_point end_update_time = std::chrono::high_resolution_clock::now();
-  int64_t update_time = (end_update_time - start_update_time).count();
+  std::chrono::duration<float> time_span = std::chrono::duration_cast<std::chrono::duration<float>>(end_update_time - start_update_time);
+  float update_time = time_span.count() * 1000.0f;
+  m_gui.status_triangulation_time = update_time;
+  m_gui.status_perf_triangles_per_second = static_cast<float>(nTriangles) / static_cast<float>(update_time);
+#endif
 
   //std::cout << "performance (CPU Side) = " << static_cast<float>(nTriangles) / static_cast<float>(update_time / 1e9) << std::endl;
   //if (update_time > 1e7) std::cout << "update time = " << update_time << "( " << 1e9f / update_time << " FPS )" << std::endl;
-  m_gui.status_perf_triangles_per_second = static_cast<float>(nTriangles) / static_cast<float>(update_time / 1e9);
-  m_gui.status_triangulation_time = update_time / 1e6f;
+  
+  
 
-  //trianglesPerSecondEvaluator.addData(nTriangles, update_time);
+  trianglesPerSecondEvaluator.addData(nTriangles, m_gui.status_triangulation_time);
   
   if (m_gui.general_writeEvaluations) {
     trianglesPerSecondEvaluator.output("c:/CST");
     m_gui.general_writeEvaluations = false;
+  }
+
+  if (m_gui.general_clearEvaluations) {
+    trianglesPerSecondEvaluator.clearData();
+    m_gui.general_clearEvaluations = false;
   }
 
 	clock_t end_time = clock();

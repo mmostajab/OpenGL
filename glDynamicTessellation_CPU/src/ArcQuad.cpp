@@ -25,7 +25,6 @@ void ArcQuad::set(Vector3Df _p1, Vector3Df _p2, Vector3Df _center0, Vector3Df _p
 
   std::array<int32_t, 2> NumberOfSegments = { _nSegs, _nSegs };
   setNSegs(NumberOfSegments);
-  createBuffer();
 }
 
 void ArcQuad::createBuffer() {
@@ -213,20 +212,22 @@ bool ArcQuad::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned i
   new_nSegs[0] = new_nSegs[1] = std::max(new_nSegs[0], new_nSegs[1]);
 
   // if the buffer does not need to change
-#ifdef UPDATE_ARCS_EVERY_FRAME
+#define UPDATE_ARCS_EVERY_FRAME
+#ifndef UPDATE_ARCS_EVERY_FRAME
   if (nSegs[0] == new_nSegs[0] && nSegs[1] == new_nSegs[1]) return false;
 #endif
 
 #ifdef USE_OPENSG
-  ifxLog( ifxLogLevel::IFX_NORMAL, "Updating arc quad.\n"); 
+#ifndef USE_OPENSG_STANDALONE
+  //ifxLog(ifxLogLevel::IFX_NORMAL, "Updating arc quad.\n"); 
+#endif // USE_OPENSG_STANDALONE
 #else
   //std::cout << "Number of segments changed from " << nSegs[0] << " to " << new_nSegs[0] << std::endl;
   //std::cout << "Number of segments changed from " << nSegs[1] << " to " << new_nSegs[1] << std::endl;
 #endif
 
   setNSegs(new_nSegs);
-  createBuffer();
-
+  
   return true;
 }
 
@@ -255,6 +256,8 @@ void ArcQuad::setNSegs(const std::array<int32_t, 2> & _nSegs)
 {
   nSegs[0] = _nSegs[0];
   nSegs[1] = _nSegs[1];
+
+  createBuffer();
 }
 
 int ArcRep::ArcQuad::getNumGenTriangles() const

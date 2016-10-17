@@ -27,12 +27,9 @@ void ArcSegment::set(
   center = _center;
 
   setNSegs(_nSegs);
-  createBuffer();
-
 }
 
 void ArcSegment::createBuffer() {
-
 #ifdef USE_OPENSG
   vertices.clear();
   lengths.clear();
@@ -133,18 +130,21 @@ bool ArcSegment::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigne
     }
 
   // if the buffer does not need to change
-#ifdef UPDATE_ARCS_EVERY_FRAME
+#define UPDATE_ARCS_EVERY_FRAME
+#ifndef UPDATE_ARCS_EVERY_FRAME
   if (nSegs == new_nSegs) return false;
 #endif
 
 #ifdef USE_OPENSG
-  ifxLog( ifxLogLevel::IFX_NORMAL, "Updating arc segment.\n"); 
+#ifndef USE_OPENSG_STANDALONE
+  //ifxLog(ifxLogLevel::IFX_NORMAL, "Updating arc segment.\n"); 
+#endif // USE_OPENSG_STANDALONE
 #else
   //std::cout << "Number of segments changed from " << nSegs << " to " << new_nSegs << std::endl;
 #endif
 
   setNSegs(new_nSegs);
-  createBuffer();
+  
   return true;
 }
 
@@ -167,6 +167,8 @@ void ArcSegment::draw() {
 void ArcSegment::setNSegs(const int & _nSegs)
 {
   nSegs = _nSegs;
+
+  createBuffer();
 }
 
 int ArcSegment::getNumGenTriangles() const

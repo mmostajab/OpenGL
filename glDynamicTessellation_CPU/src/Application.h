@@ -106,7 +106,7 @@ public:
     GLuint      fbo_textures[3];
     GLuint      quad_vao;
 
-    Evaluator<int64_t, int64_t> trianglesPerSecondEvaluator;
+    Evaluator<int64_t, float> trianglesPerSecondEvaluator;
     
 
 	std::vector<ArcSegment>  arcSegments;

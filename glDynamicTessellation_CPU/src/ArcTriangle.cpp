@@ -29,7 +29,6 @@ void ArcTriangle::set(
   p3 = _p3;
   center = _center;
   setNSegs(_nSegs);
-  createBuffer();
 }
 
   void ArcTriangle::createBuffer() {
@@ -142,17 +141,19 @@ void ArcTriangle::set(
       }
     }
 
-#ifdef UPDATE_ARCS_EVERY_FRAME
+#define UPDATE_ARCS_EVERY_FRAME
+#ifndef UPDATE_ARCS_EVERY_FRAME
     if (new_nSegs == nSegs) return false;
 #endif
 
 #ifdef USE_OPENSG
-    ifxLog( ifxLogLevel::IFX_NORMAL, "Updating arc triangle.\n"); 
+#ifndef USE_OPENSG_STANDALONE
+    //ifxLog(ifxLogLevel::IFX_NORMAL, "Updating arc triangle.\n"); 
+#endif // USE_OPENSG_STANDALONE
 #else
     //std::cout << "Number of segments changed from " << nSegs << " to " << new_nSegs << std::endl;
 #endif
     setNSegs(new_nSegs);
-    createBuffer();
     return true;
   }
 
@@ -178,6 +179,8 @@ void ArcTriangle::set(
 void ArcTriangle::setNSegs(const int& _nSegs)
 {
   nSegs = _nSegs;
+
+  createBuffer();
 }
 
 int ArcTriangle::getNumGenTriangles() const

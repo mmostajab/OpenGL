@@ -16,7 +16,9 @@
 
   #include "DrawCallNodes.h"
 
-  #include <base/ifxcore/ifxLog.h>
+#ifndef USE_OPENSG_STANDALONE
+  #include <base/ifxcore///ifxLog.h>
+#endif // USE_OPENSG_STANDALONE
 
 #else
 
