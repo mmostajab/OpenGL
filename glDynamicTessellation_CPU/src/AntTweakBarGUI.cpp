@@ -22,22 +22,25 @@ void AntTweakBarGUI::init(const unsigned int& width, const unsigned int& height)
   TwDefine("General position='480 400'");
   TwDefine("General color='176 176 176'");
   TwDefine("General size='300 50'");
-  TwAddVarRW(generalBar, "Tri. Accuracy", TW_TYPE_FLOAT, &general_triangulationAccuracyFactor, "min=0.1 step=0.1");
-  TwAddVarRW(generalBar, "Drop Cull Factor", TW_TYPE_FLOAT, &general_dropCullingFactor, "min=0.1 step=0.1");
-  TwAddVarRW(generalBar, "Write Evaluations", TW_TYPE_BOOL8, &general_writeEvaluations, "");
-  TwAddVarRW(generalBar, "Clear Evaluations", TW_TYPE_BOOL8, &general_clearEvaluations, "");
+  TwAddVarRW(generalBar, "Wireframe",         TW_TYPE_BOOL8, &general_wireframe,                   "");
+  TwAddVarRW(generalBar, "Increase Tris.",    TW_TYPE_BOOL8, &general_increaseTriangles,           "");
+  TwAddVarRW(generalBar, "Decrease Tris.",    TW_TYPE_BOOL8, &general_decreaseTriangles,           "");
+  TwAddVarRW(generalBar, "Tri. Accuracy",     TW_TYPE_FLOAT, &general_triangulationAccuracyFactor, "min=0.1 step=0.1");
+  TwAddVarRW(generalBar, "Drop Cull Factor",  TW_TYPE_FLOAT, &general_dropCullingFactor,           "min=0.1 step=0.1");
+  TwAddVarRW(generalBar, "Write Evaluations", TW_TYPE_BOOL8, &general_writeEvaluations,            "");
+  TwAddVarRW(generalBar, "Clear Evaluations", TW_TYPE_BOOL8, &general_clearEvaluations,            "");
 
   TwBar* statusBar = TwNewBar("Status");
   TwDefine("Status position='480 480'");
   TwDefine("Status size='300 100'");
   TwDefine("Status color='176 176 176'");
   TwAddVarRO(statusBar, "Triangles", TW_TYPE_UINT32, &status_nTriangles, "");
-  TwAddVarRO(statusBar, "Tri. per sec", TW_TYPE_FLOAT, &status_perf_triangles_per_second, "");
+  TwAddVarRO(statusBar, "Tris. per sec", TW_TYPE_FLOAT, &status_perf_triangles_per_second, "");
   TwAddVarRO(statusBar, "Triangulation time (ms)", TW_TYPE_FLOAT, &status_triangulation_time, "");
   //TwAddVarRO(statusBar, "Avg. lines per sec", TW_TYPE_FLOAT, &status_avg_lines_per_sec, "");
   //TwAddVarRO(statusBar, "FPS", TW_TYPE_FLOAT, &status_fps, "");
 
-  WindowSizeCB(width, height);
+  repositionBars();
 }
 
 void AntTweakBarGUI::draw() {
@@ -91,6 +94,11 @@ void AntTweakBarGUI::putBar(const char * barName, float xPercent, float yPercent
   TwDefine(cmd);
 }
 
+void AntTweakBarGUI::repositionBars() {
+  putBar("General", 480.0f / 800.0f, 360.0f / 600.0f, 300.0f / 800.0f, 110.0f / 600.0f);
+  putBar("Status", 480.0f / 800.0f, 480.0f / 600.0f, 300.0f / 800.0f, 100.0f / 600.0f);
+}
+
 // Callback function called by GLFW when window size changes
 void AntTweakBarGUI::WindowSizeCB(int width, int height) {
   // Send the new window size to AntTweakBar
@@ -98,6 +106,5 @@ void AntTweakBarGUI::WindowSizeCB(int width, int height) {
   m_width = width;
   m_height = height;
 
-  putBar("General", 480.0f / 800.0f, 400.0f / 600.0f, 300.0f / 800.0f, 70.0f / 600.0f);
-  putBar("Status", 480.0f / 800.0f, 480.0f / 600.0f, 300.0f / 800.0f, 100.0f / 600.0f);
+  repositionBars();
 }

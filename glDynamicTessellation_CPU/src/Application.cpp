@@ -170,7 +170,10 @@ void Application::init() {
     glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), NULL, GL_DYNAMIC_DRAW);
 
     // GUI
-    m_gui.general_dropCullingFactor = 1.0f;
+    m_gui.general_wireframe                   = false;
+    m_gui.general_increaseTriangles           = false;
+    m_gui.general_decreaseTriangles           = false;
+    m_gui.general_dropCullingFactor           = 1.0f;
     m_gui.general_triangulationAccuracyFactor = 1.0f;
 }
 
@@ -360,11 +363,12 @@ void Application::create() {
 
 void Application::update(float time, float timeSinceLastFrame) {
 
-  if (m_w_pressed) {
+  if (m_w_pressed || m_gui.general_wireframe) {
     if (clock() - last_change_clock > 300) {
       wireframe = !wireframe;
       last_change_clock = clock();
     }
+    m_gui.general_wireframe = false;
   }
 
   
@@ -379,23 +383,25 @@ void Application::update(float time, float timeSinceLastFrame) {
     if (m_d_pressed)
         m_camera.Move(CameraDirection::RIGHT);
         */
-    if (m_q_pressed) {
+    if (m_q_pressed || m_gui.general_decreaseTriangles) {
       if (clock() - last_change_clock > 300) {
         for (auto& arc : arcSegments)  arc.multiplyTessFactor(2.0f);
         for (auto& arc : arcTriangles) arc.multiplyTessFactor(2.0f);
         for (auto& arc : arcQuads)     arc.multiplyTessFactor(2.0f);
         last_change_clock = clock();
       }
+      m_gui.general_decreaseTriangles = false;
       //m_camera.Move(CameraDirection::UP);
     }
 
-    if (m_e_pressed) {
+    if (m_e_pressed || m_gui.general_increaseTriangles) {
       if (clock() - last_change_clock > 300) {
         for (auto& arc : arcSegments)  arc.multiplyTessFactor(0.5f);
         for (auto& arc : arcTriangles) arc.multiplyTessFactor(0.5f);
         for (auto& arc : arcQuads)     arc.multiplyTessFactor(0.5f);
         last_change_clock = clock();
       }
+      m_gui.general_increaseTriangles = false;
       //m_camera.Move(CameraDirection::DOWN);
     }
 

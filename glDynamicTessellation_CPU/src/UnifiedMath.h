@@ -2,7 +2,7 @@
 #define __DEFINES_H__
 
 //#define USE_OPENSG_STANDALONE
-#define USE_OPENSG
+//#define USE_OPENSG
 #ifdef USE_OPENSG
 
   #include <OpenSG/OSGVec3fFields.h>

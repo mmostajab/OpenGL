@@ -24,11 +24,15 @@ public:
 
   // Callback function called by GLFW when window size changes
   static void WindowSizeCB(int width, int height);
+  static void repositionBars();
   //private:
 public:
   static unsigned int m_width, m_height;
 
   // general
+  bool  general_wireframe;
+  bool  general_increaseTriangles;
+  bool  general_decreaseTriangles;
   float general_triangulationAccuracyFactor;  // triangulation accuracy
   float general_dropCullingFactor;            // drop culling factor
   bool  general_writeEvaluations;
