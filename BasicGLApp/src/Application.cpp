@@ -30,7 +30,6 @@ bool					        Application::m_e_pressed          = false;
 bool                  Application::m_mouse_left_drag    = false;
 bool                  Application::m_mouse_middle_drag  = false;
 bool                  Application::m_mouse_right_drag   = false;
-int                   Application::rendering_state      = 0;
 Camera				        Application::m_camera;
 
 Application::Application() {
@@ -113,12 +112,6 @@ void Application::init(const unsigned int& width, const unsigned int& height) {
     }
 
     init();
-
-    GLenum e = glGetError();
-    //glEnable(GL_DEPTH);
-    e = glGetError();
-    glEnable(GL_DEPTH_TEST);
-    e = glGetError();
 }
 
 
@@ -136,18 +129,12 @@ void Application::init() {
     m_camera.SetViewport(0, 0, m_width, m_height);
     m_camera.camera_scale = 0.01f;
 
-    prepare_framebuffer();
-
     glGenBuffers(1, &m_transformation_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, m_transformation_buffer);
     glBufferData(GL_UNIFORM_BUFFER, 3 * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
 
     glGenBuffers(1, &m_lighting_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, m_lighting_buffer);
-    glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), NULL, GL_DYNAMIC_DRAW);
-
-    glGenBuffers(1, &m_general_buffer);
-    glBindBuffer(GL_UNIFORM_BUFFER, m_general_buffer);
     glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), NULL, GL_DYNAMIC_DRAW);
 }
 
@@ -192,48 +179,18 @@ void Application::update(float time, float timeSinceLastFrame) {
     light_info[0] = glm::vec4(-1, -1, -1, 0);
     light_info[1] = glm::vec4(m_camera.getPosition(), 1.0f);
     glUnmapBuffer(GL_UNIFORM_BUFFER);
-
-    // Buffer 2 is reserved for the sample points of the Ambient Occlusion Rendering
-
-    // updating the general information for every object
-    glBindBufferBase(GL_UNIFORM_BUFFER, 3, m_general_buffer);
-    glm::vec4* general_info = (glm::vec4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 2 * sizeof(glm::vec4), GL_MAP_WRITE_BIT);
-    glUnmapBuffer(GL_UNIFORM_BUFFER);
 }
 
 void Application::draw() {
   glViewport(0, 0, m_width, m_height);
 
-  glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
-  glEnable(GL_DEPTH_TEST);
-    
-  float back_color[] = { 1, 0, 0, 0 };
-  float zero[] = { 1.0f, 0.0f, 0.0f, 0.0f };
-  float one = 1.0f;
-
-  glClearBufferfv(GL_COLOR, 0, back_color);
-  glClearBufferfv(GL_COLOR, 1, zero);
-  glClearBufferfv(GL_DEPTH, 0, &one);
-  glClearColor(1, 0, 0, 0);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-  glClearColor(0, 0, 1, 1);
+  glClearColor(0.1f, 0.3f, 0.7f, 1.f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  
-  bool debug = true;
-  if(debug){
-		glUseProgram(combine_program);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
-		glDisable(GL_DEPTH_TEST);
-		glBindVertexArray(quad_vao);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	}
-  
+    
+  // TODO Draw your buffers here!
+
   // Draw the world coordinate system
   glViewport(0, 0, 100, 100);
   glUseProgram(m_coord_system_program);
@@ -248,47 +205,16 @@ void Application::run() {
 
   while (!glfwWindowShouldClose(m_window))
   {
-    double frame_start_time = glfwGetTime();
+    double current_time = glfwGetTime();
+    double elapsed_since_start = current_time - start_time;
+    double elapsed_since_last_frame = current_time - start_frame;
+    
+    start_frame = glfwGetTime();
+    update(static_cast<float>(elapsed_since_start), static_cast<float>(elapsed_since_last_frame));
     draw();
-    double frame_end_time = glfwGetTime();
 
     glfwSwapBuffers(m_window);
     glfwPollEvents();
-
-    double current_time = glfwGetTime();
-    double elapsed_since_start          = current_time - start_time;
-    double elapsed_since_last_frame     = current_time - start_frame;
-
-    start_frame = glfwGetTime();
-
-    update(static_cast<float>(elapsed_since_start), static_cast<float>(elapsed_since_last_frame));
-  }
-}
-
-void Application::run_onestep() {
-
-  glfwMakeContextCurrent(m_window);
-
-  double start_time;
-  double start_frame;
-  start_time = start_frame = glfwGetTime();
-
-  if (!glfwWindowShouldClose(m_window))
-  {
-    double frame_start_time = glfwGetTime();
-    draw();
-    double frame_end_time = glfwGetTime();
-
-    glfwSwapBuffers(m_window);
-    glfwPollEvents();
-
-    double current_time = glfwGetTime();
-    double elapsed_since_start          = current_time - start_time;
-    double elapsed_since_last_frame     = current_time - start_frame;
-
-    start_frame = glfwGetTime();
-
-    update(static_cast<float>(elapsed_since_start), static_cast<float>(elapsed_since_last_frame));
   }
 }
 
@@ -302,118 +228,7 @@ Application::~Application() {
 }
 
 void Application::compileShaders() { 
-
-	const char* coordsys_vert = {
-		"#version 430 core\n"
-
-		"layout(std140, binding = 0) uniform TransformBlock {\n"
-			"mat4 proj_mat;\n"
-			"mat4 view_mat;\n"
-			"mat4 world_mat;\n"
-		"} ;\n"
-
-		"uniform vec3 position[6] = { vec3(0.0f, 0.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f) };\n"
-		"uniform vec3 color[3] = { vec3(1.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f) };\n"
-
-		"out vec4 vec_color;\n"
-
-		"void main() {\n"
-		"gl_Position =  vec4( mat3(view_mat * world_mat) * position[gl_VertexID], 1.0f);\n"
-		"vec_color = vec4(color[gl_VertexID / 2], 1.0f);\n"
-		"}\n"
-	};
-
-	const char* coordsys_frag = {
-		"#version 430 core\n"
-
-		"in vec4 vec_color;\n"
-
-		"out vec4 out_color;\n"
-
-		"void main() {\n"
-			"out_color = vec_color;\n"
-		"}\n"
-	};
-
-	const char* combine_vert = {
-		"#version 430 core\n"
-
-		"out VS_OUT\n"
-		"{\n"
-			"vec3 E;\n"
-		"} vs_out;\n"
-
-		"void main(void)\n"
-		"{\n"
-			"const vec4 vertices[] = vec4[]( vec4(-1.0, -1.0, 0.5, 1.0),"
-			"                                vec4( 1.0, -1.0, 0.5, 1.0),"
-            "		                         vec4(-1.0,  1.0, 0.5, 1.0),"
-            "		                         vec4( 1.0,  1.0, 0.5, 1.0) );\n"
-
-			"gl_Position = vertices[gl_VertexID];\n"
-			"vs_out.E = vertices[gl_VertexID].xyz;\n"
-		"}\n"
-	};
-
-	const char* combine_frag = {
-		"#version 430 core\n"
-
-		// Samplers for pre-rendered color, normal and depth
-		"layout (binding = 0) uniform sampler2D sColor;\n"
-		"layout (binding = 1) uniform sampler2D sNormalDepth;\n"
-
-		// Final output
-		"layout (location = 0) out vec4 color;\n"
-
-		"void main(void) {\n"
-
-			// Get texture position from gl_FragCoord
-			"vec2 P = gl_FragCoord.xy / textureSize(sColor, 0);\n"
-
-			// Get object color from color texture
-			"vec4 object_color =  textureLod(sColor, P, 0);\n"
-			"color = vec4(1, 0, 0, 0);// object_color;\n"
-		"}\n"
-	};
-
-  m_coord_system_program = compile_link_vs_fs_with_source(coordsys_vert, coordsys_frag);
-  combine_program = compile_link_vs_fs_with_source(combine_vert, combine_frag);
-}
-
-void Application::prepare_framebuffer() {
-  glGenFramebuffers(1, &render_fbo);
-  glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
-  glGenTextures(3, fbo_textures);
-
-  glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
-  glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB16F, 2048, 2048);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-  glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
-  glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, 2048, 2048);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-  glBindTexture(GL_TEXTURE_2D, fbo_textures[2]);
-  glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 2048, 2048);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_textures[0], 0);
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fbo_textures[1], 0);
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fbo_textures[2], 0);
-
-  static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-
-  glDrawBuffers(2, draw_buffers);
-
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-  glGenVertexArrays(1, &quad_vao);
-  glBindVertexArray(quad_vao);
+  m_coord_system_program = compile_link_vs_fs("../../src/glsl/coords.vert", "../../src/glsl/coords.frag");
 }
 
 void Application::EventMouseButton(GLFWwindow* window, int button, int action, int mods) {
@@ -439,23 +254,15 @@ void Application::EventMouseButton(GLFWwindow* window, int button, int action, i
 
 void Application::EventMousePos(GLFWwindow* window, double xpos, double ypos) {
 
-  if (m_controlKeyHold){
     if (m_mouse_left_drag){
       m_camera.Move2D(static_cast<int>(xpos), static_cast<int>(ypos));
     }
     if (m_mouse_right_drag){
       m_camera.OffsetFrustum(static_cast<int>(xpos), static_cast<int>(ypos));
     }
-  }
 
-  /*if (m_mouse_right_drag){
-    m_camera.moveForward(static_cast<int>(ypos));
-  }*/
 
   m_camera.SetMousePos(static_cast<int>(xpos), static_cast<int>(ypos));
-  /*if (m_altKeyHold){
-      m_seeding_curve->getControlPoints();
-  }*/
 }
 
 void Application::EventMouseWheel(GLFWwindow* window, double xoffset, double yoffset) {
@@ -482,10 +289,6 @@ void Application::EventKey(GLFWwindow* window, int key, int scancode, int action
     if (key == GLFW_KEY_D)  m_d_pressed = false;
     if (key == GLFW_KEY_Q)  m_q_pressed = false;
     if (key == GLFW_KEY_E)  m_e_pressed = false;
-
-    if (key == GLFW_KEY_M) {
-      rendering_state = ++rendering_state % 3;
-    }
 
     if (key == GLFW_KEY_LEFT_CONTROL)           m_controlKeyHold    = false;
     if (key == GLFW_KEY_LEFT_ALT)               m_altKeyHold        = false;

@@ -38,7 +38,6 @@ public:
 	void init(const unsigned int& width, const unsigned int& height);
     void init();
     void run();
-	void run_onestep();
     void shutdown();
 
     ~Application();
@@ -51,10 +50,7 @@ public:
 
     void compileShaders();
 
-    void prepare_framebuffer();
-
-    GLuint simple_program;
-	GLuint combine_program;
+  GLuint simple_program;
 
 private:
     static void EventMouseButton(GLFWwindow* window, int button, int action, int mods);
@@ -79,16 +75,10 @@ public:
     glm::mat4 m_projmat, m_viewmat, m_worldmat, m_inv_viewmat;
     static unsigned int m_width, m_height;
     GLuint m_coord_system_program;
-    GLuint m_transformation_buffer, m_lighting_buffer, m_general_buffer;
+    GLuint m_transformation_buffer, m_lighting_buffer;
    
 	// scene objects
 	static Camera m_camera;
-
-    // Rendering buffer
-    static int  rendering_state;
-    GLuint      render_fbo;
-    GLuint      fbo_textures[3];
-    GLuint      quad_vao;
 };
 
 #endif
