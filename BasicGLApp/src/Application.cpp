@@ -60,7 +60,7 @@ void Application::init(const unsigned int& width, const unsigned int& height, HG
     glfwSetCursorPosCallback(m_window, EventMousePos);
     glfwSetScrollCallback(m_window, EventMouseWheel);
     glfwSetMouseButtonCallback(m_window, (GLFWmousebuttonfun)EventMouseButton);
-    glfwSetKeyCallback(m_window, (GLFWkeyfun)EventKey);
+    //glfwSetKeyCallback(m_window, (GLFWkeyfun)EventKey);
 
     // - Directly redirect GLFW char events to AntTweakBar
     glfwSetCharCallback(m_window, (GLFWcharfun)EventChar);
@@ -101,7 +101,6 @@ void Application::init(const unsigned int& width, const unsigned int& height) {
     glfwSetCursorPosCallback(m_window, EventMousePos);
     glfwSetScrollCallback(m_window, EventMouseWheel);
     glfwSetMouseButtonCallback(m_window, (GLFWmousebuttonfun)EventMouseButton);
-    glfwSetKeyCallback(m_window, (GLFWkeyfun)EventKey);
 
     // - Directly redirect GLFW char events to AntTweakBar
     glfwSetCharCallback(m_window, (GLFWcharfun)EventChar);
@@ -323,5 +322,5 @@ void Application::key_callback(GLFWwindow* window, int key, int scancode, int ac
 
   if (key == GLFW_KEY_LEFT_CONTROL && action == GLFW_RELEASE){
     m_controlKeyHold = false;
-  }
+  } 
 }
