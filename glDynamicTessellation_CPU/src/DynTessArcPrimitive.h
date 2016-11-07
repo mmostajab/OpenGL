@@ -30,6 +30,8 @@
 
 #endif
 
+#include "ArcPrimitiveHelper.h"
+
 namespace ArcRep {
 
 // Type of a dynamic tessellated primitive
@@ -37,11 +39,6 @@ enum DynamicTessellatedPrimitiveType {
   DYN_TESS_ARC_SEGMENT  = 0,
   DYN_TESS_ARC_TRIANGLE = 1, 
   DYN_TESS_ARC_QUAD     = 2
-};
-
-// Vertex of a Dynamic Tessellated Arc Primitive.
-struct Vertex {
-  Vector3Df position;
 };
 
 enum TessellatonMethod {
@@ -55,8 +52,10 @@ class DynTessArcPrimitive {
 public:
   DynTessArcPrimitive(DynamicTessellatedPrimitiveType type);
 
+  virtual void updateGLBuffer();
   virtual bool updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned int w, unsigned int h)  = 0;
-  virtual void draw()                                                                                   = 0;
+  virtual void draw(bool doUpdateGLBuffer)                                                              = 0;
+  virtual void drawBoundingBox()                                                                           ;
 
   //float getTessScale() const;
   //void  setTessScale(float tessScale);
@@ -64,8 +63,20 @@ public:
 
   void setDropCullingFactor(float factor);
   void setTrianulationAccuracyFactor(float factor);
+  void setAABB(AABB aabb);
 
   virtual int   getNumGenTriangles() const = 0;
+  size_t        getFilledMemBytes() const;
+  virtual void  disable() {
+    m_disabled = true;
+  }
+  virtual void  enable() {
+    m_disabled = false;
+  }
+
+  AABB getAABB() {
+    return m_aabb;
+  }
 
 //protected:
 public:
@@ -86,7 +97,12 @@ protected:
 
 #else
 
+  std::vector<Vertex> vertices;
   GLuint buffer;
+  size_t buffer_size_bytes;
+  size_t buffer_filled_bytes;
+
+  GLuint aabb_buffer;
 
 #endif
 
@@ -98,7 +114,11 @@ protected:
 
   float                           m_dropCullingFactor;
 
+  AABB                            m_aabb;
+  bool                            m_disabled;
+  
   virtual void createBuffer() = 0;
+  virtual void createAABB() = 0;
 
 };
 

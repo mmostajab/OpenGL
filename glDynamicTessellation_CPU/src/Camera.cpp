@@ -17,8 +17,13 @@ Camera::Camera() {
   camera_pitch = 0.0f;
   camera_heading = 0.0f;
 
-  camera_ortho_view_plane_size[0] = 3.0;
-  camera_ortho_view_plane_size[1] = 3.0;
+  //camera_ortho_view_plane_size[0] = 28.0;
+  //camera_ortho_view_plane_size[1] = 28.0;
+  camera_ortho_view_plane_size[0] = 6.0;
+  camera_ortho_view_plane_size[1] = 6.0;
+
+  forward_scroll_up   = 1.1f;
+  forward_scroll_down = 0.9f;
 }
 
 Camera::~Camera() {
@@ -104,6 +109,8 @@ void Camera::Update() {
   model = glm::mat4(1.0f);
   MVP = projection * view * model;
   //glLoadMatrixf(glm::value_ptr(MVP));
+
+  //OffsetFrustum(0, 0);
 }
 
 //Setting Functions
@@ -171,12 +178,12 @@ void Camera::MoveForward(int yOffset){
     // TODO projection is changed
     //camera_position += camera_direction * (camera_scale * yOffset * 10);
     if (yOffset < 0.0f) {
-      camera_ortho_view_plane_size[0] *= 1.1f;
-      camera_ortho_view_plane_size[1] *= 1.1f;
+      camera_ortho_view_plane_size[0] *= forward_scroll_up;
+      camera_ortho_view_plane_size[1] *= forward_scroll_up;
     }
     else {
-      camera_ortho_view_plane_size[0] *= 0.9f;
-      camera_ortho_view_plane_size[1] *= 0.9f;
+      camera_ortho_view_plane_size[0] *= forward_scroll_down;
+      camera_ortho_view_plane_size[1] *= forward_scroll_down;
     }
     break;
   };

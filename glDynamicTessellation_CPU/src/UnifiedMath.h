@@ -29,8 +29,32 @@
 
 #endif
 
+#include "AABB.h"
+
 // STD
 #include <vector>
+#include <array>
+
+struct Plane {
+  Vector3Df n;
+  float     d;
+
+  void set(float _nx, float _ny, float _nz, float _d) {
+    n = Vector3Df(_nx, _ny, _nz);
+    d = _d ;
+  }
+
+  void normalize() {
+    float l = glm::length(n);
+    n = glm::normalize(n);
+    d /= l;
+  }
+
+};
+
+struct Frustum {
+  std::array<Plane, 6> planes;
+};
 
 class UnifiedMath {
 
@@ -61,6 +85,7 @@ public:
   // min
   static Vector3Df min(Vector3Df a, Vector3Df b);
   static Vector4Df min(Vector4Df a, Vector4Df b);
+  static float     min(float a, float b);
   
   // Matrix operations
   static Vector4Df  matrixMultiply(Matrix4x4f m, Vector4Df v);
@@ -77,6 +102,20 @@ public:
 
   // Const declaration
   static float pi();
+
+  // Angle
+  static float Radian2Degree(float rad);
+  static float Degree2Radian(float deg);
+  static float inZeroTwoPiRange(float a);
+  static void sinBoundsCW(float angle0, float angle1, float& minVal, float& maxVal);
+  static void cosBoundsCW(float angle0, float angle1, float& minVal, float& maxVal);
+  static float angleWithPositiveX(Vector3Df v);
+  static void curveMinMaxPoints(Vector3Df p0, Vector3Df p1, Vector3Df center, Vector3Df& minPoint, Vector3Df& maxPoint);
+  
+  // FrustumAABB intersect
+  static Frustum getFrustum(const Matrix4x4f& mvp);
+  static bool FrustumAABBIntersect(const Frustum& frustum, const AABB&);
+
 };
 
 

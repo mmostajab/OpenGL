@@ -20,40 +20,43 @@ void addLogo(
   ArcRep::ArcTriangle arc[4];
   
   arc[0].set(
-    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(1.0f, 0.0f, 0.0f)),
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(0.0f, 1.0f, 0.0f)),
+    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(1.0f, 0.0f, 0.0f)),
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(1.0f, 1.0f, 0.0f)),
-    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(1.0f, 1.0f, 0.0f)),
+    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(0.0f, 0.0f, 0.0f)),
     100
   );
   arcTriangles.push_back(arc[0]);
 
   arc[1].set(
-    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(-1.0f, 0.0f, 0.0f)),
-    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(0.0f, 1.0f, 0.0f)),
-    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(0.0f, 0.0f, 0.0f)),
+    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(1.0f, 0.0f, 0.0f)),
+    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(0.0f, -1.0f, 0.0f)),
+    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(1.0f, -1.0f, 0.0f)),
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(0.0f, 0.0f, 0.0f)),
     100
   );
   arcTriangles.push_back(arc[1]);
 
-  arc[2].set(
-    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(0.0f, -1.0f, 0.0f)),
+  arc[3].set(
+    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(0.0f, 1.0f, 0.0f)),
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(-1.0f, 0.0f, 0.0f)),
+    
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(0.0f, 0.0f, 0.0f)),
-    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(0.0f, 0.0f, 0.0f)),
+    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(-1.0f, 1.0f, 0.0f)),
+    100
+  );
+  arcTriangles.push_back(arc[3]);
+
+  arc[2].set(
+    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(-1.0f, 0.0f, 0.0f)),
+    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df( 0.0f, -1.0f, 0.0f)),
+    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df( 0.0f, 0.0f, 0.0f)),
+    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(-1.0f, -1.0f, 0.0f)),
     100
   );
   arcTriangles.push_back(arc[2]);
 
-  arc[3].set(
-    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(0.0f, -1.0f, 0.0f)),
-    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(1.0f, 0.0f, 0.0f)),  
-    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df( 1.0f, -1.0f, 0.0f)),
-    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df( 0.0f, 0.0f, 0.0f)),
-    100
-  );
-  arcTriangles.push_back(arc[3]);
+  
 }
 
 static void addC(
@@ -253,17 +256,16 @@ static void addT(
 
   ArcRep::ArcTriangle arcTriangle0, arcTriangle1;
   arcTriangle0.set(
-    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(-2.0f, 4.1f, 0)),
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(-1.0f, 4.0f, 0)),
+    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(-2.0f, 4.1f, 0)),
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(-1.8f, 4.2f, 0)),
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(-1.4f, 4.2f, 0)),
     100);
   arcTriangles.push_back(arcTriangle0);
 
   arcTriangle1.set(
-    
-    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(1.0f, 4.0f, 0)),
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(2.0f, 4.1f, 0)),
+    UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(1.0f, 4.0f, 0)),    
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(1.8f, 4.2f, 0)),
     UnifiedMath::TransformWithTranslation(shapeTransformation, Vector3Df(1.4f, 4.2f, 0)),
     100);

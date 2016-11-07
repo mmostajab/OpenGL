@@ -31,17 +31,26 @@ public:
 
   // general
   bool  general_wireframe;
+  bool  general_wireframe_pre;
+  bool  general_frustumCulling;
+  bool  general_frustumCulling_pre;
   bool  general_increaseTriangles;
   bool  general_decreaseTriangles;
   float general_triangulationAccuracyFactor;  // triangulation accuracy
   float general_dropCullingFactor;            // drop culling factor
   bool  general_writeEvaluations;
   bool  general_clearEvaluations;
+  bool  general_renderAABBs;
   
   // status
+  float status_overall_fps;
   int   status_nTriangles;
   float status_perf_triangles_per_second;
+  float status_frustum_culling_time;
   float status_triangulation_time;
+  float status_draw_time;
+  int   status_nVisible_primitives;
+  int   status_nInvisible_primitives;
 
 };
 

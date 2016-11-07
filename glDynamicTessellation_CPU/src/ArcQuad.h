@@ -45,7 +45,7 @@ public:
 
   bool updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned int w, unsigned int h);
 
-  void draw();
+  void draw(bool doUpdateGLBuffer);
 
   void setNSegs(const std::array<int32_t, 2> & _nSegs);
 
@@ -60,6 +60,7 @@ protected:
   std::array<int32_t, 2>  nSegs;              //= { -1, -1 };
 
   void createBuffer() override;
+  void createAABB() override;
 
 };
 

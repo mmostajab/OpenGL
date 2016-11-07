@@ -20,23 +20,30 @@ void AntTweakBarGUI::init(const unsigned int& width, const unsigned int& height)
   TwWindowSize(m_width, m_height);
   TwBar* generalBar = TwNewBar("General");
   TwDefine("General position='480 400'");
-  TwDefine("General color='176 176 176'");
+  TwDefine("General color='176 176 176' alpha=225");
   TwDefine("General size='300 50'");
   TwAddVarRW(generalBar, "Wireframe",         TW_TYPE_BOOL8, &general_wireframe,                   "");
+  TwAddVarRW(generalBar, "Frustum Culling",   TW_TYPE_BOOL8, &general_frustumCulling,              "");
+  TwAddVarRW(generalBar, "Bounding Boxes",    TW_TYPE_BOOL8, &general_renderAABBs,                 "");  
   TwAddVarRW(generalBar, "Increase Tris.",    TW_TYPE_BOOL8, &general_increaseTriangles,           "");
   TwAddVarRW(generalBar, "Decrease Tris.",    TW_TYPE_BOOL8, &general_decreaseTriangles,           "");
-  TwAddVarRW(generalBar, "Tri. Accuracy",     TW_TYPE_FLOAT, &general_triangulationAccuracyFactor, "min=0.1 step=0.1");
-  TwAddVarRW(generalBar, "Drop Cull Factor",  TW_TYPE_FLOAT, &general_dropCullingFactor,           "min=0.1 step=0.1");
+  TwAddVarRW(generalBar, "Tri. Accuracy",     TW_TYPE_FLOAT, &general_triangulationAccuracyFactor, "min=0.1 step=0.01");
+  TwAddVarRW(generalBar, "Drop Cull Factor",  TW_TYPE_FLOAT, &general_dropCullingFactor,           "min=0.1 step=0.01");
   TwAddVarRW(generalBar, "Write Evaluations", TW_TYPE_BOOL8, &general_writeEvaluations,            "");
   TwAddVarRW(generalBar, "Clear Evaluations", TW_TYPE_BOOL8, &general_clearEvaluations,            "");
 
   TwBar* statusBar = TwNewBar("Status");
   TwDefine("Status position='480 480'");
   TwDefine("Status size='300 100'");
-  TwDefine("Status color='176 176 176'");
+  TwDefine("Status color='176 176 176' alpha=225");
+  TwAddVarRO(statusBar, "Frame per Second (FPS)", TW_TYPE_FLOAT, &status_overall_fps, "");
   TwAddVarRO(statusBar, "Triangles", TW_TYPE_UINT32, &status_nTriangles, "");
   TwAddVarRO(statusBar, "Tris. per sec", TW_TYPE_FLOAT, &status_perf_triangles_per_second, "");
+  TwAddVarRO(statusBar, "Frustum Culling time (mS)", TW_TYPE_FLOAT, &status_frustum_culling_time, "");
   TwAddVarRO(statusBar, "Triangulation time (ms)", TW_TYPE_FLOAT, &status_triangulation_time, "");
+  TwAddVarRO(statusBar, "Draw time (ms)", TW_TYPE_FLOAT, &status_draw_time, "");
+  TwAddVarRO(statusBar, "Visible Primitives", TW_TYPE_INT32, &status_nVisible_primitives, "");
+  TwAddVarRO(statusBar, "Culled Primitives", TW_TYPE_INT32, &status_nInvisible_primitives, "");
   //TwAddVarRO(statusBar, "Avg. lines per sec", TW_TYPE_FLOAT, &status_avg_lines_per_sec, "");
   //TwAddVarRO(statusBar, "FPS", TW_TYPE_FLOAT, &status_fps, "");
 

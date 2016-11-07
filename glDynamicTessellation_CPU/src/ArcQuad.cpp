@@ -25,6 +25,7 @@ void ArcQuad::set(Vector3Df _p1, Vector3Df _p2, Vector3Df _center0, Vector3Df _p
 
   std::array<int32_t, 2> NumberOfSegments = { _nSegs, _nSegs };
   setNSegs(NumberOfSegments);
+  createAABB();
 }
 
 void ArcQuad::createBuffer() {
@@ -34,32 +35,13 @@ void ArcQuad::createBuffer() {
   lengths.clear();
   types.clear();
 #else
-  std::vector<Vertex> vertices;
+  vertices.clear();
 #endif
 
-  std::vector<Vector3Df> curve_points[2];
-  for (int i = 0; i < 2; i++){
-    Vector3Df a     = halfArcQuad[i].p0 - halfArcQuad[i].center;
-    Vector3Df b     = halfArcQuad[i].p1 - halfArcQuad[i].center;
-    float alpha = ArcPrimitiveHelper::angle_between(a, b);
+  std::vector<Vertex> curve_points[2];
 
-    for (int j = 0; j < nSegs[0] + 1; j++) {
-      float t = static_cast<float>(j) / static_cast<float>(nSegs[0]);
-      float thetha = t * alpha;
-
-      Vector3Df p;
-
-#ifdef USE_SLERP
-      p = ArcPrimitiveHelper::slerp(a, b, thetha, alpha);
-#endif
-
-#ifdef USE_COMPLEX_METHOD
-      p = ArcPrimitiveHelper::interpolation_complex(a, b, thetha, alpha);
-#endif
-      curve_points[i].push_back(p + halfArcQuad[i].center);
-    };
-  }
-    
+  ArcPrimitiveHelper::produceCurvePoints(halfArcQuad[0].p0, halfArcQuad[0].p1, halfArcQuad[0].center, nSegs[0], false, curve_points[0]);
+  ArcPrimitiveHelper::produceCurvePoints(halfArcQuad[1].p0, halfArcQuad[1].p1, halfArcQuad[1].center, nSegs[0], false, curve_points[1]);
 
   Vertex v;
 
@@ -74,10 +56,10 @@ void ArcQuad::createBuffer() {
       v.position = curve_points[1][i];
       vertices.push_back(OSG::Pnt3f(v.position));
 #else
-      v.position = curve_points[0][i];
+      v.position = curve_points[0][i].position;
       vertices.push_back(v);
       
-      v.position = curve_points[1][i];
+      v.position = curve_points[1][i].position;
       vertices.push_back(v);
 #endif
 
@@ -89,7 +71,7 @@ void ArcQuad::createBuffer() {
 #endif
 
   } else {
-
+    /*
     size_t i = 0, j = 0;
     while (i+1 < curve_points[0].size() && j+1 < curve_points[1].size()) {
 
@@ -155,23 +137,46 @@ void ArcQuad::createBuffer() {
     lengths.push_back(static_cast<OSG::UInt32>(vertices.size()));
     types.push_back(GL_TRIANGLES);
 #endif
-
+*/
   }
 
 #ifdef USE_OPENSG
   //createDrawArraysNode(transform, vertices, lengths, types);  
 #else
 
-  if (buffer > 0)
-  glDeleteBuffers(1, &buffer);
-  glCreateBuffers(1, &buffer);
-  glBindBuffer(GL_ARRAY_BUFFER, buffer);
-  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+  size_t required_buffer_size = vertices.size() * sizeof(Vertex);
+  if (buffer <= 0 || required_buffer_size > buffer_size_bytes) {
+    if (buffer > 0) glDeleteBuffers(1, &buffer);
+    glCreateBuffers(1, &buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glBufferData(GL_ARRAY_BUFFER, required_buffer_size, vertices.data(), GL_STATIC_DRAW);
+    buffer_size_bytes = required_buffer_size;
+  }
+  else {
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glBufferData(GL_ARRAY_BUFFER, required_buffer_size, vertices.data(), GL_STATIC_DRAW);
+  }
+  buffer_filled_bytes = required_buffer_size;
 #endif
       nVertices = static_cast<GLint>(vertices.size());      
   }
 
+  void ArcRep::ArcQuad::createAABB()
+  {
+    AABB aabb0, aabb1;
+
+    UnifiedMath::curveMinMaxPoints(halfArcQuad[0].p0, halfArcQuad[0].p1, halfArcQuad[0].center, aabb0.min, aabb0.max);
+    UnifiedMath::curveMinMaxPoints(halfArcQuad[1].p0, halfArcQuad[1].p1, halfArcQuad[1].center, aabb1.min, aabb1.max);
+    aabb0.extend((float*)&aabb1.min);
+    aabb0.extend((float*)&aabb1.max);
+    aabb0.enlarge(0.0001f);
+
+    setAABB(aabb0);
+  }
+
 bool ArcQuad::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned int w, unsigned int h) {
+
+  if (m_disabled) return false;
 
   std::array<int32_t, 2> new_nSegs = { 0, 0 };
 
@@ -197,8 +202,10 @@ bool ArcQuad::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned i
       float tri_alpha = 1 - pixel_size / radius;
       if (std::fabs(tri_alpha) >= 1.0f || radius <= m_dropCullingFactor * pixel_size) {
         new_nSegs[i] = 0;
+        m_disabled = true;
       }
       else {
+        m_disabled = false;
         // calculate the new number of segments
         float alpha = acos(tri_alpha);
         float angle = ArcPrimitiveHelper::angle_between(halfArcQuad[i].p0 - halfArcQuad[i].center, halfArcQuad[i].p1 - halfArcQuad[i].center);
@@ -211,8 +218,8 @@ bool ArcQuad::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned i
 
   new_nSegs[0] = new_nSegs[1] = std::max(new_nSegs[0], new_nSegs[1]);
 
-  // if the buffer does not need to change
-#define UPDATE_ARCS_EVERY_FRAME
+// if the buffer does not need to change
+//#define UPDATE_ARCS_EVERY_FRAME
 #ifndef UPDATE_ARCS_EVERY_FRAME
   if (nSegs[0] == new_nSegs[0] && nSegs[1] == new_nSegs[1]) return false;
 #endif
@@ -231,7 +238,11 @@ bool ArcQuad::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned i
   return true;
 }
 
-void ArcQuad::draw() {
+void ArcQuad::draw(bool doUpdateGLBuffer) {
+
+  if (m_disabled) return;
+
+  if(doUpdateGLBuffer) updateGLBuffer();
 
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 #ifdef USE_OPENSG
@@ -258,9 +269,14 @@ void ArcQuad::setNSegs(const std::array<int32_t, 2> & _nSegs)
   nSegs[1] = _nSegs[1];
 
   createBuffer();
+  createAABB();
 }
 
 int ArcRep::ArcQuad::getNumGenTriangles() const
 {
+  if (m_disabled)
+    return 0;
+
   return 2 * nSegs[0];
 }
+

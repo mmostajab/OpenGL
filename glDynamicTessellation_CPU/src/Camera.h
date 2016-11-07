@@ -119,6 +119,9 @@ public:
   glm::mat4 model;
   glm::mat4 MVP;
 
+  float forward_scroll_up;
+  float forward_scroll_down;
+
 };
 
 #endif

@@ -27,6 +27,7 @@ void ArcSegment::set(
   center = _center;
 
   setNSegs(_nSegs);
+  createAABB();
 }
 
 void ArcSegment::createBuffer() {
@@ -36,12 +37,7 @@ void ArcSegment::createBuffer() {
   types.clear();
 #else
 
-  if (buffer > 0) {
-    glDeleteBuffers(1, &buffer);
-    buffer = 0;
-  }
-
-  std::vector<Vertex> vertices;
+  vertices.clear();
 #endif
 
   Vertex v;
@@ -57,28 +53,9 @@ void ArcSegment::createBuffer() {
   Vector3Df a = p1 - center;
   Vector3Df b = p2 - center;
   float alpha = ArcPrimitiveHelper::angle_between(a, b);
-
-  for (int i = 0; i < nSegs + 1; i++) {
-    float t = static_cast<float>(i) / static_cast<float>(nSegs);
-    float thetha = t * alpha;
-
-    Vector3Df p;
-
-#ifdef USE_SLERP
-    p = ArcPrimitiveHelper::slerp(a, b, thetha, alpha);
-#endif
-
-#ifdef USE_COMPLEX_METHOD
-    p = ArcPrimitiveHelper::interpolation_complex(a, b, thetha, alpha);
-#endif
-
-    v.position = p + center;
-#ifdef USE_OPENSG
-    vertices.push_back(OSG::Pnt3f(v.position));
-#else
-    vertices.push_back(v);
-#endif
-  }
+  
+  // ccw = false because we know that the orientation was clockwise.
+  ArcPrimitiveHelper::produceCurvePoints(p1, p2, center, nSegs, false, vertices);
 
 #ifdef USE_OPENSG
 
@@ -86,16 +63,40 @@ void ArcSegment::createBuffer() {
 	types.push_back(GL_TRIANGLE_FAN);
 
   //createDrawArraysNode(transform, vertices, lengths, types);  
+  buffer_size_bytes = vertices.size() * 16;
 #else
-  glCreateBuffers(1, &buffer);
-  glBindBuffer(GL_ARRAY_BUFFER, buffer);
-  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW);
+  size_t required_buffer_size = vertices.size() * sizeof(Vertex);
+  if (buffer <= 0 || required_buffer_size > buffer_size_bytes) {
+    if(buffer > 0) glDeleteBuffers(1, &buffer);
+    glCreateBuffers(1, &buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glBufferData(GL_ARRAY_BUFFER, required_buffer_size, vertices.data(), GL_STATIC_DRAW);
+    buffer_size_bytes = required_buffer_size;
+  }
+  else {
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glBufferData(GL_ARRAY_BUFFER, required_buffer_size, vertices.data(), GL_STATIC_DRAW);
+  }
+  buffer_filled_bytes = required_buffer_size;
 #endif
 
   nVertices = static_cast<GLint>(vertices.size());
 }
 
+void ArcSegment::createAABB()
+{
+  AABB aabb;
+  
+  UnifiedMath::curveMinMaxPoints(p1, p2, center, aabb.min, aabb.max);
+
+  aabb.enlarge(0.01f);
+
+  setAABB(aabb);
+}
+
 bool ArcSegment::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned int w, unsigned int h) {
+
+  if (m_disabled) return false;
 
   int new_nSegs = 0;
     if(m_tessMethod == TESS_METHOD_CURVE_LENGTH)
@@ -119,8 +120,10 @@ bool ArcSegment::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigne
       float tri_alpha = 1 - pixel_size / radius;
       if (std::fabs(tri_alpha) >= 1.0f || radius <= m_dropCullingFactor * pixel_size) {
         new_nSegs = 0;
+        m_disabled = true;
       }
       else {
+        m_disabled = false;
         // calculate the new number of segments
         float alpha = acos(tri_alpha);
         float angle = ArcPrimitiveHelper::angle_between(p1 - center, p2 - center);
@@ -130,7 +133,7 @@ bool ArcSegment::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigne
     }
 
   // if the buffer does not need to change
-#define UPDATE_ARCS_EVERY_FRAME
+//#define UPDATE_ARCS_EVERY_FRAME
 #ifndef UPDATE_ARCS_EVERY_FRAME
   if (nSegs == new_nSegs) return false;
 #endif
@@ -148,7 +151,11 @@ bool ArcSegment::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigne
   return true;
 }
 
-void ArcSegment::draw() {
+void ArcSegment::draw(bool doUpdateGLBuffer) {
+
+  if (m_disabled) return;
+
+  if (doUpdateGLBuffer) updateGLBuffer();
 
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 #ifdef USE_OPENSG
@@ -169,9 +176,13 @@ void ArcSegment::setNSegs(const int & _nSegs)
   nSegs = _nSegs;
 
   createBuffer();
+  createAABB();
 }
 
 int ArcSegment::getNumGenTriangles() const
 {
+  if (m_disabled)
+    return 0;
+
   return nSegs;
 }

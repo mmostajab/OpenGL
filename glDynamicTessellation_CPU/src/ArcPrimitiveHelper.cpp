@@ -102,8 +102,42 @@ float ArcPrimitiveHelper::angle_between(const Vector3Df & a, const Vector3Df & b
 
   float thetha = acos(cos_angle_between(a, b));
 
-  if (absloute_angle_a > absloute_angle_b)
+  // Check if the angle is clockwise
+  Vector3Df c = UnifiedMath::cross(a, b);
+  if (c[2] <= 0)
     return thetha;
   else
     return 2 * UnifiedMath::pi() - thetha;
+}
+
+void ArcPrimitiveHelper::produceCurvePoints(
+  const Vector3Df & p1, const Vector3Df & p2, const Vector3Df& center, int nSegs, bool ccw,
+  std::vector<Vertex>& vertices)
+{
+  Vertex v;
+
+  Vector3Df a = p1 - center;
+  Vector3Df b = p2 - center;
+  float alpha = ArcPrimitiveHelper::angle_between(a, b);
+
+  for (int i = 0; i < nSegs + 1; i++) {
+    float t = static_cast<float>(i) / static_cast<float>(nSegs);
+    float thetha = ccw ? (1 - t) * alpha : t * alpha;
+
+    Vector3Df p;
+#ifdef USE_SLERP
+    p = ArcPrimitiveHelper::slerp(a, b, thetha, alpha);
+#endif
+
+#ifdef USE_COMPLEX_METHOD
+    p = ArcPrimitiveHelper::interpolation_complex(a, b, thetha, alpha);
+#endif
+
+    v.position = p + center;
+#ifdef USE_OPENSG
+    vertices.push_back(v.position);
+#else
+    vertices.push_back(v);
+#endif
+  }
 }

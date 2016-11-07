@@ -18,6 +18,10 @@
 
 #endif
 
+// Vertex of a Dynamic Tessellated Arc Primitive.
+struct Vertex {
+  Vector3Df position;
+};
 
 class ArcPrimitiveHelper {
 public:
@@ -55,6 +59,11 @@ public:
 
   // returns the cosine of the angle between vectors @a and @b
   static float       angle_between(const Vector3Df& a, const Vector3Df& b);
+
+  static void        produceCurvePoints(
+    const Vector3Df & p1, const Vector3Df & p2, const Vector3Df& center, 
+    int nSegs, bool ccw,
+    std::vector<Vertex>& vertices);
 };
 
 #endif // __ARC_PRIMITIVE_HELPER_H__

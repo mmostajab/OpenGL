@@ -45,18 +45,18 @@ public:
 
 	void init(const unsigned int& width, const unsigned int& height, HGLRC mainWindowContext);
 	void init(const unsigned int& width, const unsigned int& height);
-    void init();
-    void run();
+  void init();
+  void run();
 	void run_onestep();
-    void shutdown();
+  void shutdown();
 
-    ~Application();
+  ~Application();
 
 // private:
 public:
     void create();
     void update(float time, float elapsedTime);
-    void draw();
+    void draw(bool doUpdateGLBuffers);
 
     void compileShaders();
 
@@ -107,6 +107,12 @@ public:
     GLuint      quad_vao;
 
     Evaluator<int64_t, float> trianglesPerSecondEvaluator;
+    Evaluator<int64_t, float> memUsagePerTriangleEvaluator;
+    Evaluator<int64_t, float> renderTimePerTriangleEvaluator;
+    Evaluator<int64_t, float> drawTimePerTriangleEvaluator;
+    Evaluator<int64_t, float> uploadTimePerTriangleEvaluator;
+    Evaluator<float, float>   pipelinePerTrianglesEvaluator;
+    Evaluator<float, int64_t> trianglesPerZoomFactorEvaluator;
     
 
 	std::vector<ArcSegment>  arcSegments;
@@ -115,6 +121,12 @@ public:
 
   std::streambuf* m_orig_cout_buf;
   std::ofstream m_logFile;
+
+  const glm::vec3 green_color, red_color;
+
+  // Measurments
+  int    nTriangles;
+  float  memUsage;
 };
 
 #endif

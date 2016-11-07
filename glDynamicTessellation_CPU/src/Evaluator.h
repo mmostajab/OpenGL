@@ -42,7 +42,7 @@ public:
       }
       else {
 
-        if (j - i > 30) {
+        if (j - i >= 15) {
           resultType result = m_evaluationData[i].second;
           for (size_t k = i + 1; k < j; k++)
             result += m_evaluationData[k].second;

@@ -29,6 +29,7 @@ void ArcTriangle::set(
   p3 = _p3;
   center = _center;
   setNSegs(_nSegs);
+  createAABB();
 }
 
   void ArcTriangle::createBuffer() {
@@ -49,7 +50,7 @@ void ArcTriangle::set(
   lengths.clear();
   types.clear();
 #else
-  std::vector<Vertex>     vertices;
+  vertices.clear();
 #endif
 
     Vertex v;
@@ -62,35 +63,10 @@ void ArcTriangle::set(
   vertices.push_back(v);
 #endif
 
-    
-
-    Vector3Df a = p1 - center;
-    Vector3Df b = p2 - center;
-    float alpha = ArcPrimitiveHelper::angle_between(a, b);
-
     Vector3Df c = UnifiedMath::cross(p1-p3, p2-p3);
-    bool ccw = c[2] < 0;
+    bool ccw = c[2] >= 0;
 
-    for (int i = 0; i < nSegs + 1; i++) {
-      float t = static_cast<float>(i) / static_cast<float>(nSegs);
-      float thetha = ccw ? t * alpha : (1 - t) * alpha;
-
-      Vector3Df p;
-#ifdef USE_SLERP
-      p = ArcPrimitiveHelper::slerp(a, b, thetha, alpha);
-#endif
-
-#ifdef USE_COMPLEX_METHOD
-      p = ArcPrimitiveHelper::interpolation_complex(a, b, -thetha, -alpha);
-#endif
-
-      v.position = p + center;
-#ifdef USE_OPENSG
-      vertices.push_back(v.position);
-#else
-      vertices.push_back(v);
-#endif
-    }
+    ArcPrimitiveHelper::produceCurvePoints(p1, p2, center, nSegs, ccw, vertices);
 
 #ifdef USE_OPENSG
 
@@ -98,17 +74,41 @@ void ArcTriangle::set(
 	types.push_back(GL_TRIANGLE_FAN);
 
   //createDrawArraysNode(transform, vertices, lengths, types);  
+  buffer_size_bytes = vertices.size() * 16;
 #else
-    glGenBuffers(1, &buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW);
+    
 #endif
-
     nVertices = static_cast<GLint>(vertices.size());
+  }
+
+  void ArcTriangle::createAABB()
+  {
+    AABB aabb;
+
+    UnifiedMath::curveMinMaxPoints(p1, p2, center, aabb.min, aabb.max);
+
+    float r = UnifiedMath::max(UnifiedMath::length(p1 - center), UnifiedMath::length(p2 - center));
+    /*aabb.min[0] = center[0] - r;
+    aabb.min[1] = center[1] - r;
+    aabb.min[2] = center[2] - r;
+    
+    aabb.max[0] = center[0] + r;
+    aabb.max[1] = center[1] + r;
+    aabb.max[2] = center[2] + r;*/
+
+    aabb.extend((float*)&p3);
+    //aabb.extend((float*)&p1);
+    //aabb.extend((float*)&p2);
+    //aabb.extend((float*)&center);
+    //aabb.enlarge(0.01f);
+
+    setAABB(aabb);
   }
 
   bool ArcTriangle::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned int w, unsigned int h) {
     
+    if (m_disabled) return false;
+
     int new_nSegs = 0;
     if(m_tessMethod == TESS_METHOD_CURVE_LENGTH)
       new_nSegs = static_cast<int>(ArcPrimitiveHelper::calcProjectedCurveLength(mvp, w, h, p1, p2, center) / m_tessScale);
@@ -131,8 +131,10 @@ void ArcTriangle::set(
       float tri_alpha = 1 - pixel_size / radius;
       if (std::fabs(tri_alpha) >= 1.0f || radius <= m_dropCullingFactor * pixel_size) {
         new_nSegs = 0;
+        m_disabled = true;
       }
       else {
+        m_disabled = false;
         // calculate the new number of segments
         float alpha = acos(tri_alpha);
         float angle = ArcPrimitiveHelper::angle_between(p1 - center, p2 - center);
@@ -141,7 +143,8 @@ void ArcTriangle::set(
       }
     }
 
-#define UPDATE_ARCS_EVERY_FRAME
+
+//#define UPDATE_ARCS_EVERY_FRAME
 #ifndef UPDATE_ARCS_EVERY_FRAME
     if (new_nSegs == nSegs) return false;
 #endif
@@ -157,7 +160,11 @@ void ArcTriangle::set(
     return true;
   }
 
-  void ArcTriangle::draw() {
+  void ArcTriangle::draw(bool doUpdateGLBuffer) {
+
+    if (m_disabled) return;
+
+    if (doUpdateGLBuffer) updateGLBuffer();
 
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -185,5 +192,8 @@ void ArcTriangle::setNSegs(const int& _nSegs)
 
 int ArcTriangle::getNumGenTriangles() const
 {
+  if (m_disabled)
+    return 0;
+
   return nSegs;
 }
