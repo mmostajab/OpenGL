@@ -158,6 +158,41 @@ size_t ArcRep::DynTessArcPrimitive::getFilledMemBytes() const
   return buffer_filled_bytes;
 }
 
+const std::vector<Vertex>& DynTessArcPrimitive::getTriangleVertices()
+{
+  triangleVertices.clear();
+
+  if (m_disabled) return triangleVertices;
+
+  switch (bufferDrawPrimType) {
+  case GL_TRIANGLE_FAN:
+    for (size_t i = 1; i < vertices.size() - 1; i++) {
+      triangleVertices.push_back(vertices[0]);
+      triangleVertices.push_back(vertices[i + 0]);
+      triangleVertices.push_back(vertices[i + 1]);
+    }
+    break;
+  case GL_TRIANGLE_STRIP:
+    for (size_t i = 0; i < vertices.size() - 2; i++) {
+      if (i % 2 == 0) {
+        triangleVertices.push_back(vertices[i + 0]);
+        triangleVertices.push_back(vertices[i + 1]);
+        triangleVertices.push_back(vertices[i + 2]);
+      }
+      else {
+        triangleVertices.push_back(vertices[i + 1]);
+        triangleVertices.push_back(vertices[i + 0]);
+        triangleVertices.push_back(vertices[i + 2]);
+      }
+    }
+    break;
+  case GL_TRIANGLES:
+    triangleVertices = vertices;
+  }
+
+  return triangleVertices;
+}
+
 #ifdef USE_OPENSG
 
 const std::vector<OSG::Pnt3f>&  DynTessArcPrimitive::getVertices() const {

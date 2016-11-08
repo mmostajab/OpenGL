@@ -1,13 +1,25 @@
 #ifndef __HELPER_H__
 #define __HELPER_H__
 
+// STD
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <stdint.h>
+
+// GLEW
 #include <GL/glew.h>
+
+// GLM
 #include <glm/glm.hpp>
 
+typedef  struct {
+  uint32_t count;
+  uint32_t instanceCount;
+  uint32_t first;
+  uint32_t baseInstance;
+} DrawArraysIndirectCommand;
 
 static std::string convertFileToString(const std::string& filename);
 static void show_compiler_error(GLuint shader);

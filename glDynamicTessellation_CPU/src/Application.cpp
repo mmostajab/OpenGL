@@ -3,14 +3,11 @@
 #endif
 
 // #define FULL_SCREEN_ON_PRIMARY_MONITOR
-
-#define ENABLE_CULLING
-
+//#define ENABLE_CULLING
+//#define COMBINE_GL_BUFFERS
 
 //#define MEASURE_RENDER_UPLOAD_TIME
-
 //#define AUTO_CAM_MOVE_CASE2
-
 #define TEST_CASE3
 
 #include "application.h"
@@ -121,11 +118,14 @@ void Application::init(const unsigned int& width, const unsigned int& height) {
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
+
+    m_window = glfwCreateWindow(width, height, "ArcPrimitve CPU Tessellator - Demo", 
 #ifdef FULL_SCREEN_ON_PRIMARY_MONITOR
-    m_window = glfwCreateWindow(width, height, "ArcPrimitve CPU Tessellator - Demo", glfwGetPrimaryMonitor(), NULL);
+      glfwGetPrimaryMonitor(), 
 #else
-    m_window = glfwCreateWindow(width, height, "ArcPrimitve CPU Tessellator - Demo", NULL, NULL);
+      NULL,
 #endif
+      NULL);
 
     if (!m_window)
     {
@@ -206,11 +206,17 @@ void Application::init() {
     // GUI
     m_gui.general_wireframe                   = m_gui.general_wireframe_pre      =  false;
     m_gui.general_frustumCulling              = m_gui.general_frustumCulling_pre = true;//true;
+    
     m_gui.general_increaseTriangles           = false;
     m_gui.general_decreaseTriangles           = false;
     m_gui.general_renderAABBs                 = false;
     m_gui.general_dropCullingFactor           = 2.0f;
     m_gui.general_triangulationAccuracyFactor = 1.0f;
+
+    combineArcPrimitiveBuffers            = m_gui.general_combineBuffers = m_gui.general_combineBuffers_pre = true;
+    allArcPrimitiveTrianglesBuffer        = 0;
+    allArcPrimitivesNumVertices           = 0;
+    allArcPrimitivesBufferSizeNumVertices = 0;
 }
 
 void Application::create() {
@@ -373,8 +379,8 @@ void Application::create() {
 #endif
 
 #ifdef TEST_CASE3
-  int32_t w = 70;
-  int32_t h = 70;
+  int32_t w = 50;
+  int32_t h = 50;
 
   std::ifstream config("config.txt");
   if (config) {
@@ -455,6 +461,12 @@ void Application::update(float time, float timeSinceLastFrame) {
   }
 #endif
 
+  bool trianglesOfSingleBufferNeedUpdate = false;
+  if (m_gui.general_combineBuffers != m_gui.general_combineBuffers_pre) {
+    combineArcPrimitiveBuffers = m_gui.general_combineBuffers;
+    m_gui.general_combineBuffers_pre = m_gui.general_combineBuffers;
+  }
+
   if (m_gui.general_frustumCulling_pre != m_gui.general_frustumCulling && !m_gui.general_frustumCulling) {
     for (int i = 0; i < static_cast<int>(arcSegments.size()); i++) {
       arcSegments[i].enable();
@@ -467,6 +479,8 @@ void Application::update(float time, float timeSinceLastFrame) {
     for (int i = 0; i < static_cast<int>(arcQuads.size()); i++) {
       arcQuads[i].enable();
     }
+
+    trianglesOfSingleBufferNeedUpdate = true;
   }
   m_gui.general_frustumCulling_pre = m_gui.general_frustumCulling;
 
@@ -499,6 +513,7 @@ void Application::update(float time, float timeSinceLastFrame) {
       }
       m_gui.general_decreaseTriangles = false;
       //m_camera.Move(CameraDirection::UP);
+      trianglesOfSingleBufferNeedUpdate = true;
     }
 
     if (m_e_pressed || m_gui.general_increaseTriangles) {
@@ -510,6 +525,7 @@ void Application::update(float time, float timeSinceLastFrame) {
       }
       m_gui.general_increaseTriangles = false;
       //m_camera.Move(CameraDirection::DOWN);
+      trianglesOfSingleBufferNeedUpdate = true;
     }
 
     // Updating the camera matrices
@@ -659,16 +675,38 @@ void Application::update(float time, float timeSinceLastFrame) {
   {
 //#pragma omp parallel for
     for (int i = 0; i < static_cast<int>(arcSegments.size()); i++) {
-        arcSegments[i].updateBuffer(camInfo, m_mvp_mat, m_width, m_height);
+        if(arcSegments[i].updateBuffer(camInfo, m_mvp_mat, m_width, m_height))
+          trianglesOfSingleBufferNeedUpdate = true;
     }
 //#pragma omp for
     for (int i = 0; i < static_cast<int>(arcTriangles.size()); i++) {
-        arcTriangles[i].updateBuffer(camInfo, m_mvp_mat, m_width, m_height);
+        if(arcTriangles[i].updateBuffer(camInfo, m_mvp_mat, m_width, m_height))
+          trianglesOfSingleBufferNeedUpdate = true;
     }
 //#pragma omp for
     for (int i = 0; i < static_cast<int>(arcQuads.size()); i++) {
-        arcQuads[i].updateBuffer(camInfo, m_mvp_mat, m_width, m_height);
+        if(arcQuads[i].updateBuffer(camInfo, m_mvp_mat, m_width, m_height))
+          trianglesOfSingleBufferNeedUpdate = true;
     }
+  }
+
+  // ===========================================
+  // == Buffer Combination
+  // ===========================================
+
+  float buffer_combination_time = 0;
+  if (combineArcPrimitiveBuffers && trianglesOfSingleBufferNeedUpdate) {
+    //std::cout << "update.\n";
+    std::chrono::high_resolution_clock::time_point start_buffer_combination_time = std::chrono::high_resolution_clock::now();
+    updateAllArcPrimitivesSingleBuffer();
+    std::chrono::high_resolution_clock::time_point end_buffer_combination_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<float> buffer_combination_time_span = std::chrono::duration_cast<std::chrono::duration<float>>(end_buffer_combination_time - start_buffer_combination_time);
+    buffer_combination_time = buffer_combination_time_span.count() * 1000.0f;
+
+    std::cout << "Buffer combination time = " << buffer_combination_time << " ms" << std::endl;
+  }
+  else {
+    buffer_combination_time = 0;
   }
 
   // ===========================================
@@ -718,6 +756,8 @@ void Application::update(float time, float timeSinceLastFrame) {
   //std::cout << "Number of triangles = " << nTriangles << std::endl;
   m_gui.status_nTriangles = nTriangles;
 
+  m_gui.status_buffer_combination_time = buffer_combination_time;
+
 #ifdef USE_WINDOWS_TIME
   DWORD end_update_time = timeGetTime();
   DWORD update_time = (end_update_time - start_update_time) ;
@@ -734,6 +774,10 @@ void Application::update(float time, float timeSinceLastFrame) {
   //std::cout << "performance (CPU Side) = " << static_cast<float>(nTriangles) / static_cast<float>(update_time / 1e9) << std::endl;
   //if (update_time > 1e7) std::cout << "update time = " << update_time << "( " << 1e9f / update_time << " FPS )" << std::endl;
   
+
+  // ==================================================
+  // == Evaluation part
+  // ==================================================
   
   memUsage /= (1024.0f * 1024.0f);
   trianglesPerSecondEvaluator.addData(nTriangles, m_gui.status_triangulation_time);
@@ -796,7 +840,7 @@ void Application::draw(bool doUpdateGLBuffers) {
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glUseProgram(m_background_program);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
- 
+
   if (wireframe)
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -805,7 +849,7 @@ void Application::draw(bool doUpdateGLBuffers) {
 
   static bool  firstRun = true;
   static float updateDrawTime, drawTime;
-  
+
 #ifdef MEASURE_RENDER_UPLOAD_TIME
   glFinish();
 #endif
@@ -816,11 +860,24 @@ void Application::draw(bool doUpdateGLBuffers) {
   double start_render_time = glfwGetTime();
 #endif
 
-  glUseProgram(m_simple_program);
-  glUniform3fv(0, 1, (GLfloat*)&green_color);
-  for (auto& arc : arcSegments)  arc.draw(doUpdateGLBuffers);
-  for (auto& arc : arcTriangles) arc.draw(doUpdateGLBuffers);
-  for (auto& arc : arcQuads)     arc.draw(doUpdateGLBuffers);
+  if (combineArcPrimitiveBuffers){
+    glUseProgram(m_simple_program);
+    glUniform3fv(0, 1, (GLfloat*)&green_color);
+
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, allArcPrimitiveTrianglesBuffer);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const char*)0);
+    glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(allArcPrimitivesNumVertices));
+    glDisableVertexAttribArray(0);
+  } else {
+
+    glUseProgram(m_simple_program);
+    glUniform3fv(0, 1, (GLfloat*)&green_color);
+    for (auto& arc : arcSegments)  arc.draw(doUpdateGLBuffers);
+    for (auto& arc : arcTriangles) arc.draw(doUpdateGLBuffers);
+    for (auto& arc : arcQuads)     arc.draw(doUpdateGLBuffers);
+
+  }
 
 #ifdef MEASURE_RENDER_UPLOAD_TIME
   glFinish();
@@ -1252,5 +1309,45 @@ void Application::key_callback(GLFWwindow* window, int key, int scancode, int ac
 
   if (key == GLFW_KEY_LEFT_CONTROL && action == GLFW_RELEASE){
     m_controlKeyHold = false;
+  }
+}
+
+void Application::updateAllArcPrimitivesSingleBuffer()
+{
+  // 0 => for triangle fan
+  // 1 => for triangle strip
+  std::vector<Vertex> primitiveVertices[2];
+
+  for (auto& arc : arcSegments) {
+    const std::vector<Vertex>& arcTriangleVertices = arc.getTriangleVertices();
+    primitiveVertices[0].insert(primitiveVertices[0].begin(), arcTriangleVertices.begin(), arcTriangleVertices.end());
+  }
+
+  for (auto& arc : arcTriangles) {
+    const std::vector<Vertex>& arcTriangleVertices = arc.getTriangleVertices();
+    primitiveVertices[0].insert(primitiveVertices[0].begin(), arcTriangleVertices.begin(), arcTriangleVertices.end());
+  }
+
+  for (auto& arc : arcQuads) {
+    const std::vector<Vertex>& arcTriangleVertices = arc.getTriangleVertices();
+    primitiveVertices[1].insert(primitiveVertices[1].begin(), arcTriangleVertices.begin(), arcTriangleVertices.end());
+  }
+
+  for (size_t i = 0; i < 2; i++) {
+    if (allArcPrimitivesBufferSizeNumVertices[i] < primitiveVertices[i].size()) {
+      if (allArcPrimitiveTrianglesBuffer[i] > 0)
+        glDeleteBuffers(1, &allArcPrimitiveTrianglesBuffer[i]);
+
+      glGenBuffers(1, &allArcPrimitiveTrianglesBuffer[i]);
+      glBindBuffer(GL_ARRAY_BUFFER, allArcPrimitiveTrianglesBuffer[i]);
+      glBufferData(GL_ARRAY_BUFFER, primitiveVertices[i].size() * sizeof(Vertex), triangleVertices.data(), GL_STATIC_DRAW);
+      allArcPrimitivesBufferSizeNumVertices = triangleVertices.size();
+    }
+    else {
+      glBindBuffer(GL_ARRAY_BUFFER, allArcPrimitiveTrianglesBuffer);
+      glBufferSubData(GL_ARRAY_BUFFER, 0, triangleVertices.size() * sizeof(Vertex), triangleVertices.data());
+    }
+
+    allArcPrimitivesNumVertices = triangleVertices.size();
   }
 }

@@ -97,6 +97,10 @@ protected:
 
 #else
 
+  std::vector<Vertex> triangleVertices;
+  const std::vector<Vertex>& getTriangleVertices();
+
+  GLenum bufferDrawPrimType;
   std::vector<Vertex> vertices;
   GLuint buffer;
   size_t buffer_size_bytes;

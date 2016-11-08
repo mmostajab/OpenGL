@@ -23,6 +23,7 @@ void AntTweakBarGUI::init(const unsigned int& width, const unsigned int& height)
   TwDefine("General color='176 176 176' alpha=225");
   TwDefine("General size='300 50'");
   TwAddVarRW(generalBar, "Wireframe",         TW_TYPE_BOOL8, &general_wireframe,                   "");
+  TwAddVarRW(generalBar, "Combine Buffer",    TW_TYPE_BOOL8, &general_combineBuffers,              "");
   TwAddVarRW(generalBar, "Frustum Culling",   TW_TYPE_BOOL8, &general_frustumCulling,              "");
   TwAddVarRW(generalBar, "Bounding Boxes",    TW_TYPE_BOOL8, &general_renderAABBs,                 "");  
   TwAddVarRW(generalBar, "Increase Tris.",    TW_TYPE_BOOL8, &general_increaseTriangles,           "");
@@ -41,6 +42,7 @@ void AntTweakBarGUI::init(const unsigned int& width, const unsigned int& height)
   TwAddVarRO(statusBar, "Tris. per sec", TW_TYPE_FLOAT, &status_perf_triangles_per_second, "");
   TwAddVarRO(statusBar, "Frustum Culling time (mS)", TW_TYPE_FLOAT, &status_frustum_culling_time, "");
   TwAddVarRO(statusBar, "Triangulation time (ms)", TW_TYPE_FLOAT, &status_triangulation_time, "");
+  TwAddVarRO(statusBar, "Buffer combination time (ms)", TW_TYPE_FLOAT, &status_buffer_combination_time, "");
   TwAddVarRO(statusBar, "Draw time (ms)", TW_TYPE_FLOAT, &status_draw_time, "");
   TwAddVarRO(statusBar, "Visible Primitives", TW_TYPE_INT32, &status_nVisible_primitives, "");
   TwAddVarRO(statusBar, "Culled Primitives", TW_TYPE_INT32, &status_nInvisible_primitives, "");

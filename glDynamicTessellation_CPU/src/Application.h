@@ -127,6 +127,15 @@ public:
   // Measurments
   int    nTriangles;
   float  memUsage;
+
+
+  // Buffer comibination
+  bool combineArcPrimitiveBuffers;
+  GLuint allArcPrimitiveTrianglesBuffer[2];
+  GLuint allArcPrimitiveTrianglesIndirectDrawBuffer[2];
+  size_t allArcPrimitivesNumVertices[2];
+  size_t allArcPrimitivesBufferSizeNumVertices[2];
+  void updateAllArcPrimitivesSingleBuffer();
 };
 
 #endif

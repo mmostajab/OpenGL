@@ -14,6 +14,7 @@ ArcTriangle::ArcTriangle(
     int _nSegs): DynTessArcPrimitive(DYN_TESS_ARC_TRIANGLE) {
 
   set(_p1, _p2, _p3, _center, _nSegs);
+  bufferDrawPrimType = GL_TRIANGLE_FAN;
 
   }
 
@@ -176,7 +177,7 @@ void ArcTriangle::set(
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const char*)0);
 
-    glDrawArrays(GL_TRIANGLE_FAN, 0, nVertices);
+    glDrawArrays(bufferDrawPrimType, 0, nVertices);
 
     glDisableVertexAttribArray(0);
 #endif

@@ -13,7 +13,7 @@ ArcSegment::ArcSegment(
   int _nSegs): DynTessArcPrimitive(DYN_TESS_ARC_SEGMENT) {
 
   set(_p1, _p2, _center, _nSegs);
-
+  bufferDrawPrimType = GL_TRIANGLE_FAN;
 }
 
 void ArcSegment::set(
@@ -165,7 +165,7 @@ void ArcSegment::draw(bool doUpdateGLBuffer) {
   glBindBuffer(GL_ARRAY_BUFFER, buffer);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const char*)0);
 
-  glDrawArrays(GL_TRIANGLE_FAN, 0, nVertices);
+  glDrawArrays(bufferDrawPrimType, 0, nVertices);
 
   glDisableVertexAttribArray(0);
 #endif

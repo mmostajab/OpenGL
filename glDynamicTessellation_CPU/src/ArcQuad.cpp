@@ -11,6 +11,7 @@ ArcQuad::ArcQuad(Vector3Df _p1, Vector3Df _p2, Vector3Df _center0, Vector3Df _p3
   DynTessArcPrimitive(DYN_TESS_ARC_QUAD)
 {
   set(_p1, _p2, _center0, _p3, _p4, _center1, _nSegs);
+  bufferDrawPrimType = GL_TRIANGLE_STRIP;
 }
 
 void ArcQuad::set(Vector3Df _p1, Vector3Df _p2, Vector3Df _center0, Vector3Df _p3, Vector3Df _p4, Vector3Df _center1, int _nSegs)
@@ -47,6 +48,8 @@ void ArcQuad::createBuffer() {
 
   if(curve_points[0].size() == curve_points[1].size()){
 
+    bufferDrawPrimType = GL_TRIANGLE_STRIP;
+
     for(size_t i = 0; i < curve_points[0].size(); i++){
 
 #ifdef USE_OPENSG
@@ -71,6 +74,7 @@ void ArcQuad::createBuffer() {
 #endif
 
   } else {
+    bufferDrawPrimType = GL_TRIANGLES;
     /*
     size_t i = 0, j = 0;
     while (i+1 < curve_points[0].size() && j+1 < curve_points[1].size()) {
@@ -254,9 +258,9 @@ void ArcQuad::draw(bool doUpdateGLBuffer) {
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const char*)0);
 
   if(nSegs[0] == nSegs[1])
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, nVertices);
+    glDrawArrays(bufferDrawPrimType, 0, nVertices);
   else
-    glDrawArrays(GL_TRIANGLES, 0, nVertices);
+    glDrawArrays(bufferDrawPrimType, 0, nVertices);
 
   glDisableVertexAttribArray(0);
 #endif
