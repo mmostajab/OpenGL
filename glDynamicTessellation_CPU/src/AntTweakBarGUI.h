@@ -34,6 +34,8 @@ public:
   bool  general_wireframe_pre;
   bool  general_frustumCulling;
   bool  general_frustumCulling_pre;
+  bool  general_updateEveryFrame;
+  bool  general_updateEveryFrame_pre;
   bool  general_combineBuffers;
   bool  general_combineBuffers_pre;
   bool  general_increaseTriangles;
@@ -50,6 +52,7 @@ public:
   float status_perf_triangles_per_second;
   float status_frustum_culling_time;
   float status_triangulation_time;
+  float status_update_time;
   float status_buffer_combination_time;
   float status_draw_time;
   int   status_nVisible_primitives;

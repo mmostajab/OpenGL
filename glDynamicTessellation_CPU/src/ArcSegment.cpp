@@ -57,6 +57,9 @@ void ArcSegment::createBuffer() {
   // ccw = false because we know that the orientation was clockwise.
   ArcPrimitiveHelper::produceCurvePoints(p1, p2, center, nSegs, false, vertices);
 
+  size_t required_buffer_size = vertices.size() * sizeof(Vertex);
+  buffer_filled_bytes = required_buffer_size;
+
 #ifdef USE_OPENSG
 
   lengths.push_back(static_cast<OSG::UInt32>(vertices.size()));
@@ -65,19 +68,19 @@ void ArcSegment::createBuffer() {
   //createDrawArraysNode(transform, vertices, lengths, types);  
   buffer_size_bytes = vertices.size() * 16;
 #else
-  size_t required_buffer_size = vertices.size() * sizeof(Vertex);
-  if (buffer <= 0 || required_buffer_size > buffer_size_bytes) {
-    if(buffer > 0) glDeleteBuffers(1, &buffer);
-    glCreateBuffers(1, &buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, required_buffer_size, vertices.data(), GL_STATIC_DRAW);
-    buffer_size_bytes = required_buffer_size;
-  }
-  else {
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, required_buffer_size, vertices.data(), GL_STATIC_DRAW);
-  }
-  buffer_filled_bytes = required_buffer_size;
+
+  //if (buffer <= 0 || required_buffer_size > buffer_size_bytes) {
+  //  if(buffer > 0) glDeleteBuffers(1, &buffer);
+  //  glCreateBuffers(1, &buffer);
+  //  glBindBuffer(GL_ARRAY_BUFFER, buffer);
+  //  glBufferData(GL_ARRAY_BUFFER, required_buffer_size, vertices.data(), GL_STATIC_DRAW);
+  //  buffer_size_bytes = required_buffer_size;
+  //}
+  //else {
+  //  glBindBuffer(GL_ARRAY_BUFFER, buffer);
+  //  glBufferData(GL_ARRAY_BUFFER, required_buffer_size, vertices.data(), GL_STATIC_DRAW);
+  //}
+  
 #endif
 
   nVertices = static_cast<GLint>(vertices.size());
@@ -133,10 +136,8 @@ bool ArcSegment::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigne
     }
 
   // if the buffer does not need to change
-//#define UPDATE_ARCS_EVERY_FRAME
-#ifndef UPDATE_ARCS_EVERY_FRAME
-  if (nSegs == new_nSegs) return false;
-#endif
+  if (!m_updateEveryFrame && nSegs == new_nSegs) return false;
+
 
 #ifdef USE_OPENSG
 #ifndef USE_OPENSG_STANDALONE

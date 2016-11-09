@@ -130,11 +130,29 @@ public:
 
 
   // Buffer comibination
+  enum {
+    TRIANGLE_FAN_BUFFER_ID                  = 0,
+    TRIANGLE_STRIP_BUFFER_ID                = 1,
+    NUMBER_OF_REQUIRED_COMBINATION_BUFFERS  = 2,
+  };
+
+
+  // Update the arc primitives every frame
+  void enableUpdateEveryFrame();
+  void disableUpdateEveryFrame();
+  bool updateEveryFrame;
+
+  // Separate / Combined GL Buffers
+  void disableSeparateGLBuffers();
+  void enableSeparateGLBuffers();
   bool combineArcPrimitiveBuffers;
-  GLuint allArcPrimitiveTrianglesBuffer[2];
-  GLuint allArcPrimitiveTrianglesIndirectDrawBuffer[2];
-  size_t allArcPrimitivesNumVertices[2];
-  size_t allArcPrimitivesBufferSizeNumVertices[2];
+  std::array<std::vector<Vertex>, NUMBER_OF_REQUIRED_COMBINATION_BUFFERS>                     primitiveVertices;
+  std::array<std::vector<DrawArraysIndirectCommand>, NUMBER_OF_REQUIRED_COMBINATION_BUFFERS>  indirectDrawCmds;
+  std::array<GLuint, NUMBER_OF_REQUIRED_COMBINATION_BUFFERS>                                  allArcPrimitiveTrianglesBuffer;
+  std::array<GLuint, NUMBER_OF_REQUIRED_COMBINATION_BUFFERS>                                  allArcPrimitiveTrianglesIndirectDrawBuffer;
+  std::array<size_t, NUMBER_OF_REQUIRED_COMBINATION_BUFFERS>                                  allArcPrimitivesBufferSizeNumVertices;
+  std::array<size_t, NUMBER_OF_REQUIRED_COMBINATION_BUFFERS>                                  allArcPrimitivesBufferSizeNumCmds;
+  
   void updateAllArcPrimitivesSingleBuffer();
 };
 

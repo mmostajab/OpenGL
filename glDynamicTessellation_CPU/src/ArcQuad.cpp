@@ -144,12 +144,15 @@ void ArcQuad::createBuffer() {
 */
   }
 
+  size_t required_buffer_size = vertices.size() * sizeof(Vertex);
+  buffer_filled_bytes = required_buffer_size;
+  nVertices = static_cast<GLint>(vertices.size());
+
 #ifdef USE_OPENSG
   //createDrawArraysNode(transform, vertices, lengths, types);  
 #else
-
-  size_t required_buffer_size = vertices.size() * sizeof(Vertex);
-  if (buffer <= 0 || required_buffer_size > buffer_size_bytes) {
+  
+  /*if (buffer <= 0 || required_buffer_size > buffer_size_bytes) {
     if (buffer > 0) glDeleteBuffers(1, &buffer);
     glCreateBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -159,10 +162,10 @@ void ArcQuad::createBuffer() {
   else {
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glBufferData(GL_ARRAY_BUFFER, required_buffer_size, vertices.data(), GL_STATIC_DRAW);
-  }
-  buffer_filled_bytes = required_buffer_size;
+  }*/
+  
 #endif
-      nVertices = static_cast<GLint>(vertices.size());      
+           
   }
 
   void ArcRep::ArcQuad::createAABB()
@@ -223,10 +226,7 @@ bool ArcQuad::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigned i
   new_nSegs[0] = new_nSegs[1] = std::max(new_nSegs[0], new_nSegs[1]);
 
 // if the buffer does not need to change
-//#define UPDATE_ARCS_EVERY_FRAME
-#ifndef UPDATE_ARCS_EVERY_FRAME
-  if (nSegs[0] == new_nSegs[0] && nSegs[1] == new_nSegs[1]) return false;
-#endif
+  if (!m_updateEveryFrame && nSegs[0] == new_nSegs[0] && nSegs[1] == new_nSegs[1]) return false;
 
 #ifdef USE_OPENSG
 #ifndef USE_OPENSG_STANDALONE

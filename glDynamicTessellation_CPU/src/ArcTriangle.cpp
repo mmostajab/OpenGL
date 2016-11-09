@@ -145,10 +145,8 @@ void ArcTriangle::set(
     }
 
 
-//#define UPDATE_ARCS_EVERY_FRAME
-#ifndef UPDATE_ARCS_EVERY_FRAME
-    if (new_nSegs == nSegs) return false;
-#endif
+    if (!m_updateEveryFrame && new_nSegs == nSegs) return false;
+
 
 #ifdef USE_OPENSG
 #ifndef USE_OPENSG_STANDALONE

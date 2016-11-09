@@ -50,6 +50,10 @@ DynTessArcPrimitive::DynTessArcPrimitive(DynamicTessellatedPrimitiveType _type) 
 void DynTessArcPrimitive::updateGLBuffer()
 {
   size_t required_buffer_size = vertices.size() * sizeof(Vertex);
+  buffer_filled_bytes = required_buffer_size;
+
+  if (m_glBufferCreationDisabled) return;
+
   //if (true){
   if (buffer <= 0 || required_buffer_size > buffer_size_bytes) {
     if (buffer > 0) glDeleteBuffers(1, &buffer);
@@ -62,7 +66,6 @@ void DynTessArcPrimitive::updateGLBuffer()
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glBufferData(GL_ARRAY_BUFFER, required_buffer_size, vertices.data(), GL_STATIC_DRAW);
   }
-  buffer_filled_bytes = required_buffer_size;
 }
 
 void ArcRep::DynTessArcPrimitive::drawBoundingBox()
@@ -164,7 +167,9 @@ const std::vector<Vertex>& DynTessArcPrimitive::getTriangleVertices()
 
   if (m_disabled) return triangleVertices;
 
-  switch (bufferDrawPrimType) {
+  //triangleVertices = vertices;
+
+  /*switch (bufferDrawPrimType) {
   case GL_TRIANGLE_FAN:
     for (size_t i = 1; i < vertices.size() - 1; i++) {
       triangleVertices.push_back(vertices[0]);
@@ -188,9 +193,29 @@ const std::vector<Vertex>& DynTessArcPrimitive::getTriangleVertices()
     break;
   case GL_TRIANGLES:
     triangleVertices = vertices;
-  }
+  }*/
 
-  return triangleVertices;
+  return vertices/*triangleVertices*/;
+}
+
+void ArcRep::DynTessArcPrimitive::disableGLBufferCreation()
+{
+  m_glBufferCreationDisabled = true;
+}
+
+void ArcRep::DynTessArcPrimitive::enableGLBufferCreation()
+{
+  m_glBufferCreationDisabled = false;
+}
+
+void ArcRep::DynTessArcPrimitive::disableUpdateEveryFrame()
+{
+  m_updateEveryFrame = false;
+}
+
+void ArcRep::DynTessArcPrimitive::enableUpdateEveryFrame()
+{
+  m_updateEveryFrame = true;
 }
 
 #ifdef USE_OPENSG

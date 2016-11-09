@@ -22,16 +22,17 @@ void AntTweakBarGUI::init(const unsigned int& width, const unsigned int& height)
   TwDefine("General position='480 400'");
   TwDefine("General color='176 176 176' alpha=225");
   TwDefine("General size='300 50'");
-  TwAddVarRW(generalBar, "Wireframe",         TW_TYPE_BOOL8, &general_wireframe,                   "");
-  TwAddVarRW(generalBar, "Combine Buffer",    TW_TYPE_BOOL8, &general_combineBuffers,              "");
-  TwAddVarRW(generalBar, "Frustum Culling",   TW_TYPE_BOOL8, &general_frustumCulling,              "");
-  TwAddVarRW(generalBar, "Bounding Boxes",    TW_TYPE_BOOL8, &general_renderAABBs,                 "");  
-  TwAddVarRW(generalBar, "Increase Tris.",    TW_TYPE_BOOL8, &general_increaseTriangles,           "");
-  TwAddVarRW(generalBar, "Decrease Tris.",    TW_TYPE_BOOL8, &general_decreaseTriangles,           "");
-  TwAddVarRW(generalBar, "Tri. Accuracy",     TW_TYPE_FLOAT, &general_triangulationAccuracyFactor, "min=0.1 step=0.01");
-  TwAddVarRW(generalBar, "Drop Cull Factor",  TW_TYPE_FLOAT, &general_dropCullingFactor,           "min=0.1 step=0.01");
-  TwAddVarRW(generalBar, "Write Evaluations", TW_TYPE_BOOL8, &general_writeEvaluations,            "");
-  TwAddVarRW(generalBar, "Clear Evaluations", TW_TYPE_BOOL8, &general_clearEvaluations,            "");
+  TwAddVarRW(generalBar, "Wireframe",          TW_TYPE_BOOL8, &general_wireframe,                   "");
+  TwAddVarRW(generalBar, "Combine Buffer",     TW_TYPE_BOOL8, &general_combineBuffers,              "");
+  TwAddVarRW(generalBar, "Frustum Culling",    TW_TYPE_BOOL8, &general_frustumCulling,              "");
+  TwAddVarRW(generalBar, "Bounding Boxes",     TW_TYPE_BOOL8, &general_renderAABBs,                 "");  
+  TwAddVarRW(generalBar, "Increase Tris.",     TW_TYPE_BOOL8, &general_increaseTriangles,           "");
+  TwAddVarRW(generalBar, "Decrease Tris.",     TW_TYPE_BOOL8, &general_decreaseTriangles,           "");
+  TwAddVarRW(generalBar, "Tri. Accuracy",      TW_TYPE_FLOAT, &general_triangulationAccuracyFactor, "min=0.1 step=0.01");
+  TwAddVarRW(generalBar, "Drop Cull Factor",   TW_TYPE_FLOAT, &general_dropCullingFactor,           "min=0.1 step=0.01");
+  TwAddVarRW(generalBar, "Update every frame", TW_TYPE_BOOL8, &general_updateEveryFrame,            "");
+  TwAddVarRW(generalBar, "Write Evaluations",  TW_TYPE_BOOL8, &general_writeEvaluations,            "");
+  TwAddVarRW(generalBar, "Clear Evaluations",  TW_TYPE_BOOL8, &general_clearEvaluations,            "");
 
   TwBar* statusBar = TwNewBar("Status");
   TwDefine("Status position='480 480'");
@@ -42,6 +43,7 @@ void AntTweakBarGUI::init(const unsigned int& width, const unsigned int& height)
   TwAddVarRO(statusBar, "Tris. per sec", TW_TYPE_FLOAT, &status_perf_triangles_per_second, "");
   TwAddVarRO(statusBar, "Frustum Culling time (mS)", TW_TYPE_FLOAT, &status_frustum_culling_time, "");
   TwAddVarRO(statusBar, "Triangulation time (ms)", TW_TYPE_FLOAT, &status_triangulation_time, "");
+  TwAddVarRO(statusBar, "Update time (ms)", TW_TYPE_FLOAT, &status_update_time, "");
   TwAddVarRO(statusBar, "Buffer combination time (ms)", TW_TYPE_FLOAT, &status_buffer_combination_time, "");
   TwAddVarRO(statusBar, "Draw time (ms)", TW_TYPE_FLOAT, &status_draw_time, "");
   TwAddVarRO(statusBar, "Visible Primitives", TW_TYPE_INT32, &status_nVisible_primitives, "");

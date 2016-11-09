@@ -108,7 +108,15 @@ protected:
 
   GLuint aabb_buffer;
 
+  bool m_glBufferCreationDisabled;
+  void disableGLBufferCreation();
+  void enableGLBufferCreation();
+
 #endif
+
+  bool m_updateEveryFrame;
+  void disableUpdateEveryFrame();
+  void enableUpdateEveryFrame();
 
 protected:
   DynamicTessellatedPrimitiveType m_type;
