@@ -58,11 +58,7 @@ void ArcTriangle::set(
     v.position = p3;
 
     
-#ifdef USE_OPENSG
-  vertices.push_back(v.position);
-#else
   vertices.push_back(v);
-#endif
 
     Vector3Df c = UnifiedMath::cross(p1-p3, p2-p3);
     bool ccw = c[2] >= 0;

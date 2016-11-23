@@ -18,7 +18,7 @@ public:
     Vector3Df _p1     = Vector3Df(1.0f, 0.0f, 0.0f),
     Vector3Df _p2     = Vector3Df(0.0f, 1.0f, 0.0f),
     Vector3Df _center = Vector3Df(0.0f)/*double _alpha = glm::pi<double>() / 2.0f*/,
-    int _nSegs        = 100);
+    int _nSegs        = 10);
 
   void set(
     Vector3Df _p1,

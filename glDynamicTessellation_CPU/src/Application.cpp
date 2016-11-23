@@ -8,7 +8,8 @@
 
 //#define MEASURE_RENDER_UPLOAD_TIME
 //#define AUTO_CAM_MOVE_CASE2
-#define TEST_CASE3
+//#define TEST_CASE3
+#define TEST_CASE_OPEN_FILE
 
 #include "application.h"
 
@@ -385,8 +386,8 @@ void Application::create() {
 #endif
 
 #ifdef TEST_CASE3
-  int32_t w = 200;
-  int32_t h = 200;
+  int32_t w = 500;
+  int32_t h = 100;
 
   std::ifstream config("config.txt");
   if (config) {
@@ -404,6 +405,69 @@ void Application::create() {
     }
   }
 #endif
+
+
+#ifdef TEST_CASE_OPEN_FILE
+  //std::ifstream inputArcFile("GlaschkeExample.txt");
+  std::ifstream inputArcFile("plasma_arcs.txt");
+  
+  if (!inputArcFile) {
+    std::cout << "cannot open arc file.\n";
+    return;
+  }
+
+  while (!inputArcFile.eof()) {
+    std::string type;
+    inputArcFile >> type;
+
+    if (type == "s") {
+      ArcSegment segment;
+
+      glm::vec3 p1, p2, pc;
+
+      inputArcFile
+        >> p1.x >> p1.y
+        >> p2.x >> p2.y
+        >> pc.x >> pc.y;
+
+
+      segment.set(p1, p2, pc, 100);
+
+      arcSegments.push_back(segment);
+    }
+    else if (type == "t") {
+      ArcTriangle tri;
+
+      glm::vec3 p1, p2, p3, pc;
+
+      inputArcFile
+        >> p1.x >> p1.y
+        >> p2.x >> p2.y
+        >> p3.x >> p3.y
+        >> pc.x >> pc.y;
+
+      tri.set(p1, p2, p3, pc, 100);
+      arcTriangles.push_back(tri);
+    }
+    else if (type == "q") {
+      ArcQuad quad;
+      glm::vec3 p1, p2, p3, p4, pc12, pc34;
+
+      inputArcFile
+        >> p1.x >> p1.y
+        >> p2.x >> p2.y
+        >> p3.x >> p3.y
+        >> p4.x >> p4.y
+        >> pc12.x >> pc12.y
+        >> pc34.x >> pc34.y;
+      quad.set(p1, p2, pc12, p3, p4, pc34, 100);
+
+      arcQuads.push_back(quad);
+    }
+  }
+
+#endif
+
   //addC(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
   //addS(glm::vec3( 0.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);
   /*addT(glm::vec3( 1.0f, 0.0f, 0.0f), 1.0f * glm::pi<float>() / 6.0f, 1.0f, arcSegments, arcTriangles, arcQuads);*/
@@ -641,9 +705,9 @@ void Application::update(float time, float timeSinceLastFrame) {
     std::chrono::high_resolution_clock::time_point start_frustum_culling_time = std::chrono::high_resolution_clock::now();
     Frustum frustum = UnifiedMath::getFrustum(m_mvp_mat);
 
-#pragma omp parallel
+//#pragma omp parallel
     {
-#pragma omp for
+//#pragma omp for
       for (int i = 0; i < static_cast<int>(arcSegments.size()); i++) {
         if (UnifiedMath::FrustumAABBIntersect(frustum, arcSegments[i].getAABB())) {
           arcSegments[i].enable();
@@ -655,7 +719,7 @@ void Application::update(float time, float timeSinceLastFrame) {
         }
       }
 
-#pragma omp for
+//#pragma omp for
       for (int i = 0; i < static_cast<int>(arcTriangles.size()); i++) {
         if (UnifiedMath::FrustumAABBIntersect(frustum, arcTriangles[i].getAABB())) {
           arcTriangles[i].enable();
@@ -667,7 +731,7 @@ void Application::update(float time, float timeSinceLastFrame) {
         }
       }
 
-#pragma omp for
+//#pragma omp for
       for (int i = 0; i < static_cast<int>(arcQuads.size()); i++) {
         if (UnifiedMath::FrustumAABBIntersect(frustum, arcQuads[i].getAABB())) {
           arcQuads[i].enable();
@@ -679,7 +743,7 @@ void Application::update(float time, float timeSinceLastFrame) {
         }
       }
 
-#pragma omp barrier 
+//#pragma omp barrier 
     }
     std::chrono::high_resolution_clock::time_point end_frustum_culling_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<float> frustum_culling_time_span = std::chrono::duration_cast<std::chrono::duration<float>>(end_frustum_culling_time - start_frustum_culling_time);
@@ -714,25 +778,25 @@ void Application::update(float time, float timeSinceLastFrame) {
   omp_set_num_threads(omp_get_max_threads());
 
   std::chrono::high_resolution_clock::time_point start_triangulation_time = std::chrono::high_resolution_clock::now();
-#pragma omp parallel
+//#pragma omp parallel
   {
-#pragma omp for
+//#pragma omp for
     for (int i = 0; i < static_cast<int>(arcSegments.size()); i++) {
         if(arcSegments[i].updateBuffer(camInfo, m_mvp_mat, m_width, m_height))
           trianglesOfSingleBufferNeedUpdate = true;
     }
-#pragma omp for
+//#pragma omp for
     for (int i = 0; i < static_cast<int>(arcTriangles.size()); i++) {
         if(arcTriangles[i].updateBuffer(camInfo, m_mvp_mat, m_width, m_height))
           trianglesOfSingleBufferNeedUpdate = true;
     }
-#pragma omp for
+//#pragma omp for
     for (int i = 0; i < static_cast<int>(arcQuads.size()); i++) {
         if(arcQuads[i].updateBuffer(camInfo, m_mvp_mat, m_width, m_height))
           trianglesOfSingleBufferNeedUpdate = true;
     }
 
-#pragma omp barrier 
+//#pragma omp barrier 
   }
 
   std::chrono::high_resolution_clock::time_point end_triangulation_time = std::chrono::high_resolution_clock::now();

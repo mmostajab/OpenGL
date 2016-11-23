@@ -196,12 +196,21 @@ Matrix4x4f UnifiedMath::scale(Vector3Df s)
 #endif // USE_OPENSG
 }
 
+#ifdef USE_OPENSG
+Vector2Df UnifiedMath::TransformWithTranslation(Matrix4x4f m, Vector3Df v)
+{
+  Vector4Df v4d = make_Vector4Df(v, 1.0f);
+  Vector4Df res = matrixMultiply(m, v4d);
+  return Vector2Df(res[0], res[1]);
+}
+#else
 Vector3Df UnifiedMath::TransformWithTranslation(Matrix4x4f m, Vector3Df v)
 {
   Vector4Df v4d = make_Vector4Df(v, 1.0f);
   Vector4Df res = matrixMultiply(m, v4d);
   return Vector3Df(res[0], res[1], res[2]);
 }
+#endif
 
 float UnifiedMath::pi()
 {
@@ -266,8 +275,8 @@ void UnifiedMath::sinBoundsCW(float angle0, float angle1, float& minVal, float& 
 
 void UnifiedMath::cosBoundsCW(float angle0, float angle1, float& minVal, float& maxVal) {
 
-  float cosAngle0 = glm::cos(angle0);
-  float cosAngle1 = glm::cos(angle1);
+  float cosAngle0 = cos(angle0);//glm::cos(angle0);
+  float cosAngle1 = cos(angle1);//glm::cos(angle1);
 
   if (cosAngle0 <= cosAngle1) {
     //minAngle = angle0;
@@ -307,6 +316,16 @@ void UnifiedMath::cosBoundsCW(float angle0, float angle1, float& minVal, float& 
 }
 
 float UnifiedMath::angleWithPositiveX(Vector3Df v) {
+#ifdef USE_OPENSG
+  float acos_angle = v.x() / sqrt(v.x() * v.x() + v.y() * v.y());
+
+  if (v.y() >= 0) {
+    return acos(acos_angle);
+  }
+  else {
+    return 2.0f * pi() - acos(acos_angle);
+  }
+#else
   float acos_angle = v.x / sqrt(v.x * v.x + v.y * v.y);
 
   if (v.y >= 0) {
@@ -315,6 +334,7 @@ float UnifiedMath::angleWithPositiveX(Vector3Df v) {
   else {
     return 2.0f * pi() - acos(acos_angle);
   }
+#endif
 }
 
 void UnifiedMath::curveMinMaxPoints(Vector3Df p0, Vector3Df p1, Vector3Df center, Vector3Df& minPoint, Vector3Df& maxPoint) {
@@ -332,7 +352,7 @@ void UnifiedMath::curveMinMaxPoints(Vector3Df p0, Vector3Df p1, Vector3Df center
   sinBoundsCW(angle0, angle1, minSinVal, maxSinVal);
   //std::cout << "Sin: minVal = " << minSinVal << " maxVal = " << maxSinVal << std::endl;
 
-  float r0 = glm::length(p0 - center), r1 = glm::length(p1 - center);
+  float r0 = UnifiedMath::length(p0 - center), r1 = UnifiedMath::length(p1 - center);
 
   if (r0 >= r1) {
     minPoint[0] = center[0] + r0 * minCosVal;

@@ -17,8 +17,8 @@ ArcSegment::ArcSegment(
 }
 
 void ArcSegment::set(
-  Vector3Df _p1,
   Vector3Df _p2,
+  Vector3Df _p1,
   Vector3Df _center,
   int _nSegs) {
 
@@ -45,7 +45,7 @@ void ArcSegment::createBuffer() {
   v.position = center_of_arc;
 
 #ifdef USE_OPENSG
-  vertices.push_back(OSG::Pnt3f(v.position));
+  vertices.push_back(v);
 #else
   vertices.push_back(v);
 #endif
@@ -137,7 +137,6 @@ bool ArcSegment::updateBuffer(const CameraInfo& camInfo, Matrix4x4f mvp, unsigne
 
   // if the buffer does not need to change
   if (!m_updateEveryFrame && nSegs == new_nSegs) return false;
-
 
 #ifdef USE_OPENSG
 #ifndef USE_OPENSG_STANDALONE

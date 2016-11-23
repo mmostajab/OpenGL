@@ -11,7 +11,10 @@
   #include <OpenSG/OSGLinearTransform.h>
   #include <OpenSG/OSGQuaternion.h>
 
+  #include <base/ifxdatatypes/ifxVectorTypes.h>
 
+
+  #define Vector2Df   OSG::Pnt2f
   #define Vector3Df   OSG::Vec3f
   #define Vector4Df   OSG::Vec4f
   #define Matrix4x4f  OSG::Matrix4f
@@ -23,6 +26,7 @@
   #include <glm/gtx/transform.hpp>
   #include <glm/gtc/matrix_transform.hpp>
 
+  #define Vector2Df  glm::vec2
   #define Vector3Df  glm::vec3
   #define Vector4Df  glm::vec4
   #define Matrix4x4f glm::mat4
@@ -45,9 +49,15 @@ struct Plane {
   }
 
   void normalize() {
+#ifdef USE_OPENSG
+    float l = n.length();
+    n.normalize();
+    d /= l;
+#else
     float l = glm::length(n);
     n = glm::normalize(n);
     d /= l;
+#endif
   }
 
 };
@@ -98,7 +108,11 @@ public:
   static Matrix4x4f scale(Vector3Df s);
 
   // Trasnformation
+#ifdef USE_OPENSG
+  static Vector2Df TransformWithTranslation(Matrix4x4f m, Vector3Df v);
+#else
   static Vector3Df TransformWithTranslation(Matrix4x4f m, Vector3Df v);
+#endif
 
   // Const declaration
   static float pi();

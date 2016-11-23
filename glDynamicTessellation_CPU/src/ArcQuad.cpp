@@ -20,8 +20,8 @@ void ArcQuad::set(Vector3Df _p1, Vector3Df _p2, Vector3Df _center0, Vector3Df _p
   halfArcQuad[0].p1 = _p2;
   halfArcQuad[0].center = _center0;
 
-  halfArcQuad[1].p0 = _p3;
-  halfArcQuad[1].p1 = _p4;
+  halfArcQuad[1].p0 = _p4;
+  halfArcQuad[1].p1 = _p3;
   halfArcQuad[1].center = _center1;
 
   std::array<int32_t, 2> NumberOfSegments = { _nSegs, _nSegs };
@@ -53,11 +53,11 @@ void ArcQuad::createBuffer() {
     for(size_t i = 0; i < curve_points[0].size(); i++){
 
 #ifdef USE_OPENSG
-      v.position = curve_points[0][i];
-      vertices.push_back(OSG::Pnt3f(v.position));
+      v = curve_points[0][i];
+      vertices.push_back(v);
 
-      v.position = curve_points[1][i];
-      vertices.push_back(OSG::Pnt3f(v.position));
+      v = curve_points[1][i];
+      vertices.push_back(v);
 #else
       v.position = curve_points[0][i].position;
       vertices.push_back(v);

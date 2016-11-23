@@ -52,6 +52,7 @@ void DynTessArcPrimitive::updateGLBuffer()
   size_t required_buffer_size = vertices.size() * sizeof(Vertex);
   buffer_filled_bytes = required_buffer_size;
 
+#ifndef USE_OPENSG
   if (m_glBufferCreationDisabled) return;
 
   //if (true){
@@ -66,6 +67,7 @@ void DynTessArcPrimitive::updateGLBuffer()
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glBufferData(GL_ARRAY_BUFFER, required_buffer_size, vertices.data(), GL_STATIC_DRAW);
   }
+#endif
 }
 
 void ArcRep::DynTessArcPrimitive::drawBoundingBox()
@@ -118,6 +120,7 @@ void ArcRep::DynTessArcPrimitive::setAABB(AABB aabb)
 {
   m_aabb = aabb;
 
+#ifndef USE_OPENSG
   std::array<Vertex, 24> vertices;
 
   glm::vec3 dim = m_aabb.max - m_aabb.min;
@@ -154,6 +157,7 @@ void ArcRep::DynTessArcPrimitive::setAABB(AABB aabb)
   glGenBuffers(1, &aabb_buffer);
   glBindBuffer(GL_ARRAY_BUFFER, aabb_buffer);
   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+#endif
 }
 
 size_t ArcRep::DynTessArcPrimitive::getFilledMemBytes() const
@@ -167,7 +171,7 @@ const std::vector<Vertex>& DynTessArcPrimitive::getTriangleVertices()
 
   if (m_disabled) return triangleVertices;
 
-  //triangleVertices = vertices;
+  triangleVertices = vertices;
 
   /*switch (bufferDrawPrimType) {
   case GL_TRIANGLE_FAN:
@@ -195,9 +199,10 @@ const std::vector<Vertex>& DynTessArcPrimitive::getTriangleVertices()
     triangleVertices = vertices;
   }*/
 
-  return vertices/*triangleVertices*/;
+  return triangleVertices;
 }
 
+#ifndef USE_OPENSG
 void ArcRep::DynTessArcPrimitive::disableGLBufferCreation()
 {
   m_glBufferCreationDisabled = true;
@@ -207,6 +212,7 @@ void ArcRep::DynTessArcPrimitive::enableGLBufferCreation()
 {
   m_glBufferCreationDisabled = false;
 }
+#endif
 
 void ArcRep::DynTessArcPrimitive::disableUpdateEveryFrame()
 {
@@ -220,11 +226,12 @@ void ArcRep::DynTessArcPrimitive::enableUpdateEveryFrame()
 
 #ifdef USE_OPENSG
 
-const std::vector<OSG::Pnt3f>&  DynTessArcPrimitive::getVertices() const {
+const std::vector<Vertex>& ArcRep::DynTessArcPrimitive::getVertices() const {
+//const std::vector<Vertex>&  DynTessArcPrimitive::getVertices() const {
   return vertices;
 }
 
-const std::vector<OSG::UInt32>& DynTessArcPrimitive::getLengths()  const {
+const std::vector<uint32_t>& DynTessArcPrimitive::getLengths()  const {
   return lengths;
 }
 

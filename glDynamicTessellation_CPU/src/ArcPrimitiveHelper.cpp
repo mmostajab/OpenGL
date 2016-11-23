@@ -134,10 +134,6 @@ void ArcPrimitiveHelper::produceCurvePoints(
 #endif
 
     v.position = p + center;
-#ifdef USE_OPENSG
-    vertices.push_back(v.position);
-#else
     vertices.push_back(v);
-#endif
   }
 }

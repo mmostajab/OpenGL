@@ -83,28 +83,20 @@ public:
 
 #ifdef USE_OPENSG
 public:
-  const std::vector<OSG::Pnt3f>&  getVertices() const;
-  const std::vector<OSG::UInt32>& getLengths()  const;
-  const std::vector<OSG::UInt8>&  getTypes()    const;
+  const std::vector<Vertex>&      getVertices() const;
+  const std::vector<uint32_t>&    getLengths()  const;
+  const std::vector<uint8_t>&     getTypes()    const;
 
 protected:
   /*OSG::NodePtr transform;
   OSG::NodePtr switchNode;*/
 
-  std::vector<OSG::Pnt3f> vertices;
-  std::vector<OSG::UInt32> lengths;
-	std::vector<OSG::UInt8>  types;
+  std::vector<uint32_t> lengths;
+	std::vector<uint8_t>  types;
 
 #else
 
-  std::vector<Vertex> triangleVertices;
-  const std::vector<Vertex>& getTriangleVertices();
-
-  GLenum bufferDrawPrimType;
-  std::vector<Vertex> vertices;
   GLuint buffer;
-  size_t buffer_size_bytes;
-  size_t buffer_filled_bytes;
 
   GLuint aabb_buffer;
 
@@ -113,6 +105,14 @@ protected:
   void enableGLBufferCreation();
 
 #endif
+
+  std::vector<Vertex>      vertices;
+  std::vector<Vertex> triangleVertices;
+  const std::vector<Vertex>& getTriangleVertices();
+
+  GLenum bufferDrawPrimType;
+  size_t buffer_size_bytes;
+  size_t buffer_filled_bytes;
 
   bool m_updateEveryFrame;
   void disableUpdateEveryFrame();
