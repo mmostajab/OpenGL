@@ -47,9 +47,6 @@ private:
 
     void compileShaders();
 
-    void prepare_framebuffer();
-    void prepare_ssao();
-
     GLuint simple_program;
 
 private:
@@ -75,27 +72,11 @@ private:
     static unsigned int m_width, m_height;
     GLuint m_coord_system_program;
     GLuint m_transformation_buffer, m_lighting_buffer, m_general_buffer;
+    glm::vec4 back_color;
+    float     one;
    
 	  // scene objects
 	  static Camera m_camera;
-
-    // Screen Space Ambient Occlusion
-    static int         rendering_state;
-    GLuint      ssao_program;
-    GLuint      render_fbo;
-    GLuint      fbo_textures[3];
-    GLuint      quad_vao;
-    GLuint      points_buffer;
-
-    // Order Independence Transparency
-    GLuint render_oreder_independece_linked_list_program, resolve_order_independence_program;
-    size_t total_pixels;
-    GLuint head_pointer_texture;
-    GLuint head_pointer_clear_buffer;
-    GLuint linked_list_buffer, linked_list_texture;
-    GLuint atomic_counter_buffer;
-    GLuint render_opaque_fbo;
-    GLuint fbo_opaque_texture;
 
     // Ply buffers
     GLuint ply_program;

@@ -15,6 +15,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <GL/glew.h>
 
+int64_t num_particles = 0;
+
 // Static Members
 GLFWwindow*				    Application::m_window = 0;
 unsigned int			    Application::m_width              = 0;
@@ -132,9 +134,9 @@ void Application::init() {
 
     m_camera.SetMode(MODELVIEWER);
     //m_camera.SetMode(FREE);
-    m_camera.SetPosition(glm::vec3(100.0f, 100.0f, 3.0f));
+    m_camera.SetPosition(glm::vec3(10000.0f, 10000.0f, 10000.0f));
     m_camera.SetLookAt(glm::vec3(0.0f, 0.0f, 0.0f));
-    m_camera.SetClipping(0.01f, 1000.0f);
+    m_camera.SetClipping(0.01f, 10000000.0f);
     m_camera.SetFOV(60);
     m_camera.SetViewport(0, 0, m_width, m_height);
     m_camera.camera_scale = 0.1f;
@@ -143,7 +145,7 @@ void Application::init() {
 
     glGenBuffers(1, &m_transformation_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, m_transformation_buffer);
-    glBufferData(GL_UNIFORM_BUFFER, 3 * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, 4 * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
 
     glGenBuffers(1, &m_lighting_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, m_lighting_buffer);
@@ -157,7 +159,7 @@ void Application::init() {
 void Application::create() {
   compileShaders();
 
-  segs = 50;
+  segs = 5000;
   dim = 30.0f;
 
   std::ifstream infile("config.txt");
@@ -173,12 +175,12 @@ void Application::create() {
     }
   }
 
-  glPointSize(10);
+  glPointSize(1);
 
   glCreateBuffers(1, &point_buffer);
   glBindBuffer(GL_ARRAY_BUFFER, point_buffer);
   glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(glm::vec4), points.data(), GL_STATIC_DRAW);
-
+  num_particles = static_cast<int64_t>(points.size());
   std::cout << "Number of particles = " << points.size() << std::endl;
 }
 
@@ -207,10 +209,11 @@ void Application::update(float time, float timeSinceLastFrame) {
     m_camera.GetMatricies(m_projmat, m_viewmat, m_worldmat);
     m_inv_viewmat = glm::inverse(m_viewmat);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_transformation_buffer);
-    glm::mat4* transform_matrices = (glm::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 3 * sizeof(glm::mat4), GL_MAP_WRITE_BIT);
+    glm::mat4* transform_matrices = (glm::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 4 * sizeof(glm::mat4), GL_MAP_WRITE_BIT);
     transform_matrices[0] = m_projmat;
     transform_matrices[1] = m_viewmat;
     transform_matrices[2] = m_worldmat;
+    transform_matrices[3] = m_projmat * m_viewmat * m_worldmat;
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 
     glMatrixMode(GL_MODELVIEW);
@@ -235,6 +238,7 @@ void Application::update(float time, float timeSinceLastFrame) {
     glm::vec4* general_info = (glm::vec4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 2 * sizeof(glm::vec4), GL_MAP_WRITE_BIT);
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 
+#ifdef UPDATE_PARTICLES
     for (size_t i = 0; i < points.size(); i++) {
 
       points[i].x += 0.5f * ((rand() % 1000) / 1000.0f - 0.5f);
@@ -246,6 +250,7 @@ void Application::update(float time, float timeSinceLastFrame) {
 
     glBindBuffer(GL_ARRAY_BUFFER, point_buffer);
     glBufferSubData(GL_ARRAY_BUFFER, 0, points.size() * sizeof(glm::vec4), points.data());
+#endif
 }
 
 void Application::draw() {
@@ -295,10 +300,14 @@ void Application::run() {
   {
     double frame_start_time = glfwGetTime();
     draw();
-    double frame_end_time = glfwGetTime();
 
     glfwSwapBuffers(m_window);
     glfwPollEvents();
+
+    glFinish();
+    double frame_end_time = glfwGetTime();
+
+    std::cout << num_particles / (frame_end_time - frame_start_time) << " particles / second" << std::endl;
 
     double current_time = glfwGetTime();
     double elapsed_since_start          = current_time - start_time;
@@ -433,11 +442,16 @@ void Application::compileShaders() {
 
 #else
 
-  sphere_program = compile_link_vs_gs_fs(
-    "../../src/glsl/sphere.vert",
-    "../../src/glsl/sphere.geom",
-    "../../src/glsl/sphere.frag"
-  );
+  sphere_program =
+    compile_link_vs_fs(
+      "../../src/glsl/sphere.vert",
+      "../../src/glsl/sphere.frag"
+    );
+    //compile_link_vs_gs_fs(
+    //"../../src/glsl/sphere.vert",
+    //"../../src/glsl/sphere.geom",
+    //"../../src/glsl/sphere.frag"
+  //);
 #endif
 }
 

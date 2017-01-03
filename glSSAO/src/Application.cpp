@@ -31,29 +31,7 @@ bool					        Application::m_e_pressed          = false;
 bool                  Application::m_mouse_left_drag    = false;
 bool                  Application::m_mouse_middle_drag  = false;
 bool                  Application::m_mouse_right_drag   = false;
-int                   Application::rendering_state      = 0;
 Camera				        Application::m_camera;
-
-// Random number generator
-static unsigned int seed = 0x13371337;
-
-static inline float random_float()
-{
-  //return static_cast<float>(rand() % 100000) / 100000.0f;
-
-    float res;
-    unsigned int tmp;
-
-    seed *= 16807;
-
-    tmp = seed ^ (seed >> 4) ^ (seed << 15);
-
-    *((unsigned int *)&res) = (tmp >> 9) | 0x3F800000;
-
-    return (res - 1.0f);
-
-
-}
 
 Application::Application() {
 }
@@ -113,9 +91,6 @@ void Application::init() {
     m_camera.SetViewport(0, 0, m_width, m_height);
     m_camera.camera_scale = 0.01f;
 
-    prepare_framebuffer();
-    prepare_ssao();
-
     glGenBuffers(1, &m_transformation_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, m_transformation_buffer);
     glBufferData(GL_UNIFORM_BUFFER, 3 * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
@@ -127,12 +102,15 @@ void Application::init() {
     glGenBuffers(1, &m_general_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, m_general_buffer);
     glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), NULL, GL_DYNAMIC_DRAW);
+
+    back_color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+    one = 1.0f;
 }
 
 void Application::create() {
    compileShaders();
-#define aaa
-#ifdef aaa
+#define PORSCHE_MESH
+#ifdef PORSCHE_MESH
    PlyDataReader::getSingletonPtr()->readDataInfo("big_porsche.ply", nullptr, 0);
 #else
    PlyDataReader::getSingletonPtr()->readDataInfo("happy.ply", nullptr, 0);
@@ -180,7 +158,7 @@ void Application::create() {
    for (size_t i = 0; i < vertices.size(); i++) {
 
      //vertices[i].pos *= 30.0;
-#ifdef aaa
+#ifdef PORSCHE_MESH
      vertices[i].pos *= 0.4;
 #else
      vertices[i].pos *= 1.0;
@@ -245,39 +223,14 @@ void Application::update(float time, float timeSinceLastFrame) {
 void Application::draw() {
 
   glViewport(0, 0, m_width, m_height);
-
-  glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
-  glEnable(GL_DEPTH_TEST);
-    
-  float back_color[] = { 1, 1, 1, 1 };
-  float zero[] = { 0.0f, 0.0f, 0.0f, -10.0f };
-  float one = 1.0f;
-
-  glClearBufferfv(GL_COLOR, 0, back_color);
-  glClearBufferfv(GL_COLOR, 1, zero);
-  glClearBufferfv(GL_DEPTH, 0, &one);
+  
+  glClearColor(back_color[0], back_color[1], back_color[2], back_color[3]);
+  glClearDepth(one);
     
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-//	m_ground.draw();
- 
-  // Render the Screen Space Ambient Occlusion from generated depth texture
-  glBindBufferBase(GL_UNIFORM_BUFFER, 2, points_buffer);
   drawPly();
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glUseProgram(ssao_program);
   
-  GLint rendering_state_loc = glGetUniformLocation(ssao_program, "rendering_state");
-  glUniform1i(rendering_state_loc, rendering_state);
-
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
-  glActiveTexture(GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
-  glDisable(GL_DEPTH_TEST);
-  glBindVertexArray(quad_vao);
-  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
   // Draw the world coordinate system
   glViewport(0, 0, 100, 100);
   glUseProgram(m_coord_system_program);
@@ -326,9 +279,7 @@ void Application::run() {
 
   while (!glfwWindowShouldClose(m_window))
   {
-    double frame_start_time = glfwGetTime();
     draw();
-    double frame_end_time = glfwGetTime();
 
     glfwSwapBuffers(m_window);
     glfwPollEvents();
@@ -355,86 +306,8 @@ Application::~Application() {
 void Application::compileShaders() { 
     
   m_coord_system_program = compile_link_vs_fs("../../src/glsl/coord_sys.vert", "../../src/glsl/coord_sys.frag");
-  ssao_program = compile_link_vs_fs("../../src/glsl/ssao.vert", "../../src/glsl/ssao.frag");
   ply_program = compile_link_vs_fs("../../src/glsl/ply.vert", "../../src/glsl/ply.frag");
-  //render_oreder_independece_linked_list_program = compile_link_vs_fs("../../src/glsl/OIT_build_list.vert", "../../src/glsl/OIT_build_list.frag");
-  //resolve_order_independence_program = compile_link_vs_fs("../../src/glsl/OIT_resolve.vert", "../../src/glsl/OIT_resolve.frag");
-}
 
-void Application::prepare_framebuffer() {
-  glGenFramebuffers(1, &render_fbo);
-  glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
-  glGenTextures(3, fbo_textures);
-
-  glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
-  glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB16F, 2048, 2048);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-  glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
-  glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, 2048, 2048);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-  glBindTexture(GL_TEXTURE_2D, fbo_textures[2]);
-  glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 2048, 2048);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_textures[0], 0);
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fbo_textures[1], 0);
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fbo_textures[2], 0);
-
-  static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-
-  glDrawBuffers(2, draw_buffers);
-
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-  glGenVertexArrays(1, &quad_vao);
-  glBindVertexArray(quad_vao);
-}
-
-void Application::prepare_ssao() {
-
-  rendering_state = 0;
-
-  int i;
-  SAMPLE_POINTS point_data;
-
-  std::random_device rd;
-  std::mt19937_64 generator(rd());
-  std::uniform_real_distribution<float> distribution(-3.141592f, 3.141592f);
-
-  for (i = 0; i < 256; i++)
-  {
-    //do {
-    
-      float phi = 2 * glm::pi<float>() * random_float();
-      float thetha = acos(pow(1 - random_float(), 1 / (glm::e<float>() + 1)));
-
-      point_data.point[i][0] = sin(thetha) * cos(phi);
-      point_data.point[i][1] = sin(thetha) * sin(phi);
-      point_data.point[i][2] = cos(thetha);
-      point_data.point[i][3] = 0.0f;
-
-    //} while (glm::length(point_data.point[i]) > 1.0f);
-    glm::normalize(point_data.point[i]);
-  }
-  for (i = 0; i < 256; i++)
-  {
-    point_data.random_vectors[i][0] = 2 * random_float() - 1;
-    point_data.random_vectors[i][1] = 2 * random_float() - 1;
-    point_data.random_vectors[i][2] = 2 * random_float() - 1;
-    point_data.random_vectors[i][3] = random_float();
-    //glm::normalize(point_data.random_vectors[i]);
-  }
-
-  glGenBuffers(1, &points_buffer);
-  glBindBuffer(GL_UNIFORM_BUFFER, points_buffer);
-  glBufferData(GL_UNIFORM_BUFFER, sizeof(SAMPLE_POINTS), &point_data, GL_STATIC_DRAW);
 }
 
 void Application::EventMouseButton(GLFWwindow* window, int button, int action, int mods) {
@@ -460,23 +333,14 @@ void Application::EventMouseButton(GLFWwindow* window, int button, int action, i
 
 void Application::EventMousePos(GLFWwindow* window, double xpos, double ypos) {
 
-  if (m_controlKeyHold){
-    if (m_mouse_left_drag){
-      m_camera.Move2D(static_cast<int>(xpos), static_cast<int>(ypos));
-    }
-    if (m_mouse_right_drag){
-      m_camera.OffsetFrustum(static_cast<int>(xpos), static_cast<int>(ypos));
-    }
+  if (m_mouse_left_drag) {
+    m_camera.Move2D(static_cast<int>(xpos), static_cast<int>(ypos));
+  }
+  if (m_mouse_right_drag) {
+    m_camera.OffsetFrustum(static_cast<int>(xpos), static_cast<int>(ypos));
   }
 
-  /*if (m_mouse_right_drag){
-    m_camera.moveForward(static_cast<int>(ypos));
-  }*/
-
   m_camera.SetMousePos(static_cast<int>(xpos), static_cast<int>(ypos));
-  /*if (m_altKeyHold){
-      m_seeding_curve->getControlPoints();
-  }*/
 }
 
 void Application::EventMouseWheel(GLFWwindow* window, double xoffset, double yoffset) {
@@ -485,12 +349,12 @@ void Application::EventMouseWheel(GLFWwindow* window, double xoffset, double yof
 
 void Application::EventKey(GLFWwindow* window, int key, int scancode, int action, int mods) {
   if (action == GLFW_PRESS){
-    if (m_controlKeyHold && key == GLFW_KEY_W)  m_w_pressed = true;
-    if (m_controlKeyHold && key == GLFW_KEY_S)  m_s_pressed = true;
-    if (m_controlKeyHold && key == GLFW_KEY_A)  m_a_pressed = true;
-    if (m_controlKeyHold && key == GLFW_KEY_D)  m_d_pressed = true;
-    if (m_controlKeyHold && key == GLFW_KEY_Q)  m_q_pressed = true;
-    if (m_controlKeyHold && key == GLFW_KEY_E)  m_e_pressed = true;
+    if (key == GLFW_KEY_W)  m_w_pressed = true;
+    if (key == GLFW_KEY_S)  m_s_pressed = true;
+    if (key == GLFW_KEY_A)  m_a_pressed = true;
+    if (key == GLFW_KEY_D)  m_d_pressed = true;
+    if (key == GLFW_KEY_Q)  m_q_pressed = true;
+    if (key == GLFW_KEY_E)  m_e_pressed = true;
 
     if (key == GLFW_KEY_LEFT_CONTROL)           m_controlKeyHold = true;
     if (key == GLFW_KEY_LEFT_ALT)               m_altKeyHold     = true;
@@ -503,10 +367,6 @@ void Application::EventKey(GLFWwindow* window, int key, int scancode, int action
     if (key == GLFW_KEY_D)  m_d_pressed = false;
     if (key == GLFW_KEY_Q)  m_q_pressed = false;
     if (key == GLFW_KEY_E)  m_e_pressed = false;
-
-    if (key == GLFW_KEY_M) {
-      rendering_state = ++rendering_state % 3;
-    }
 
     if (key == GLFW_KEY_LEFT_CONTROL)           m_controlKeyHold    = false;
     if (key == GLFW_KEY_LEFT_ALT)               m_altKeyHold        = false;
