@@ -1,4 +1,4 @@
-#include <VisualizationUtil/trianglemesh.h>
+#include "trianglemesh.h"
 
 // Std
 #include <iostream>

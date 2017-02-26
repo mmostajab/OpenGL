@@ -1,7 +1,6 @@
 #pragma once
 
-// Qt
-#include <GL/GL.h>
+// GLEW
 #include <GL/glew.h>
 
 namespace VisUtils {
