@@ -19,17 +19,17 @@
 GLFWwindow*				    Application::m_window = 0;
 unsigned int			    Application::m_width              = 0;
 unsigned int			    Application::m_height             = 0;
-bool					        Application::m_controlKeyHold     = false;
-bool					        Application::m_altKeyHold         = false;
-bool					        Application::m_w_pressed          = false;
-bool					        Application::m_s_pressed          = false;
-bool					        Application::m_a_pressed          = false;
-bool					        Application::m_d_pressed          = false;
-bool					        Application::m_q_pressed          = false;
-bool					        Application::m_e_pressed          = false;
-bool                  Application::m_mouse_left_drag    = false;
-bool                  Application::m_mouse_middle_drag  = false;
-bool                  Application::m_mouse_right_drag   = false;
+bool					    Application::m_controlKeyHold     = false;
+bool					    Application::m_altKeyHold         = false;
+bool					    Application::m_w_pressed          = false;
+bool					    Application::m_s_pressed          = false;
+bool					    Application::m_a_pressed          = false;
+bool					    Application::m_d_pressed          = false;
+bool					    Application::m_q_pressed          = false;
+bool					    Application::m_e_pressed          = false;
+bool						Application::m_mouse_left_drag    = false;
+bool						Application::m_mouse_middle_drag  = false;
+bool						Application::m_mouse_right_drag   = false;
 Camera				        Application::m_camera;
 
 Application::Application() {
@@ -43,7 +43,7 @@ void Application::init(const unsigned int& width, const unsigned int& height, HG
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
-    m_window = glfwCreateWindow(width, height, "Simple GL App", NULL, NULL);
+    m_window = glfwCreateWindow(width, height, "Pixel Accurate Cross-section Computation", NULL, NULL);
     if (!m_window)
     {
         glfwTerminate();
@@ -130,15 +130,45 @@ void Application::init() {
 
     glGenBuffers(1, &m_transformation_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, m_transformation_buffer);
-    glBufferData(GL_UNIFORM_BUFFER, 3 * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, 5 * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
 
     glGenBuffers(1, &m_lighting_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, m_lighting_buffer);
     glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), NULL, GL_DYNAMIC_DRAW);
+
+	glEnable(GL_DEPTH_TEST);
 }
 
 void Application::create() {
   compileShaders();
+
+  int nVertices, nIndices;
+  std::ifstream meshBin("../../models/cow.bin", std::ios::binary);
+  meshBin.read((char*)&nVertices, sizeof(int));
+  meshBin.read((char*)&nIndices, sizeof(int));
+
+  std::vector<VisUtils::TriangleMeshVertex> vertex(nVertices);
+  for (int i = 0; i < nVertices-4; i++) {
+	  glm::vec3 pos, normal;
+	  meshBin.read((char*)&pos, sizeof(glm::vec3));
+	  meshBin.read((char*)&normal, sizeof(glm::vec3));
+
+	  vertex[i].id = i;
+	  vertex[i].position = pos;
+	  vertex[i].normal = normal;
+	  vertex[i].result = glm::vec4((float)(rand() % 10000) / 10000.0f);
+  }
+
+  std::vector<uint32_t> indices(nIndices);
+  for (int i = 0; i < nIndices-6; i++) {
+	  meshBin.read((char*)&indices[i], sizeof(unsigned int));
+  }
+
+  mesh = std::make_unique<VisUtils::TriangleMesh>(vertex, indices);
+
+  mesh->compileShaders();
+  mesh->createBuffer();
+
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
@@ -166,10 +196,12 @@ void Application::update(float time, float timeSinceLastFrame) {
     m_camera.GetMatricies(m_projmat, m_viewmat, m_worldmat);
     m_inv_viewmat = glm::inverse(m_viewmat);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_transformation_buffer);
-    glm::mat4* transform_matrices = (glm::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 3 * sizeof(glm::mat4), GL_MAP_WRITE_BIT);
+    glm::mat4* transform_matrices = (glm::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 5 * sizeof(glm::mat4), GL_MAP_WRITE_BIT);
     transform_matrices[0] = m_projmat;
     transform_matrices[1] = m_viewmat;
     transform_matrices[2] = m_worldmat;
+	transform_matrices[3] = m_viewmat * m_worldmat;
+	transform_matrices[4] = m_projmat * transform_matrices[3];
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 
     // updating the lighting info
@@ -189,6 +221,7 @@ void Application::draw() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
   // TODO Draw your buffers here!
+  mesh->draw();
 
   // Draw the world coordinate system
   glViewport(0, 0, 100, 100);

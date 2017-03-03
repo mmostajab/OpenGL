@@ -11,6 +11,8 @@ MESSAGE(STATUS "Configuring PixelAccurateCrossSectionApp Source")
 FILE(GLOB PixelAccurateCrossSectionAppSources RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
   glsl/*.frag
   glsl/*.vert
+  glsl/trianglemesh/*.frag
+  glsl/trianglemesh/*.vert
   cl/*.cl
   *.cpp
 )

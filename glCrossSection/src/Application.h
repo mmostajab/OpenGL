@@ -4,6 +4,7 @@
 #include "helper.h"
 
 #include <Windows.h>
+#include <memory>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_EXPOSE_NATIVE_WGL
@@ -20,6 +21,7 @@
 #include <stdio.h>
 
 #include "Camera.h"
+#include "trianglemesh.h"
 
 #define MAX_FRAMEBUFFER_WIDTH 2048
 #define MAX_FRAMEBUFFER_HEIGHT 2048
@@ -79,6 +81,7 @@ public:
    
 	// scene objects
 	static Camera m_camera;
+	std::unique_ptr< VisUtils::TriangleMesh > mesh;
 };
 
 #endif

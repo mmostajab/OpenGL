@@ -55,7 +55,7 @@ namespace VisUtils {
 		GLuint								m_glTriangleMeshIndicesBuffer;
 
 		// Particle Rendering shader
-		QGLShaderProgram					m_glTriangleMeshRenderProgram;
+		GLuint								m_glTriangleMeshRenderProgram;
 
 	};
 
