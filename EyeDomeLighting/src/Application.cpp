@@ -143,6 +143,8 @@ void Application::create() {
   compileShaders();
   createFrameBuffer();
   createMeshBuffer();
+
+  glGenVertexArrays(1, &m_quadBuffer);
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
@@ -308,7 +310,14 @@ void Application::draw() {
   glClearColor(0.2f, 0.4f, 0.7f, 0.f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+#if 0
   drawMesh();
+#endif
+
+#if 1
+  glUseProgram(m_eyeDomeLightingProgram);
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+#endif
 
   // TODO Draw your buffers here!
 
@@ -351,6 +360,7 @@ Application::~Application() {
 void Application::compileShaders() { 
   m_coord_system_program = compile_link_vs_fs("../../src/glsl/coords.vert", "../../src/glsl/coords.frag");
   m_meshRenderProgram = compile_link_vs_fs("../../src/glsl/mesh.vert", "../../src/glsl/mesh.frag");
+  m_eyeDomeLightingProgram = compile_link_vs_fs("../../src/glsl/quad.vert", "../../src/glsl/EyeDomeLighting.frag");
 }
 
 void Application::EventMouseButton(GLFWwindow* window, int button, int action, int mods) {

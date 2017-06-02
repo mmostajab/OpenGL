@@ -91,6 +91,9 @@ public:
 	GLuint m_meshIndicesBuffer;
 	GLuint m_meshVerticesBuffer;
 	unsigned int m_meshTriangleCount;
+
+	GLuint m_eyeDomeLightingProgram;
+	GLuint m_quadBuffer;
 };
 
 #endif
