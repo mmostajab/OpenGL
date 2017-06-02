@@ -121,8 +121,8 @@ void Application::init() {
 
     m_camera.SetMode(MODELVIEWER);
     //m_camera.SetMode(FREE);
-    m_camera.SetPosition(glm::vec3(3.0f, 3.0f, 3.0f));
-    m_camera.SetLookAt(glm::vec3(0.0f, 0.0f, 0.0f));
+    m_camera.SetPosition(glm::vec3(0.45f, 0.45f, 0.45f));
+    m_camera.SetLookAt(glm::vec3(0.0f, 0.45f, 0.0f));
     m_camera.SetClipping(0.01f, 100.0f);
     m_camera.SetFOV(60);
     m_camera.SetViewport(0, 0, m_width, m_height);
@@ -350,7 +350,7 @@ Application::~Application() {
 
 void Application::compileShaders() { 
   m_coord_system_program = compile_link_vs_fs("../../src/glsl/coords.vert", "../../src/glsl/coords.frag");
-  m_meshRenderProgram = compile_link_vs_fs("../../src/glsl/simple.vert", "../../src/glsl/simple.frag");
+  m_meshRenderProgram = compile_link_vs_fs("../../src/glsl/mesh.vert", "../../src/glsl/mesh.frag");
 }
 
 void Application::EventMouseButton(GLFWwindow* window, int button, int action, int mods) {
