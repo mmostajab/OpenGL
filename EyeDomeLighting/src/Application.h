@@ -85,7 +85,7 @@ public:
 	void createMeshBuffer();
 	void drawMesh();
 	GLuint m_frameBuffer;
-	GLuint m_fbo_textures[2];
+	GLuint m_fbo_textures[3];
 
 	GLuint m_meshRenderProgram;
 	GLuint m_meshIndicesBuffer;

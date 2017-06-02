@@ -113,7 +113,7 @@ void Application::init(const unsigned int& width, const unsigned int& height) {
     init();
 }
 
-
+#define DRAGON
 void Application::init() {
     GLenum e = glGetError();
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -121,10 +121,17 @@ void Application::init() {
 
     m_camera.SetMode(MODELVIEWER);
     //m_camera.SetMode(FREE);
-    m_camera.SetPosition(glm::vec3(0.45f, 0.45f, 0.45f));
-    m_camera.SetLookAt(glm::vec3(0.0f, 0.45f, 0.0f));
-    m_camera.SetClipping(0.01f, 100.0f);
-    m_camera.SetFOV(60);
+#ifdef DRAGON
+    m_camera.SetPosition(glm::vec3(39.3f, 30.65f, -85.5f));
+	m_camera.SetLookAt(glm::vec3(12.8f, 1.3f, 4.6f));
+#else
+	m_camera.SetPosition(glm::vec3(0.45f, 0.45f, 0.45f));
+	m_camera.SetLookAt(glm::vec3(0.0f, 0.45f, 0.0f));
+#endif
+
+
+    m_camera.SetClipping(0.01f, 1000.0f);
+    m_camera.SetFOV(90);
     m_camera.SetViewport(0, 0, m_width, m_height);
     m_camera.camera_scale = 0.01f;
 
@@ -167,6 +174,11 @@ void Application::update(float time, float timeSinceLastFrame) {
     if (m_e_pressed)
         m_camera.Move(CameraDirection::DOWN);
 
+	if (m_controlKeyHold) {
+		std::clog << "Position " << m_camera.camera_position.x << " " << m_camera.camera_position.y << " " << m_camera.camera_position.z << std::endl;
+		std::clog << "Look at  " << m_camera.camera_look_at.x << " " << m_camera.camera_look_at.y << " " << m_camera.camera_look_at.z << std::endl;
+	}
+
     // Updating the camera matrices
     m_camera.Update();
     m_camera.GetMatricies(m_projmat, m_viewmat, m_worldmat);
@@ -189,7 +201,7 @@ void Application::update(float time, float timeSinceLastFrame) {
 void Application::createFrameBuffer() {
 	glGenFramebuffers(1, &m_frameBuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
-	glGenTextures(2, m_fbo_textures);
+	glGenTextures(3, m_fbo_textures);
 
 	glBindTexture(GL_TEXTURE_2D, m_fbo_textures[0]);
 	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB16F, m_width, m_height);
@@ -197,6 +209,11 @@ void Application::createFrameBuffer() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	glBindTexture(GL_TEXTURE_2D, m_fbo_textures[1]);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB32F, m_width, m_height);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glBindTexture(GL_TEXTURE_2D, m_fbo_textures[2]);
 	glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, m_width, m_height);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -204,9 +221,10 @@ void Application::createFrameBuffer() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_fbo_textures[0], 0);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,  m_fbo_textures[1], 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, m_fbo_textures[1], 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,  m_fbo_textures[2], 0);
 
-	static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
+	static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0,  GL_COLOR_ATTACHMENT1 };
 	glDrawBuffers(1, draw_buffers);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -241,17 +259,41 @@ void Application::loadfile(std::string filename, std::vector<Vertex>& vertices, 
 			Vertex vertex;
 			//std::cout << "Vertex #" << v << " " << mesh->mVertices[v][0] << " " << mesh->mVertices[v][1] << " " << mesh->mVertices[v][2] << std::endl;
 			vertex.position = glm::vec3(mesh->mVertices[v][0], mesh->mVertices[v][1], mesh->mVertices[v][2]);
-			vertex.normal = glm::vec3(mesh->mNormals[v][0], mesh->mNormals[v][1], mesh->mNormals[v][2]);
+			if (mesh->mNormals)
+				vertex.normal = glm::vec3(mesh->mNormals[v][0], mesh->mNormals[v][1], mesh->mNormals[v][2]);
+			else
+				vertex.normal = glm::vec3(0.0f);
 			vertices.push_back(vertex);
 		}
 		for (unsigned int f = 0; f < mesh->mNumFaces; f++) {
 			aiFace& face = mesh->mFaces[f];
 			for (unsigned int fi = 1; fi < face.mNumIndices - 1; fi++) {
-				indices.push_back(verticesOffset + face.mIndices[0]);
-				indices.push_back(verticesOffset + face.mIndices[fi + 0]);
-				indices.push_back(verticesOffset + face.mIndices[fi + 1]);
+
+				uint32_t vIds[3] = {
+					verticesOffset + face.mIndices[0],
+					verticesOffset + face.mIndices[fi + 0],
+					verticesOffset + face.mIndices[fi + 1]
+				};
+
+				indices.push_back(vIds[0]);
+				indices.push_back(vIds[1]);
+				indices.push_back(vIds[2]);
+
+				if (!mesh->mNormals) {
+
+					glm::vec3 n = glm::cross(vertices[vIds[1]].position - vertices[vIds[0]].position, vertices[vIds[2]].position - vertices[vIds[0]].position);
+
+					vertices[vIds[0]].normal += n;
+					vertices[vIds[1]].normal += n;
+					vertices[vIds[2]].normal += n;
+
+				}
 			}
 		}
+	}
+
+	for (auto& v : vertices) {
+		v.normal = glm::normalize(v.normal);
 	}
 }
 
@@ -259,7 +301,13 @@ void Application::createMeshBuffer()
 {
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
+
+#if 0 
 	loadfile("ben_00.obj", vertices, indices);
+
+#else 
+	loadfile("xyzrgb_dragon.ply", vertices, indices);
+#endif
 
 	m_meshTriangleCount = static_cast<unsigned int>(indices.size()) / 3;
 
@@ -316,6 +364,10 @@ void Application::draw() {
 
 #if 1
   glUseProgram(m_eyeDomeLightingProgram);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, m_fbo_textures[0]);
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, m_fbo_textures[2]);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 #endif
 
