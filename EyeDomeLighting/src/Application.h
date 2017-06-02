@@ -24,10 +24,10 @@
 #define MAX_FRAMEBUFFER_WIDTH 2048
 #define MAX_FRAMEBUFFER_HEIGHT 2048
 
-struct PlyObjVertex
-{
-  glm::vec3 pos;
-  glm::vec3 normal;
+#include <glm/glm.hpp>
+struct Vertex {
+	glm::vec3 position;
+	glm::vec3 normal;
 };
 
 class Application {
@@ -79,6 +79,18 @@ public:
    
 	// scene objects
 	static Camera m_camera;
+
+	void createFrameBuffer();
+	void loadfile(std::string filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices);
+	void createMeshBuffer();
+	void drawMesh();
+	GLuint m_frameBuffer;
+	GLuint m_fbo_textures[2];
+
+	GLuint m_meshRenderProgram;
+	GLuint m_meshIndicesBuffer;
+	GLuint m_meshVerticesBuffer;
+	unsigned int m_meshTriangleCount;
 };
 
 #endif

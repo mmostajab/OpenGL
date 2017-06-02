@@ -135,10 +135,14 @@ void Application::init() {
     glGenBuffers(1, &m_lighting_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, m_lighting_buffer);
     glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), NULL, GL_DYNAMIC_DRAW);
+
+	glEnable(GL_DEPTH_TEST);
 }
 
 void Application::create() {
   compileShaders();
+  createFrameBuffer();
+  createMeshBuffer();
 }
 
 void Application::update(float time, float timeSinceLastFrame) {
@@ -180,14 +184,132 @@ void Application::update(float time, float timeSinceLastFrame) {
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 }
 
+void Application::createFrameBuffer() {
+	glGenFramebuffers(1, &m_frameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+	glGenTextures(2, m_fbo_textures);
+
+	glBindTexture(GL_TEXTURE_2D, m_fbo_textures[0]);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB16F, m_width, m_height);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glBindTexture(GL_TEXTURE_2D, m_fbo_textures[1]);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, m_width, m_height);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_fbo_textures[0], 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,  m_fbo_textures[1], 0);
+
+	static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
+	glDrawBuffers(1, draw_buffers);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+void Application::loadfile(std::string filename, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
+{
+	Assimp::Importer importer;
+	const aiScene* scene = importer.ReadFile(filename.c_str(),
+		aiProcess_CalcTangentSpace |
+		aiProcess_Triangulate |
+		aiProcess_JoinIdenticalVertices |
+		aiProcess_SortByPType);
+	if (!scene) {
+		std::cout << "[ERROR] Cannot load " << filename << std::endl;
+		return;
+	}
+
+	for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
+		uint32_t verticesOffset = static_cast<uint32_t>(vertices.size());
+
+		std::vector<glm::vec3> newMeshVertices;
+		std::vector<glm::vec3> newMeshIndices;
+
+		aiMesh* mesh = scene->mMeshes[i];
+		int iMeshFaces = mesh->mNumFaces;
+		for (unsigned int v = 0; v < mesh->mNumVertices; v++) {
+			Vertex vertex;
+			//std::cout << "Vertex #" << v << " " << mesh->mVertices[v][0] << " " << mesh->mVertices[v][1] << " " << mesh->mVertices[v][2] << std::endl;
+			vertex.position = glm::vec3(mesh->mVertices[v][0], mesh->mVertices[v][1], mesh->mVertices[v][2]);
+			vertex.normal = glm::vec3(mesh->mNormals[v][0], mesh->mNormals[v][1], mesh->mNormals[v][2]);
+			vertices.push_back(vertex);
+		}
+		for (unsigned int f = 0; f < mesh->mNumFaces; f++) {
+			aiFace& face = mesh->mFaces[f];
+			for (unsigned int fi = 1; fi < face.mNumIndices - 1; fi++) {
+				indices.push_back(verticesOffset + face.mIndices[0]);
+				indices.push_back(verticesOffset + face.mIndices[fi + 0]);
+				indices.push_back(verticesOffset + face.mIndices[fi + 1]);
+			}
+		}
+	}
+}
+
+void Application::createMeshBuffer()
+{
+	std::vector<Vertex> vertices;
+	std::vector<unsigned int> indices;
+	loadfile("ben_00.obj", vertices, indices);
+
+	m_meshTriangleCount = static_cast<unsigned int>(indices.size()) / 3;
+
+	std::clog << "=======================================================" << std::endl;
+	std::cout << " Number of vertices  = " << vertices.size()     << std::endl;
+	std::cout << " Number of triangles = " << m_meshTriangleCount << std::endl;
+	std::clog << "=======================================================" << std::endl;
+
+	glGenBuffers(1, &m_meshVerticesBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, m_meshVerticesBuffer);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+
+	glGenBuffers(1, &m_meshIndicesBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_meshIndicesBuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+}
+
+void Application::drawMesh() {
+	glUseProgram(m_meshRenderProgram);
+
+	glBindBuffer(GL_ARRAY_BUFFER, m_meshVerticesBuffer);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (char*)0 + offsetof(Vertex, position));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (char*)0 + offsetof(Vertex, normal));
+	
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_meshIndicesBuffer);
+
+	glDrawElements(GL_TRIANGLES, 3*m_meshTriangleCount, GL_UNSIGNED_INT, 0);
+
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(0);
+}
+
 void Application::draw() {
   glViewport(0, 0, m_width, m_height);
 
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
 
-  glClearColor(0.1f, 0.3f, 0.7f, 1.f);
+  glClearColor(0.0f, 0.0f, 0.0f, 1.f);
+  glClearDepth(1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
+
+  drawMesh();
+  
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glClearColor(0.2f, 0.4f, 0.7f, 0.f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  drawMesh();
+
   // TODO Draw your buffers here!
 
   // Draw the world coordinate system
@@ -228,6 +350,7 @@ Application::~Application() {
 
 void Application::compileShaders() { 
   m_coord_system_program = compile_link_vs_fs("../../src/glsl/coords.vert", "../../src/glsl/coords.frag");
+  m_meshRenderProgram = compile_link_vs_fs("../../src/glsl/simple.vert", "../../src/glsl/simple.frag");
 }
 
 void Application::EventMouseButton(GLFWwindow* window, int button, int action, int mods) {
