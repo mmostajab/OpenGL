@@ -43,7 +43,7 @@ void Application::init(const unsigned int& width, const unsigned int& height, HG
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
-    m_window = glfwCreateWindow(width, height, "Simple GL App", NULL, NULL);
+    m_window = glfwCreateWindow(width, height, "Eye-Dome Lighting Sample", NULL, NULL);
     if (!m_window)
     {
         glfwTerminate();
@@ -122,8 +122,8 @@ void Application::init() {
     m_camera.SetMode(MODELVIEWER);
     //m_camera.SetMode(FREE);
 #ifdef DRAGON
-    m_camera.SetPosition(glm::vec3(39.3f, 30.65f, -85.5f));
-	m_camera.SetLookAt(glm::vec3(12.8f, 1.3f, 4.6f));
+    m_camera.SetPosition(glm::vec3(43.6f, 25.6f, -117.6f));
+	m_camera.SetLookAt(glm::vec3(10.8f, -3.3f, 2.95f));
 #else
 	m_camera.SetPosition(glm::vec3(0.45f, 0.45f, 0.45f));
 	m_camera.SetLookAt(glm::vec3(0.0f, 0.45f, 0.0f));
@@ -131,7 +131,7 @@ void Application::init() {
 
 
     m_camera.SetClipping(0.01f, 1000.0f);
-    m_camera.SetFOV(90);
+    m_camera.SetFOV(60);
     m_camera.SetViewport(0, 0, m_width, m_height);
     m_camera.camera_scale = 0.01f;
 
