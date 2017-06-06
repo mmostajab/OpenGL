@@ -48,18 +48,18 @@ void main() {
 #endif
 
 #ifdef EYE_DOME_LIGHTING
-	float edlStrength = 10000;
-	int radius = 1;
+	float edlStrength = 1000;
+	int radius = 50;
 	float response = 
-		max(0, func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.zy).x)) + 
-		max(0, func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.zx).x)) +
-		max(0, func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.yz).x)) + 
-		max(0, func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.yx).x)) +
-
-		max(0, func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.zz).x)) + 
-		max(0, func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.xx).x)) +
-		max(0, func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.xz).x)) + 
-		max(0, func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.zx).x)) ;
+		abs( func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.zy).x)) + 
+		abs( func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.zx).x)) +
+		abs( func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.yz).x)) + 
+		abs( func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.yx).x)) +
+		
+		abs( func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.zz).x)) + 
+		abs( func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.xx).x)) +
+		abs( func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.xz).x)) + 
+		abs( func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.zx).x)) ;
 
 	response /= 8.0;
 	//response /= 4.0;

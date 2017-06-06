@@ -113,8 +113,8 @@ void Application::init(const unsigned int& width, const unsigned int& height) {
     init();
 }
 
-//#define DRAGON
-#define Armadillo
+#define DRAGON
+//#define Armadillo
 void Application::init() {
     GLenum e = glGetError();
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
