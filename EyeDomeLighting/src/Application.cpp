@@ -87,7 +87,7 @@ void Application::init(const unsigned int& width, const unsigned int& height) {
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
-    m_window = glfwCreateWindow(width, height, "Simple GL App", NULL, NULL);
+    m_window = glfwCreateWindow(width, height, "Point Cloud Lighting", NULL, NULL);
     if (!m_window)
     {
         glfwTerminate();
@@ -113,7 +113,7 @@ void Application::init(const unsigned int& width, const unsigned int& height) {
     init();
 }
 
-#define DRAGON
+//#define DRAGON
 void Application::init() {
     GLenum e = glGetError();
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -302,7 +302,7 @@ void Application::createMeshBuffer()
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
 
-#if 0 
+#ifndef DRAGON 
 	loadfile("ben_00.obj", vertices, indices);
 
 #else 
