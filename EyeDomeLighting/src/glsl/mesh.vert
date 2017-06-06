@@ -17,5 +17,5 @@ out VS_OUT {
 void main() {
   gl_Position =  proj_mat * view_mat * world_mat * vec4( position, 1.0f );
   vs_out.worldCoord = world_mat * vec4(position, 1.0f);
-  vs_out.viewNormal = mat3(view_mat) * normal;
+  vs_out.viewNormal = mat3(view_mat * world_mat) * normal;
 }

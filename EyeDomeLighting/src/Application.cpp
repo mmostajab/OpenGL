@@ -114,6 +114,7 @@ void Application::init(const unsigned int& width, const unsigned int& height) {
 }
 
 //#define DRAGON
+#define Armadillo
 void Application::init() {
     GLenum e = glGetError();
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -124,6 +125,9 @@ void Application::init() {
 #ifdef DRAGON
     m_camera.SetPosition(glm::vec3(43.6f, 25.6f, -117.6f));
 	m_camera.SetLookAt(glm::vec3(10.8f, -3.3f, 2.95f));
+#elif defined(Armadillo)
+	m_camera.SetPosition(glm::vec3(77.2f, 88.2f, -140.2f));
+	m_camera.SetLookAt(glm::vec3(8.2f, 22.4f, 4.1f));
 #else
 	m_camera.SetPosition(glm::vec3(0.45f, 0.45f, 0.45f));
 	m_camera.SetLookAt(glm::vec3(0.0f, 0.45f, 0.0f));
@@ -182,6 +186,7 @@ void Application::update(float time, float timeSinceLastFrame) {
     // Updating the camera matrices
     m_camera.Update();
     m_camera.GetMatricies(m_projmat, m_viewmat, m_worldmat);
+	//m_worldmat = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0, 1, 0));
     m_inv_viewmat = glm::inverse(m_viewmat);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_transformation_buffer);
     glm::mat4* transform_matrices = (glm::mat4*)glMapBufferRange(GL_UNIFORM_BUFFER, 0, 3 * sizeof(glm::mat4), GL_MAP_WRITE_BIT);
@@ -302,11 +307,12 @@ void Application::createMeshBuffer()
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
 
-#ifndef DRAGON 
-	loadfile("ben_00.obj", vertices, indices);
-
-#else 
+#ifdef DRAGON 
 	loadfile("xyzrgb_dragon.ply", vertices, indices);
+#elif defined(Armadillo)
+	loadfile("Armadillo.ply", vertices, indices);
+#else 
+	loadfile("ben_00.obj", vertices, indices);
 #endif
 
 	m_meshTriangleCount = static_cast<unsigned int>(indices.size()) / 3;

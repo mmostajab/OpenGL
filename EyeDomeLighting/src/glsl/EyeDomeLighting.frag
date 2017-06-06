@@ -12,6 +12,18 @@ layout(location = 0) out vec4 out_color;
 //#define SHOW_COLOR
 //#define GRADIENT_NORMALS
 #define EYE_DOME_LIGHTING
+#define USE_LOG
+
+
+float func(float x){
+	//return x;
+
+#ifdef USE_LOG
+	return log2(x);
+#else
+	return (x-1.0f)/x;
+#endif
+}
 
 void main() {
 	
@@ -36,14 +48,21 @@ void main() {
 #endif
 
 #ifdef EYE_DOME_LIGHTING
-	float edlStrength = 90;
+	float edlStrength = 10000;
 	int radius = 1;
 	float response = 
-		max(0, log2(texture(sDepth, P).x) - log2(textureOffset(sDepth, P, radius * offset.zy).x)) + 
-		max(0, log2(texture(sDepth, P).x) - log2(textureOffset(sDepth, P, radius * offset.zx).x)) +
-		max(0, log2(texture(sDepth, P).x) - log2(textureOffset(sDepth, P, radius * offset.yz).x)) + 
-		max(0, log2(texture(sDepth, P).x) - log2(textureOffset(sDepth, P, radius * offset.yx).x)) ;
-	response /= 4.0;
+		max(0, func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.zy).x)) + 
+		max(0, func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.zx).x)) +
+		max(0, func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.yz).x)) + 
+		max(0, func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.yx).x)) +
+
+		max(0, func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.zz).x)) + 
+		max(0, func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.xx).x)) +
+		max(0, func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.xz).x)) + 
+		max(0, func(texture(sDepth, P).x) - func(textureOffset(sDepth, P, radius * offset.zx).x)) ;
+
+	response /= 8.0;
+	//response /= 4.0;
 
 	float diffuse = exp(-response*300.0*edlStrength);
 #endif
